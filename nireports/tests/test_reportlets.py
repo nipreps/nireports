@@ -30,7 +30,11 @@ import pandas as pd
 import pytest
 
 from .generate_data import _create_dtseries_cifti
-from nireports.tools.timeseries import _get_tr, _cifti_timeseries, _nifti_timeseries
+from nireports.tools.timeseries import (
+    get_tr as _get_tr,
+    cifti_timeseries as _cifti_timeseries,
+    nifti_timeseries as _nifti_timeseries,
+)
 
 from nireports.reportlets.nuisance import plot_carpet
 from nireports.reportlets.surface import cifti_surfaces_plot

@@ -60,29 +60,3 @@ def _get_values_inside_a_mask(main_file, mask_file):
 
     data = main_data[np.logical_and(nan_mask, mask)]
     return data
-
-
-def _get_tr(img):
-    """
-    Attempt to extract repetition time from NIfTI/CIFTI header.
-
-    Examples
-    --------
-    >>> _get_tr(nb.load(
-    ...     testdata_path
-    ...     / 'sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz'
-    ... ))
-    2.2
-    >>> _get_tr(nb.load(
-    ...     testdata_path
-    ...     / 'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'
-    ... ))
-    2.0
-
-    """
-
-    try:
-        return img.header.matrix.get_index_map(0).series_step
-    except AttributeError:
-        return img.header.get_zooms()[-1]
-    raise RuntimeError("Could not extract TR - unknown data structure type")
