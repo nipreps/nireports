@@ -1,0 +1,35 @@
+version: 2.1
+
+executors:
+  python-min:
+    docker:
+      - image: cimg/python:3.8
+    environment:
+      REQUIREMENTS: min-requirements.txt
+  python-latest:
+    docker:
+      - image: cimg/python:3.10
+
+
+jobs:
+  test:
+    executor: python-latest
+    steps:
+    - checkout
+    - run:
+        command: if [[ -n "$REQUIREMENTS" ]]; then pip install -r $REQUIREMENTS; fi
+    - run:
+        command: pip install .[test]
+    - run:
+        command: pytest -sv --doctest-modules --cov nireports -n auto nireports
+    - store_artifacts:
+        # This should be updated when we start emitting outputs
+        path: out/
+
+
+workflows:
+  min-max:
+    jobs:
+      - test
+      - test:
+          executor: python-min
