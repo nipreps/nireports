@@ -98,3 +98,35 @@ jobs:
         run: pytest -sv --doctest-modules --cov nireports -n auto nireports
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
+
+  deploy:
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch packages
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+      - name: Check for PyPI token
+        id: deployable
+        env:
+          TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -n "$PYPI_API_TOKEN" ]; then echo ::set-output name=DEPLOY::true; fi
+          if [ -n "$TEST_PYPI_API_TOKEN" ]; then echo ::set-output name=TEST_DEPLOY::true; fi
+      - name: Test PyPI upload
+        if: steps.deployable.outputs.TEST_DEPLOY
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+          skip_existing: true
+      - name: Upload to PyPI (on tags)
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && steps.deployable.outputs.DEPLOY
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
