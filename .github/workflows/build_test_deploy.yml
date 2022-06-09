@@ -57,6 +57,11 @@ jobs:
             architecture: x86
           - os: macos-latest
             architecture: x86
+          # Only run oldest/newest on Windows/Mac
+          - os: windows-latest
+            python-version: 3.9
+          - os: macos-latest
+            python-version: 3.9
           # Only install minimum requirements for one installation type
           # Doesn't matter which
           - package: 'dist/*.whl'
