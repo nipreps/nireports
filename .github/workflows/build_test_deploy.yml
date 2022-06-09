@@ -1,0 +1,95 @@
+name: Build-Test-Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - maint/*
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - main
+      - maint/*
+  schedule:
+    # 8am EST / 9am EDT Mondays
+    - cron: '0 13 * * 1'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install build dependencies
+        run: pip install --upgrade pip build twine
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Check distributions
+        run: twine check dist/*
+      - uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+  test:
+    needs: [build]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
+        python-version: [3.8, 3.9, '3.10']
+        architecture: ['x64', 'x86']
+        package: ['.', 'dist/*.whl', 'dist/*.tar.gz']
+        requirements: ['', 'min-requirements.txt']
+        exclude:
+          # 32-bit is a Windows-only consideration
+          - os: ubuntu-latest
+            architecture: x86
+          - os: macos-latest
+            architecture: x86
+          # Only install minimum requirements for one installation type
+          # Doesn't matter which
+          - package: 'dist/*.whl'
+            requirements: 'min-requirements.txt'
+          - package: 'dist/*.tar.gz'
+            requirements: 'min-requirements.txt'
+    env:
+      REQUIREMENTS: ${{ matrix.requirements }}
+      PACKAGE: ${{ matrix.package }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Fetch packages
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.architecture }}
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+      - name: Install dependencies
+        run: if [[ -n "$REQUIREMENTS" ]]; then pip install -r $REQUIREMENTS; fi
+      - name: Install package
+        run: pip install $PACKAGE
+      - name: Verify installation
+        run: python -c "import nireports; print(nireports.__version__)"
+      - name: Install test dependencies
+        run: pip install nireports[test]
+      - name: Run tests
+        run: pytest -sv --doctest-modules --cov nireports -n auto nireports
+      - uses: codecov/codecov-action@v3
+        if: ${{ always() }}
