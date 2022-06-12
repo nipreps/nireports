@@ -25,4 +25,4 @@ exclude = '''
   | dist
 )/
 '''
-line-length = 79
+line-length = 99
