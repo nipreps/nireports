@@ -248,8 +248,8 @@ class Report:
 
     >>> robj = Report(testdir / 'out', 'madeoutuuid', subject_id='01', packagename='fmriprep',
     ...               reportlets_dir=testdir / 'work' / 'reportlets')
-    >>> robj.layout.get(subject='01', desc='reconall')  # doctest: +ELLIPSIS
-    [<BIDSFile filename='.../figures/sub-01_desc-reconall_T1w.svg'>]
+    >>> robj.layout.get(subject='01', desc='reconall')[0]._path.as_posix()  # doctest: +ELLIPSIS
+    '.../figures/sub-01_desc-reconall_T1w.svg'
 
     >>> robj.generate_report()
     0
