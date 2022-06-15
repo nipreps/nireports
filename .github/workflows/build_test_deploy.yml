@@ -92,7 +92,7 @@ jobs:
       - name: Install dependencies
         run: if [[ -n "$REQUIREMENTS" ]]; then pip install -r $REQUIREMENTS; fi
       - name: Install package
-        run: pip install $PACKAGE
+        run: pip install $PACKAGE[test]
       - name: Verify installation
         run: python -c "import nireports; print(nireports.__version__)"
       - name: Install test dependencies
