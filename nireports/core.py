@@ -96,8 +96,8 @@ class Reportlet(Element):
 
     .. doctest::
 
-    >>> bl.get(subject='01', desc='reconall') # doctest: +ELLIPSIS
-    [<BIDSFile filename='.../fmriprep/sub-01/figures/sub-01_desc-reconall_T1w.svg'>]
+    >>> bl.get(subject='01', desc='reconall')[0]._path.as_posix() # doctest: +ELLIPSIS
+    '.../fmriprep/sub-01/figures/sub-01_desc-reconall_T1w.svg'
 
     >>> len(bl.get(subject='01', space='.*', regex_search=True))
     2
@@ -191,9 +191,7 @@ class Reportlet(Element):
                     dst.parent.mkdir(parents=True, exist_ok=True)
                     copyfile(src, dst, copy=True, use_hardlink=True)
 
-                contents = SVG_SNIPPET[config.get("static", True)].format(
-                    html_anchor
-                )
+                contents = SVG_SNIPPET[config.get("static", True)].format(html_anchor)
 
                 # Our current implementations of dynamic reportlets do this themselves,
                 # however I'll leave the code here since this is potentially something we
@@ -285,9 +283,7 @@ class Report:
         self.packagename = packagename
         self.subject_id = subject_id
         if subject_id is not None:
-            self.subject_id = (
-                subject_id[4:] if subject_id.startswith("sub-") else subject_id
-            )
+            self.subject_id = subject_id[4:] if subject_id.startswith("sub-") else subject_id
             self.out_filename = f"sub-{self.subject_id}.html"
 
         # Default template from nireports
@@ -327,14 +323,8 @@ class Report:
         for subrep_cfg in config:
             # First determine whether we need to split by some ordering
             # (ie. sessions / tasks / runs), which are separated by commas.
-            orderings = [
-                s
-                for s in subrep_cfg.get("ordering", "").strip().split(",")
-                if s
-            ]
-            entities, list_combos = self._process_orderings(
-                orderings, self.layout
-            )
+            orderings = [s for s in subrep_cfg.get("ordering", "").strip().split(",") if s]
+            entities, list_combos = self._process_orderings(orderings, self.layout)
 
             if not list_combos:  # E.g. this is an anatomical reportlet
                 reportlets = [
@@ -352,15 +342,12 @@ class Report:
                     # Set a common title for this particular combination c
                     title = "Reports for: %s." % ", ".join(
                         [
-                            '%s <span class="bids-entity">%s</span>'
-                            % (ent_filt[i], c_filt[i])
+                            '%s <span class="bids-entity">%s</span>' % (ent_filt[i], c_filt[i])
                             for i in range(len(c_filt))
                         ]
                     )
                     for cfg in subrep_cfg["reportlets"]:
-                        cfg["bids"].update(
-                            {entities[i]: c[i] for i in range(len(c))}
-                        )
+                        cfg["bids"].update({entities[i]: c[i] for i in range(len(c))})
                         rlet = Reportlet(self.layout, self.out_dir, config=cfg)
                         if not rlet.is_empty():
                             rlet.title = title
@@ -379,18 +366,11 @@ class Report:
                 self.sections.append(sub_report)
 
         # Populate errors section
-        error_dir = (
-            self.out_dir
-            / "sub-{}".format(self.subject_id)
-            / "log"
-            / self.run_uuid
-        )
+        error_dir = self.out_dir / "sub-{}".format(self.subject_id) / "log" / self.run_uuid
         if error_dir.is_dir():
             from ..utils.misc import read_crashfile
 
-            self.errors = [
-                read_crashfile(str(f)) for f in error_dir.glob("crash*.*")
-            ]
+            self.errors = [read_crashfile(str(f)) for f in error_dir.glob("crash*.*")]
 
     def generate_report(self):
         """Once the Report has been indexed, the final HTML can be generated"""
@@ -405,16 +385,12 @@ class Report:
                 .findall((logs_path / "CITATION.html").read_text())[0]
                 .strip()
             )
-            boilerplate.append(
-                (boiler_idx, "HTML", f'<div class="boiler-html">{text}</div>')
-            )
+            boilerplate.append((boiler_idx, "HTML", f'<div class="boiler-html">{text}</div>'))
             boiler_idx += 1
 
         if (logs_path / "CITATION.md").exists():
             text = (logs_path / "CITATION.md").read_text()
-            boilerplate.append(
-                (boiler_idx, "Markdown", f"<pre>{text}</pre>\n")
-            )
+            boilerplate.append((boiler_idx, "Markdown", f"<pre>{text}</pre>\n"))
             boiler_idx += 1
 
         if (logs_path / "CITATION.tex").exists():
@@ -439,9 +415,7 @@ class Report:
             boiler_idx += 1
 
         env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(
-                searchpath=str(self.template_path.parent)
-            ),
+            loader=jinja2.FileSystemLoader(searchpath=str(self.template_path.parent)),
             trim_blocks=True,
             lstrip_blocks=True,
             autoescape=False,
@@ -453,9 +427,7 @@ class Report:
 
         # Write out report
         self.out_dir.mkdir(parents=True, exist_ok=True)
-        (self.out_dir / self.out_filename).write_text(
-            report_render, encoding="UTF-8"
-        )
+        (self.out_dir / self.out_filename).write_text(report_render, encoding="UTF-8")
         return len(self.errors)
 
     @staticmethod
@@ -489,28 +461,20 @@ class Report:
             all_value_combos.remove(tuple([None for k in orderings]))
         # see what values exist for each entity
         unique_values = [
-            {value[idx] for value in all_value_combos}
-            for idx in range(len(orderings))
+            {value[idx] for value in all_value_combos} for idx in range(len(orderings))
         ]
         # if all values are None for an entity, we do not want to keep that entity
         keep_idx = [
-            False
-            if (len(val_set) == 1 and None in val_set) or not val_set
-            else True
+            False if (len(val_set) == 1 and None in val_set) or not val_set else True
             for val_set in unique_values
         ]
         # the "kept" entities
         entities = list(compress(orderings, keep_idx))
         # the "kept" value combinations
-        value_combos = [
-            tuple(compress(value_combo, keep_idx))
-            for value_combo in all_value_combos
-        ]
+        value_combos = [tuple(compress(value_combo, keep_idx)) for value_combo in all_value_combos]
         # sort the value combinations alphabetically from the first entity to the last entity
         value_combos.sort(
-            key=lambda entry: tuple(
-                str(value) if value is not None else "0" for value in entry
-            )
+            key=lambda entry: tuple(str(value) if value is not None else "0" for value in entry)
         )
 
         return entities, value_combos
@@ -590,9 +554,7 @@ def generate_reports(
 
         logger = logging.getLogger("cli")
         error_list = ", ".join(
-            "%s (%d)" % (subid, err)
-            for subid, err in zip(subject_list, report_errors)
-            if err
+            "%s (%d)" % (subid, err) for subid, err in zip(subject_list, report_errors) if err
         )
         logger.error(
             "Preprocessing did not finish successfully. Errors occurred while processing "
