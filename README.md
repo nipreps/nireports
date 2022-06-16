@@ -4,8 +4,8 @@
 
 *NiReports* contains the two main components of the *visual reporting system* of *NiPreps*:
 
-  * **Reportlets**: visualizations targetting the quality assessment of a particular processing step of the neuroimaging pipeline.
-    Typically, reportlets show brain mosaics with perhaps contours and/or segmentations.
+  * **Reportlets**: visualizations for assessing the quality of a particular processing step within the neuroimaging pipeline.
+    Typically, reportlets show brain mosaics perhaps with contours and/or segmentations.
     They can be *dynamic* and flicker between two different *states* to help assess the accuracy of image registrations.
     However, the reportlets are not limited to brain mosaics, and can contain correlation plots, BOLD fMRI *carpetplots*, etc.
   * **Report assembler**: end-user *NiPreps* write out reportlets to a predetermined folder, which is then queried by the assembler using *PyBIDS*.
