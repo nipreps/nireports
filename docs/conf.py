@@ -13,7 +13,11 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-
+try:
+    # This option is only available with Python 3.8
+    from importlib.metadata import version as get_version
+except ImportError:
+    from importlib_metadata import version as get_version
 
 # -- Project information -----------------------------------------------------
 
