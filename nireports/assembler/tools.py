@@ -3,6 +3,11 @@ Utilities for the :mod:`~nireports.assembler` module.
 """
 
 
+from pathlib import Path
+
+from nireports.assembler.report import Report
+
+
 def run_reports(
     out_dir,
     subject_label,
