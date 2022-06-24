@@ -20,7 +20,7 @@ class Reportlet(Element):
     >>> from pkg_resources import resource_filename
     >>> from shutil import copytree
     >>> from bids.layout import BIDSLayout
-    >>> test_data_path = resource_filename('nireports', 'data/tests/work')
+    >>> test_data_path = resource_filename('nireports', 'assembler/data/tests/work')
     >>> testdir = Path(tmpdir)
     >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
     >>> out_figs = testdir / 'out' / 'fmriprep'

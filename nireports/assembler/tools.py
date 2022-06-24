@@ -21,7 +21,7 @@ def run_reports(
 
     >>> from pkg_resources import resource_filename
     >>> from shutil import copytree
-    >>> test_data_path = resource_filename('nireports', 'data/tests/work')
+    >>> test_data_path = resource_filename('nireports', 'assembler/data/tests/work')
     >>> testdir = Path(tmpdir)
     >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
     >>> (testdir / 'fmriprep').mkdir(parents=True, exist_ok=True)
