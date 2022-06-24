@@ -1,3 +1,5 @@
+from typing import Iterable, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -5,17 +7,16 @@ from matplotlib import gridspec as mgs
 
 
 def confoundplot(
-    tseries,
-    gs_ts,
-    gs_dist=None,
-    name=None,
-    units=None,
-    tr=None,
-    hide_x=True,
-    color="b",
-    nskip=0,
-    cutoff=None,
-    ylims=None,
+    time_series,
+    subplot_spec: mgs.SubplotSpec,
+    dist_subplot_spec: mgs.SubplotSpec = None,
+    name: str = None,
+    units: str = None,
+    tr: float = None,
+    hide_x: bool = True,
+    color: str = "b",
+    thresholds: Iterable[float] = None,
+    ylims: Tuple[float, float] = None,
 ):
 
     # Define TR and number of frames
@@ -23,18 +24,20 @@ def confoundplot(
     if tr is None:
         notr = True
         tr = 1.0
-    ntsteps = len(tseries)
-    tseries = np.array(tseries)
+    n_timepoints = len(time_series)
+    time_series = np.array(time_series)
 
     # Define nested GridSpec
-    gs = mgs.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0)
+    gs = mgs.GridSpecFromSubplotSpec(
+        1, 2, subplot_spec=subplot_spec, width_ratios=[1, 100], wspace=0.0
+    )
 
     ax_ts = plt.subplot(gs[1])
     ax_ts.grid(False)
 
     # Set 10 frame markers in X axis
-    interval = max((ntsteps // 10, ntsteps // 5, 1))
-    xticks = list(range(0, ntsteps)[::interval])
+    interval = max((n_timepoints // 10, n_timepoints // 5, 1))
+    xticks = list(range(0, n_timepoints)[::interval])
     ax_ts.set_xticks(xticks)
 
     if not hide_x:
@@ -90,7 +93,7 @@ def confoundplot(
     ax_ts.set_yticks([])
     ax_ts.set_yticklabels([])
 
-    nonnan = tseries[~np.isnan(tseries)]
+    nonnan = time_series[~np.isnan(time_series)]
     if nonnan.size > 0:
         # Calculate Y limits
         valrange = nonnan.max() - nonnan.min()
@@ -145,7 +148,7 @@ def confoundplot(
     )
 
     # Annotate percentile 95
-    ax_ts.plot((0, ntsteps - 1), [p95] * 2, linewidth=0.1, color="lightgray")
+    ax_ts.plot((0, n_timepoints - 1), [p95] * 2, linewidth=0.1, color="lightgray")
     ax_ts.annotate(
         "%.2f" % p95,
         xy=(0, p95),
@@ -157,11 +160,11 @@ def confoundplot(
         size=3,
     )
 
-    if cutoff is None:
-        cutoff = []
+    if thresholds is None:
+        thresholds = []
 
-    for i, thr in enumerate(cutoff):
-        ax_ts.plot((0, ntsteps - 1), [thr] * 2, linewidth=0.2, color="dimgray")
+    for i, thr in enumerate(thresholds):
+        ax_ts.plot((0, n_timepoints - 1), [thr] * 2, linewidth=0.2, color="dimgray")
 
         ax_ts.annotate(
             "%.2f" % thr,
@@ -174,12 +177,12 @@ def confoundplot(
             size=3,
         )
 
-    ax_ts.plot(tseries, color=color, linewidth=0.8)
-    ax_ts.set_xlim((0, ntsteps - 1))
+    ax_ts.plot(time_series, color=color, linewidth=0.8)
+    ax_ts.set_xlim((0, n_timepoints - 1))
 
-    if gs_dist is not None:
-        ax_dist = plt.subplot(gs_dist)
-        sns.displot(tseries, vertical=True, ax=ax_dist)
+    if dist_subplot_spec is not None:
+        ax_dist = plt.subplot(dist_subplot_spec)
+        sns.displot(time_series, vertical=True, ax=ax_dist)
         ax_dist.set_xlabel("Timesteps")
         ax_dist.set_ylim(ax_ts.get_ylim())
         ax_dist.set_yticklabels([])
