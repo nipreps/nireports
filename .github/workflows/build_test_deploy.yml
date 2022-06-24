@@ -89,6 +89,8 @@ jobs:
           architecture: ${{ matrix.architecture }}
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
+      - name: Upgrade pip
+        run: pip install -U pip
       - name: Install dependencies
         run: if [[ -n "$REQUIREMENTS" ]]; then pip install -r $REQUIREMENTS; fi
       - name: Install package
