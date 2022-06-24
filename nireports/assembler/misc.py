@@ -55,7 +55,7 @@ def _read_pkl(path):
 def _read_txt(path):
     """Read a txt crashfile
 
-    >>> new_path = Path(__file__).resolve().parent.parent
+    >>> new_path = Path(__file__).resolve().parent
     >>> test_data_path = new_path / 'data' / 'tests'
     >>> info = _read_txt(test_data_path / 'crashfile.txt')
     >>> info['node']  # doctest: +ELLIPSIS
