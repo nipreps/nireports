@@ -2,6 +2,8 @@
 .. image:: https://readthedocs.org/projects/nireports/badge/?version=latest
   :target: https://nireports.readthedocs.io/en/latest/?badge=latest
   :alt: Documentation Status
+.. image:: https://codecov.io/gh/nipreps/nireports/branch/main/graph/badge.svg?token=OPH6D32GWN
+  :target: https://codecov.io/gh/nipreps/nireports
 
 *NiReports*: the *NiPreps*' reporting and visualization tools
 =============================================================
