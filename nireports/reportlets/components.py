@@ -23,10 +23,7 @@ def confoundplot(
 ):
 
     # Define TR and number of frames
-    notr = False
-    if tr is None:
-        notr = True
-        tr = 1.0
+    tr = 1.0 if tr is None else tr
     n_timepoints = len(time_series)
     time_series = np.array(time_series)
 
@@ -40,16 +37,17 @@ def confoundplot(
 
     # Set 10 frame markers in X axis
     interval = max((n_timepoints // 10, n_timepoints // 5, 1))
-    xticks = list(range(0, n_timepoints)[::interval])
+    xticks = np.arange(0, n_timepoints, interval)
     ax_ts.set_xticks(xticks)
 
     if not hide_x:
-        if notr:
+        if tr is None:
             ax_ts.set_xlabel("time (frame #)")
         else:
             ax_ts.set_xlabel("time (s)")
             labels = tr * np.array(xticks)
-            ax_ts.set_xticklabels(["%.02f" % t for t in labels.tolist()])
+            xticklabels = [f"{t:.2f}" for t in labels.tolist()]
+            ax_ts.set_xticklabels(xticklabels)
     else:
         ax_ts.set_xticklabels([])
 
