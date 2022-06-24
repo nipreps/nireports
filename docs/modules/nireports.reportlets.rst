@@ -1,6 +1,5 @@
 nireports.reportlets package
 ============================
-
 Module contents
 ---------------
 
