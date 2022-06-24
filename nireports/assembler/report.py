@@ -15,7 +15,7 @@ from nireports.assembler.reportlet import Reportlet
 
 # Add a new figures spec
 try:
-    add_config_paths(figures=pkgrf("nireports", "data/nipreps.json"))
+    add_config_paths(figures=pkgrf("nireports", "assembler/data/nipreps.json"))
 except ValueError as e:
     if "Configuration 'figures' already exists" != str(e):
         raise
@@ -47,7 +47,7 @@ class Report:
     >>> from pkg_resources import resource_filename
     >>> from shutil import copytree
     >>> from bids.layout import BIDSLayout
-    >>> test_data_path = resource_filename('nireports', 'data/tests/work')
+    >>> test_data_path = resource_filename('nireports', 'assembler/data/tests/work')
     >>> testdir = Path(tmpdir)
     >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
     >>> out_figs = testdir / 'out' / 'fmriprep'

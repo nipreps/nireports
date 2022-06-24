@@ -86,7 +86,10 @@ def bids_sessions(tmpdir_factory):
 
 @pytest.fixture()
 def test_report1():
-    test_data_path = pkgrf("nireports", os.path.join("data", "tests", "work", "reportlets"))
+    test_data_path = pkgrf(
+        "nireports",
+        os.path.join("assembler", "data", "tests", "work", "reportlets"),
+    )
     out_dir = tempfile.mkdtemp()
 
     return Report(

@@ -1,3 +1,0 @@
-"""
-Default report assembly template.
-"""
