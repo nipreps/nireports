@@ -11,7 +11,7 @@ Welcome to nireports's documentation!
    :caption: Contents:
 
    overview
-   Installation
+   installation
    quickstart
    modules/modules
 
