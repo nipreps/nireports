@@ -1,2 +1,2 @@
 def test_import():
-    import nireports
+    import nireports  # noqa: F401
