@@ -10,6 +10,9 @@ Welcome to nireports's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   overview
+   Installation
+   quickstart
    modules/modules
 
 
