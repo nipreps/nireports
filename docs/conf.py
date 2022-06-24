@@ -22,7 +22,7 @@ copyright = "2022, The NiPreps Developers"
 author = "The NiPreps Developers"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.0"
+release = get_version("nireports")
 
 
 # -- General configuration ---------------------------------------------------
