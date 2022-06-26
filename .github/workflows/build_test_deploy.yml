@@ -71,6 +71,11 @@ jobs:
             requirements: 'min-requirements.txt'
           - package: 'dist/*.tar.gz'
             requirements: 'min-requirements.txt'
+          # Skip 32-bit Windows with Python 3.10 (see #42)
+          - os: windows-latest
+            architecture: x86
+            python-version: 3.10
+
     env:
       REQUIREMENTS: ${{ matrix.requirements }}
       PACKAGE: ${{ matrix.package }}
