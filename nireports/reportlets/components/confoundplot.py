@@ -1,3 +1,6 @@
+"""
+Definition of the :func:`confoundplot` component.
+"""
 from typing import Any, Dict, Iterable, List, Tuple
 
 import matplotlib.pyplot as plt
@@ -72,7 +75,41 @@ def confoundplot(
     thresholds: Iterable[float] = None,
     ylims: Tuple[float, float] = None,
     annotation_percentile: float = 95.0,
-):
+) -> tuple:
+    """
+    Plot a time series in a given subplot.
+
+    Parameters
+    ----------
+    time_series : _type_
+        Time series
+    subplot_spec : SubplotSpec
+        Subplot specification
+    dist_subplot_spec : SubplotSpec, optional
+        Distribution subplot specification, by default None
+    name : str, optional
+        Name to use for annotation, by default None
+    units : str, optional
+        Units to use for annotating the name and in the summary statistics, by
+        default None
+    tr : float, optional
+        Repetition time, by default None
+    hide_x : bool, optional
+        Whether to hide the x-axis or not, by default True
+    color : str, optional
+        Color to use for plotting the time series, by default "b"
+    thresholds : Iterable[float], optional
+        Threshold to display, by default None
+    ylims : Tuple[float, float], optional
+        Custom y-axis limits (min, max), by default None
+    annotation_percentile : float, optional
+        Annotate a particular percentile, by default 95.0
+
+    Returns
+    -------
+    tuple
+        Axis or axes (if distribution plot was created), grid spec
+    """
     # Mediate input.
     thresholds = [] if thresholds is None else thresholds
     units = units or ""
