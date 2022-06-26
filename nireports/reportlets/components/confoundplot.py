@@ -1,6 +1,3 @@
-"""
-Foundational tooling for the :mod:`~nireports.reportlets` module.
-"""
 from typing import Any, Dict, Iterable, List, Tuple
 
 import matplotlib.pyplot as plt
@@ -8,6 +5,14 @@ import numpy as np
 import seaborn as sns
 from matplotlib.gridspec import GridSpecFromSubplotSpec, SubplotSpec
 
+BBOX_CONFIGURATION: Dict[str, Any] = {
+    "boxstyle": "round",
+    "fc": "w",
+    "ec": "none",
+    "color": "none",
+    "lw": 0,
+    "alpha": 0.8,
+}
 NAME_ANNOTATION: Dict[str, Any] = {
     "xy": (0.0, 0.7),
     "xytext": (0, 0),
@@ -16,14 +21,7 @@ NAME_ANNOTATION: Dict[str, Any] = {
     "va": "center",
     "ha": "left",
     "size": 8,
-    "bbox": {
-        "boxstyle": "round",
-        "fc": "w",
-        "ec": "none",
-        "color": "none",
-        "lw": 0,
-        "alpha": 0.8,
-    },
+    "bbox": BBOX_CONFIGURATION,
 }
 STATS_ANNOTATION: Dict[str, Any] = {
     "xy": (0.98, 0.7),
@@ -33,14 +31,7 @@ STATS_ANNOTATION: Dict[str, Any] = {
     "va": "center",
     "ha": "right",
     "size": 4,
-    "bbox": {
-        "boxstyle": "round",
-        "fc": "w",
-        "ec": "none",
-        "color": "none",
-        "lw": 0,
-        "alpha": 0.8,
-    },
+    "bbox": BBOX_CONFIGURATION,
 }
 PERCENTILE_ANNOTATION: Dict[str, Any] = {
     "xytext": (-1, 0),
