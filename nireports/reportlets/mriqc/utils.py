@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 #
-# Copyright 2021 The NiPreps Developers <nipreps@gmail.com>
+# Copyright 2023 The NiPreps Developers <nipreps@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@
 #
 #     https://www.nipreps.org/community/licensing/
 #
+# STATEMENT OF CHANGES: This file was ported carrying over full git history from MRIQC,
+# another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
+# The original file this work derives from is found at:
+# https://github.com/nipreps/mriqc/blob/1ffd4c8d1a20b44ebfea648a7b12bb32a425d4ec/
+# mriqc/viz/utils.py
 """Visualization utilities."""
 import math
 import os.path as op
@@ -396,9 +401,7 @@ def plot_mosaic(
             )
             naxis += 1
 
-    fig.subplots_adjust(
-        left=0.05, right=0.95, bottom=0.05, top=0.95, wspace=0.05, hspace=0.05
-    )
+    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, wspace=0.05, hspace=0.05)
 
     if title:
         fig.suptitle(title, fontsize="10")
@@ -516,9 +519,7 @@ def _calc_fd(fd_file, fd_radius):
     translations = np.transpose(np.abs(np.diff(cols[0:3, :])))
     rotations = np.transpose(np.abs(np.diff(cols[3:6, :])))
 
-    fd_power = np.sum(translations, axis=1) + (fd_radius * pi / 180) * np.sum(
-        rotations, axis=1
-    )
+    fd_power = np.sum(translations, axis=1) + (fd_radius * pi / 180) * np.sum(rotations, axis=1)
 
     # FD is zero for the first time point
     fd_power = np.insert(fd_power, 0, 0)
@@ -556,16 +557,12 @@ def plot_segmentation(anat_file, segmentation, out_file, **kwargs):
 
     anat_ras = nb.as_closest_canonical(nb.load(anat_file))
     anat_ras_plumb = anat_ras.__class__(
-        anat_ras.dataobj,
-        _dicom_real_to_card(anat_ras.affine),
-        anat_ras.header
+        anat_ras.dataobj, _dicom_real_to_card(anat_ras.affine), anat_ras.header
     )
 
     seg_ras = nb.as_closest_canonical(nb.load(segmentation))
     seg_ras_plumb = seg_ras.__class__(
-        seg_ras.dataobj,
-        _dicom_real_to_card(seg_ras.affine),
-        seg_ras.header
+        seg_ras.dataobj, _dicom_real_to_card(seg_ras.affine), seg_ras.header
     )
 
     if kwargs.get("saturate", False):
