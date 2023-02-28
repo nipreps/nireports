@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 #
-# Copyright 2021 The NiPreps Developers <nipreps@gmail.com>
+# Copyright 2023 The NiPreps Developers <nipreps@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,12 +20,15 @@
 #
 #     https://www.nipreps.org/community/licensing/
 #
+# STATEMENT OF CHANGES: This file was ported carrying over full git history from MRIQC,
+# another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
+# The original file this work derives from is found at:
+# https://github.com/nipreps/mriqc/blob/1ffd4c8d1a20b44ebfea648a7b12bb32a425d4ec/
+# mriqc/interfaces/viz.py
 """Visualization interfaces."""
-from io import open  # pylint: disable=W0622
 from pathlib import Path
 
 import numpy as np
-from mriqc.viz.utils import plot_mosaic, plot_segmentation, plot_spikes
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -35,16 +38,14 @@ from nipype.interfaces.base import (
     traits,
 )
 
+from nireports.reportlets.mriqc.utils import plot_mosaic, plot_segmentation, plot_spikes
+
 
 class PlotContoursInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="File to be plotted")
-    in_contours = File(
-        exists=True, mandatory=True, desc="file to pick the contours from"
-    )
+    in_contours = File(exists=True, mandatory=True, desc="file to pick the contours from")
     cut_coords = traits.Int(8, usedefault=True, desc="number of slices")
-    levels = traits.List(
-        [0.5], traits.Float, usedefault=True, desc="add a contour per level"
-    )
+    levels = traits.List([0.5], traits.Float, usedefault=True, desc="add a contour per level")
     colors = traits.List(
         ["r"],
         traits.Str,
@@ -159,9 +160,7 @@ class PlotMosaic(SimpleInterface):
             cmap=self.inputs.cmap,
             annotate=self.inputs.annotate,
         )
-        self._results["out_file"] = str(
-            (Path(runtime.cwd) / self.inputs.out_file).resolve()
-        )
+        self._results["out_file"] = str((Path(runtime.cwd) / self.inputs.out_file).resolve())
         return runtime
 
 
@@ -175,9 +174,7 @@ class PlotSpikesOutputSpec(TraitedSpec):
 
 
 class PlotSpikes(SimpleInterface):
-    """
-    Plot slices of a dataset with spikes
-    """
+    """Plot slices of a dataset with spikes."""
 
     input_spec = PlotSpikesInputSpec
     output_spec = PlotSpikesOutputSpec
@@ -189,8 +186,7 @@ class PlotSpikes(SimpleInterface):
         spikes_list = np.loadtxt(self.inputs.in_spikes, dtype=int).tolist()
         # No spikes
         if not spikes_list:
-            with open(out_file, "w") as f:
-                f.write("<p>No high-frequency spikes were found in this dataset</p>")
+            Path(out_file).write_text("<p>No high-frequency spikes were found in this dataset</p>")
             return runtime
 
         spikes_list = [tuple(i) for i in np.atleast_2d(spikes_list).tolist()]

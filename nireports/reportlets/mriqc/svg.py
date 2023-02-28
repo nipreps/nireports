@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 #
-# Copyright 2021 The NiPreps Developers <nipreps@gmail.com>
+# Copyright 2023 The NiPreps Developers <nipreps@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@
 #
 #     https://www.nipreps.org/community/licensing/
 #
+# STATEMENT OF CHANGES: This file was ported carrying over full git history from MRIQC,
+# another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
+# The original file this work derives from is found at:
+# https://github.com/nipreps/mriqc/blob/1ffd4c8d1a20b44ebfea648a7b12bb32a425d4ec/
+# mriqc/viz/svg.py
 """SVG handling utilities."""
 
 
@@ -59,9 +64,7 @@ def combine_svg(svg_list, axis="vertical"):
             for i, els in enumerate(sizes):
                 scales[i] = ref_size[0] / els[0]
 
-        newsizes = [
-            tuple(size) for size in np.array(sizes) * np.array(scales)[..., np.newaxis]
-        ]
+        newsizes = [tuple(size) for size in np.array(sizes) * np.array(scales)[..., np.newaxis]]
         totalsize = [newsizes[0][0], np.sum(newsizes, axis=0)[1]]
 
     elif axis == "horizontal":
@@ -72,9 +75,7 @@ def combine_svg(svg_list, axis="vertical"):
             for i, els in enumerate(sizes):
                 scales[i] = ref_size[1] / els[1]
 
-        newsizes = [
-            tuple(size) for size in np.array(sizes) * np.array(scales)[..., np.newaxis]
-        ]
+        newsizes = [tuple(size) for size in np.array(sizes) * np.array(scales)[..., np.newaxis]]
         totalsize = [np.sum(newsizes, axis=0)[0], newsizes[0][1]]
 
     # Compose the views panel: total size is the width of
