@@ -1,3 +1,0 @@
-"""
-Nipype interfaces.
-"""
