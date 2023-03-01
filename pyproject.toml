@@ -132,7 +132,7 @@ per-file-ignores = [
 
 [tool.pytest.ini_options]
 norecursedirs = [".git"]
-addopts = "-svx --doctest-modules"
+addopts = "-svx --doctest-modules -n auto"
 doctest_optionflags = "ALLOW_UNICODE NORMALIZE_WHITESPACE ELLIPSIS"
 env = "PYTHONHASHSEED=0"
 filterwarnings = ["ignore::DeprecationWarning"]
