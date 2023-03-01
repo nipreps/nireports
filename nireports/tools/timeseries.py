@@ -20,6 +20,11 @@
 #
 #     https://www.nipreps.org/community/licensing/
 #
+# STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
+# another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
+# The original file this work derives from is found at:
+# https://github.com/nipreps/niworkflows/blob/fa273d004c362d9562616253180e95694f07be3b/
+# niworkflows/utils/timeseries.py
 """Extracting signals from NIfTI and CIFTI2 files."""
 import numpy as np
 import nibabel as nb

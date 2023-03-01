@@ -1,4 +1,4 @@
-package: niworkflows
+package: nireports
 sections:
 - name: Summary
   reportlets:
