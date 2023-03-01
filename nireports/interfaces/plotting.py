@@ -33,12 +33,10 @@ from nipype.interfaces.base import (
     traits,
     isdefined,
 )
-from niworkflows.utils.timeseries import _cifti_timeseries, _nifti_timeseries
-from niworkflows.viz.plots import (
-    fMRIPlot,
-    compcor_variance_plot,
-    confounds_correlation_plot,
-)
+from nireports.tools.timeseries import cifti_timeseries, get_tr, nifti_timeseries
+from nireports.reportlets.nuisance import confounds_correlation_plot
+from nireports.reportlets.xca import compcor_variance_plot
+from nireports.reportlets.modality.func import fMRIPlot
 
 
 class _FMRISummaryInputSpec(BaseInterfaceInputSpec):
@@ -91,9 +89,9 @@ class FMRISummary(SimpleInterface):
         input_data = nb.load(self.inputs.in_func)
         seg_file = self.inputs.in_segm if isdefined(self.inputs.in_segm) else None
         dataset, segments = (
-            _cifti_timeseries(input_data)
+            cifti_timeseries(input_data)
             if isinstance(input_data, nb.Cifti2Image) else
-            _nifti_timeseries(input_data, seg_file)
+            nifti_timeseries(input_data, seg_file)
         )
 
         fig = fMRIPlot(
@@ -105,7 +103,7 @@ class FMRISummary(SimpleInterface):
             ),
             tr=(
                 self.inputs.tr if isdefined(self.inputs.tr) else
-                _get_tr(input_data)
+                get_tr(input_data)
             ),
             confounds=dataframe,
             units={"outliers": "%", "FD": "mm"},
@@ -225,25 +223,3 @@ class ConfoundsCorrelationPlot(SimpleInterface):
             reference=self.inputs.reference_column,
         )
         return runtime
-
-
-def _get_tr(img):
-    """
-    Attempt to extract repetition time from NIfTI/CIFTI header
-
-    Examples
-    --------
-    >>> _get_tr(nb.load(Path(test_data) /
-    ...    'sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz'))
-    2.2
-    >>> _get_tr(nb.load(Path(test_data) /
-    ...    'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'))
-    2.0
-
-    """
-
-    try:
-        return img.header.matrix.get_index_map(0).series_step
-    except AttributeError:
-        return img.header.get_zooms()[-1]
-    raise RuntimeError("Could not extract TR - unknown data structure type")
