@@ -29,6 +29,7 @@ dependencies = [
     "pyyaml",
     "seaborn",
     "svgutils >= 0.3.4",
+    "templateflow",
 ]
 dynamic = ["version"]
 
