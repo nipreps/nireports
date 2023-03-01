@@ -272,3 +272,42 @@ def test_cifti_surfaces_plot(tmp_path, create_surface_dtseries, outdir):
 
     out_file = str(outdir / "cifti_surfaces_plot.svg")
     cifti_surfaces_plot(create_surface_dtseries, output_file=out_file)
+
+
+def test_cifti_carpetplot(tmp_path, testdata_path, outdir):
+    """Exercise extraction of timeseries from CIFTI2."""
+
+    cifti_file = os.path.join(
+        testdata_path,
+        "sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii",
+    )
+    data, segments = _cifti_timeseries(cifti_file)
+    plot_carpet(
+        data,
+        segments,
+        tr=_get_tr(nb.load(cifti_file)),
+        output_file=outdir / "carpetplot_cifti.svg" if outdir is not None else None,
+        drop_trs=0,
+        cmap="paired",
+    )
+
+
+def test_nifti_carpetplot(tmp_path, testdata_path, outdir):
+    """Exercise extraction of timeseries from CIFTI2."""
+
+    nifti_file = os.path.join(
+        testdata_path,
+        "sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz",
+    )
+    seg_file = os.path.join(
+        testdata_path,
+        "sub-ds205s03_task-functionallocalizer_run-01_bold_parc.nii.gz",
+    )
+    data, segments = _nifti_timeseries(nifti_file, seg_file)
+    plot_carpet(
+        data,
+        segments,
+        tr=_get_tr(nb.load(nifti_file)),
+        output_file=outdir / "carpetplot_nifti.svg" if outdir is not None else None,
+        drop_trs=0,
+    )
