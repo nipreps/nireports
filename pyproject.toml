@@ -41,9 +41,12 @@ NiPreps = "https://www.nipreps.org/"
 
 [project.optional-dependencies]
 doc = [
-    "nbsphinx",
-    "sphinx",
-    "sphinx_rtd_theme >= 0.5.2",
+    "furo ~= 2021.10.09",
+    "pydot >= 1.2.3",
+    "pydotplus",
+    "sphinx ~= 4.0",
+    "sphinxcontrib-apidoc",
+    "sphinxcontrib-napoleon",
 ]
 
 dev = [

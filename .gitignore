@@ -133,3 +133,7 @@ dmypy.json
 
 # VSCode configuration
 .vscode/
+
+# Sphinx documentation
+docs/_build/
+docs/api/

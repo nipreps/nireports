@@ -13,7 +13,7 @@ Welcome to nireports's documentation!
    overview
    installation
    quickstart
-   modules/modules
+   api
 
 
 Indices and tables
