@@ -38,7 +38,7 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from nireports.reportlets.mriqc.utils import plot_mosaic, plot_segmentation, plot_spikes
+from nireports.reportlets.mosaic import plot_mosaic, plot_segmentation, plot_spikes
 
 
 class PlotContoursInputSpec(BaseInterfaceInputSpec):
