@@ -29,7 +29,8 @@
 from pathlib import Path
 import numpy as np
 import nibabel as nb
-from .utils import compose_view, plot_registration, cuts_from_bbox
+from nireports.reportlets.utils import compose_view, cuts_from_bbox
+from nireports.reportlets.mosaic import plot_registration
 
 
 def display(

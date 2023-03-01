@@ -137,3 +137,20 @@ doctest_optionflags = "ALLOW_UNICODE NORMALIZE_WHITESPACE ELLIPSIS"
 env = "PYTHONHASHSEED=0"
 filterwarnings = ["ignore::DeprecationWarning"]
 junit_family = "xunit2"
+
+
+[tool.coverage.run]
+branch = true
+omit = [
+    '*/tests/*',
+    '*/__init__.py',
+    '*/conftest.py',
+    'nireports/_version.py'
+]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    'raise NotImplementedError',
+    'warnings\.warn',
+]

@@ -15,7 +15,7 @@ from nireports.assembler.reportlet import Reportlet
 
 # Add a new figures spec
 try:
-    add_config_paths(figures=pkgrf("nireports", "assembler/data/nipreps.json"))
+    add_config_paths(figures=pkgrf("nireports.assembler", "data/nipreps.json"))
 except ValueError as e:
     if "Configuration 'figures' already exists" != str(e):
         raise
@@ -95,8 +95,8 @@ class Report:
             self.out_filename = f"sub-{self.subject_id}.html"
 
         # Default template from nireports
-        self.template_path = Path(pkgrf("nireports", "report.tpl"))
-        self._load_config(Path(config or pkgrf("nireports", "default.yml")))
+        self.template_path = Path(pkgrf("nireports.assembler", "data/report.tpl"))
+        self._load_config(Path(config or pkgrf("nireports.assembler", "data/default.yml")))
         assert self.template_path.exists()
 
     def _load_config(self, config):

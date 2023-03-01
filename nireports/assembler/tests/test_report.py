@@ -225,7 +225,7 @@ def test_generated_reportlets(bids_sessions, ordering):
         subject_id="01",
         packagename="fmriprep",
     )
-    config = Path(pkgrf("nireports", "default.yml"))
+    config = Path(pkgrf("nireports.assembler", "data/default.yml"))
     settings = load(config.read_text())
     # change settings to only include some missing ordering
     settings["sections"][3]["ordering"] = ordering
