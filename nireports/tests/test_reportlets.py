@@ -29,10 +29,8 @@ import nibabel as nb
 import pandas as pd
 import pytest
 
-from .conftest import datadir
 from .generate_data import _create_dtseries_cifti
-from niworkflows.utils.timeseries import _cifti_timeseries, _nifti_timeseries
-from niworkflows.interfaces.plotting import _get_tr
+from nireports.tools.timeseries import _get_tr, _cifti_timeseries, _nifti_timeseries
 
 from nireports.reportlets.nuisance import plot_carpet
 from nireports.reportlets.surface import cifti_surfaces_plot
@@ -42,25 +40,19 @@ from nireports.reportlets.modality.func import fMRIPlot
 
 @pytest.mark.parametrize("tr", (None, 0.7))
 @pytest.mark.parametrize("sorting", (None, "ward", "linkage"))
-def test_carpetplot(tr, sorting):
+def test_carpetplot(tr, sorting, outdir):
     """Write a carpetplot"""
-    save_artifacts = os.getenv("SAVE_CIRCLE_ARTIFACTS", False)
 
     rng = np.random.default_rng(2010)
-
     plot_carpet(
         rng.normal(100, 20, size=(18000, 1900)),
         title="carpetplot with title",
         tr=tr,
         output_file=(
-            os.path.join(
-                save_artifacts,
-                f"carpet_nosegs_{'index' if tr is None else 'time'}_"
-                f"{'nosort' if sorting is None else sorting}.svg",
-            )
-            if save_artifacts
-            else None
-        ),
+            outdir
+            / f"carpet_nosegs_{'index' if tr is None else 'time'}_"
+            / f"{'nosort' if sorting is None else sorting}.svg"
+        ) if outdir is not None else None,
         sort_rows=sorting,
         drop_trs=15,
     )
@@ -86,14 +78,10 @@ def test_carpetplot(tr, sorting):
         segments,
         tr=tr,
         output_file=(
-            os.path.join(
-                save_artifacts,
-                f"carpet_random_{'index' if tr is None else 'seg'}_"
-                f"{'nosort' if sorting is None else sorting}.svg",
-            )
-            if save_artifacts
-            else None
-        ),
+            outdir
+            / f"carpet_random_{'index' if tr is None else 'seg'}_"
+            / f"{'nosort' if sorting is None else sorting}.svg",
+        ) if outdir is not None else None,
         sort_rows=sorting,
     )
 
@@ -113,14 +101,10 @@ def test_carpetplot(tr, sorting):
         detrend=False,
         tr=tr,
         output_file=(
-            os.path.join(
-                save_artifacts,
-                f"carpet_const_{'index' if tr is None else 'time'}_"
-                f"{'nosort' if sorting is None else sorting}.svg",
-            )
-            if save_artifacts
-            else None
-        ),
+            outdir
+            / f"carpet_const_{'index' if tr is None else 'time'}_"
+            / f"{'nosort' if sorting is None else sorting}.svg"
+        ) if outdir is not None else None,
         sort_rows=sorting,
     )
 
@@ -136,13 +120,12 @@ def test_carpetplot(tr, sorting):
         ),
     ],
 )
-def test_fmriplot(input_files):
+def test_fmriplot(input_files, testdata_path, outdir):
     """Exercise the fMRIPlot class."""
-    save_artifacts = os.getenv("SAVE_CIRCLE_ARTIFACTS", False)
     rng = np.random.default_rng(2010)
 
-    in_file = os.path.join(datadir, input_files[0])
-    seg_file = os.path.join(datadir, input_files[1]) if input_files[1] is not None else None
+    in_file = os.path.join(testdata_path, input_files[0])
+    seg_file = os.path.join(testdata_path, input_files[1]) if input_files[1] is not None else None
 
     dtype = "nifti" if input_files[0].endswith("volreg.nii.gz") else "cifti"
     has_seg = "_parc" if seg_file else ""
@@ -165,22 +148,23 @@ def test_fmriplot(input_files):
         units={"FD": "mm"},
         paired_carpet=dtype == "cifti",
     ).plot()
-    if save_artifacts:
+    if outdir is not None:
         fig.savefig(
-            os.path.join(save_artifacts, f"fmriplot_{dtype}{has_seg}.svg"),
+            outdir / f"fmriplot_{dtype}{has_seg}.svg",
             bbox_inches="tight",
         )
 
 
-def test_plot_melodic_components(tmp_path):
+def test_plot_melodic_components(tmp_path, outdir):
     """Test plotting melodic components"""
     import numpy as np
 
-    # save the artifacts
-    out_dir = Path(os.getenv("SAVE_CIRCLE_ARTIFACTS", str(tmp_path)))
-    all_noise = str(out_dir / "melodic_all_noise.svg")
-    no_noise = str(out_dir / "melodic_no_noise.svg")
-    no_classified = str(out_dir / "melodic_no_classified.svg")
+    if outdir is None:
+        outdir = Path(str(tmp_path))
+
+    all_noise = str(outdir / "melodic_all_noise.svg")
+    no_noise = str(outdir / "melodic_no_noise.svg")
+    no_classified = str(outdir / "melodic_no_classified.svg")
 
     # melodic directory
     melodic_dir = tmp_path / "melodic"
@@ -250,11 +234,14 @@ def test_plot_melodic_components(tmp_path):
     )
 
 
-def test_compcor_variance_plot(tmp_path):
+def test_compcor_variance_plot(tmp_path, testdata_path, outdir):
     """Test plotting CompCor variance"""
-    out_dir = Path(os.getenv("SAVE_CIRCLE_ARTIFACTS", str(tmp_path)))
-    out_file = str(out_dir / "variance_plot_short.svg")
-    metadata_file = os.path.join(datadir, "confounds_metadata_short_test.tsv")
+
+    if outdir is None:
+        outdir = Path(str(tmp_path))
+
+    out_file = str(outdir / "variance_plot_short.svg")
+    metadata_file = os.path.join(testdata_path, "confounds_metadata_short_test.tsv")
     compcor_variance_plot([metadata_file], output_file=out_file)
 
 
@@ -272,9 +259,12 @@ def create_surface_dtseries():
     out_file.unlink()
 
 
-def test_cifti_surfaces_plot(tmp_path, create_surface_dtseries):
+def test_cifti_surfaces_plot(tmp_path, create_surface_dtseries, outdir):
     """Test plotting CIFTI-2 surfaces"""
     os.chdir(tmp_path)
-    out_dir = Path(os.getenv("SAVE_CIRCLE_ARTIFACTS", str(tmp_path)))
-    out_file = str(out_dir / "cifti_surfaces_plot.svg")
+
+    if outdir is None:
+        outdir = Path(str(tmp_path))
+
+    out_file = str(outdir / "cifti_surfaces_plot.svg")
     cifti_surfaces_plot(create_surface_dtseries, output_file=out_file)
