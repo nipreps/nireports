@@ -77,9 +77,7 @@ def svg_compress(image, compress="auto"):
     # Check availability of svgo and cwebp
     has_compress = all((which("svgo"), which("cwebp")))
     if compress is True and not has_compress:
-        raise RuntimeError(
-            "Compression is required, but svgo or cwebp are not installed"
-        )
+        raise RuntimeError("Compression is required, but svgo or cwebp are not installed")
     else:
         compress = (compress is True or compress == "auto") and has_compress
 
@@ -267,11 +265,13 @@ def cuts_from_bbox(mask_nii, cuts=3):
     # I have manually found that for the axial view requiring 30%
     # of the slice elements to be masked drops almost empty boxes
     # in the mosaic of axial planes (and also addresses #281)
-    ijk_th = np.ceil([
-        (mask_data.shape[1] * mask_data.shape[2]) * 0.2,  # sagittal
-        (mask_data.shape[0] * mask_data.shape[2]) * 0.1,  # coronal
-        (mask_data.shape[0] * mask_data.shape[1]) * 0.3,  # axial
-    ]).astype(int)
+    ijk_th = np.ceil(
+        [
+            (mask_data.shape[1] * mask_data.shape[2]) * 0.2,  # sagittal
+            (mask_data.shape[0] * mask_data.shape[2]) * 0.1,  # coronal
+            (mask_data.shape[0] * mask_data.shape[1]) * 0.3,  # axial
+        ]
+    ).astype(int)
 
     vox_coords = np.zeros((4, cuts), dtype=np.float32)
     vox_coords[-1, :] = 1.0
@@ -292,7 +292,7 @@ def cuts_from_bbox(mask_nii, cuts=3):
 
 
 def _3d_in_file(in_file):
-    """ if self.inputs.in_file is 3d, return it.
+    """if self.inputs.in_file is 3d, return it.
     if 4d, pick an arbitrary volume and return that.
 
     if in_file is a list of files, return an arbitrary file from

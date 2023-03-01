@@ -56,8 +56,10 @@ def test_carpetplot(tr, sorting):
             os.path.join(
                 save_artifacts,
                 f"carpet_nosegs_{'index' if tr is None else 'time'}_"
-                f"{'nosort' if sorting is None else sorting}.svg"
-            ) if save_artifacts else None
+                f"{'nosort' if sorting is None else sorting}.svg",
+            )
+            if save_artifacts
+            else None
         ),
         sort_rows=sorting,
         drop_trs=15,
@@ -73,11 +75,9 @@ def test_carpetplot(tr, sorting):
     segments = {}
     start = 0
     for group, size in zip(labels, sizes):
-        segments[group] = indexes[start:start + size]
-        data[indexes[start:start + size]] = rng.normal(
-            rng.standard_normal(1) * 100,
-            rng.normal(20, 5, size=1),
-            size=(size, 300)
+        segments[group] = indexes[start : start + size]
+        data[indexes[start : start + size]] = rng.normal(
+            rng.standard_normal(1) * 100, rng.normal(20, 5, size=1), size=(size, 300)
         )
         start += size
 
@@ -89,8 +89,10 @@ def test_carpetplot(tr, sorting):
             os.path.join(
                 save_artifacts,
                 f"carpet_random_{'index' if tr is None else 'seg'}_"
-                f"{'nosort' if sorting is None else sorting}.svg"
-            ) if save_artifacts else None
+                f"{'nosort' if sorting is None else sorting}.svg",
+            )
+            if save_artifacts
+            else None
         ),
         sort_rows=sorting,
     )
@@ -101,8 +103,8 @@ def test_carpetplot(tr, sorting):
     segments = {}
     start = 0
     for i, (group, size) in enumerate(zip(labels, sizes)):
-        segments[group] = indexes[start:start + size]
-        data[indexes[start:start + size]] = i
+        segments[group] = indexes[start : start + size]
+        data[indexes[start : start + size]] = i
         start += size
 
     plot_carpet(
@@ -114,19 +116,26 @@ def test_carpetplot(tr, sorting):
             os.path.join(
                 save_artifacts,
                 f"carpet_const_{'index' if tr is None else 'time'}_"
-                f"{'nosort' if sorting is None else sorting}.svg"
-            ) if save_artifacts else None
+                f"{'nosort' if sorting is None else sorting}.svg",
+            )
+            if save_artifacts
+            else None
         ),
         sort_rows=sorting,
     )
 
 
-@pytest.mark.parametrize("input_files", [
-    ("sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz", None),
-    ("sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii", None),
-    ("sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz",
-     "sub-ds205s03_task-functionallocalizer_run-01_bold_parc.nii.gz"),
-])
+@pytest.mark.parametrize(
+    "input_files",
+    [
+        ("sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz", None),
+        ("sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii", None),
+        (
+            "sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz",
+            "sub-ds205s03_task-functionallocalizer_run-01_bold_parc.nii.gz",
+        ),
+    ],
+)
 def test_fmriplot(input_files):
     """Exercise the fMRIPlot class."""
     save_artifacts = os.getenv("SAVE_CIRCLE_ARTIFACTS", False)
@@ -139,19 +148,20 @@ def test_fmriplot(input_files):
     has_seg = "_parc" if seg_file else ""
 
     timeseries, segments = (
-        _nifti_timeseries(in_file, seg_file) if dtype == "nifti" else
-        _cifti_timeseries(in_file)
+        _nifti_timeseries(in_file, seg_file) if dtype == "nifti" else _cifti_timeseries(in_file)
     )
 
     fig = fMRIPlot(
         timeseries,
         segments,
         tr=_get_tr(nb.load(in_file)),
-        confounds=pd.DataFrame({
-            "outliers": rng.normal(0.2, 0.2, timeseries.shape[-1] - 1),
-            "DVARS": rng.normal(0.2, 0.2, timeseries.shape[-1] - 1),
-            "FD": rng.normal(0.2, 0.2, timeseries.shape[-1] - 1),
-        }),
+        confounds=pd.DataFrame(
+            {
+                "outliers": rng.normal(0.2, 0.2, timeseries.shape[-1] - 1),
+                "DVARS": rng.normal(0.2, 0.2, timeseries.shape[-1] - 1),
+                "FD": rng.normal(0.2, 0.2, timeseries.shape[-1] - 1),
+            }
+        ),
         units={"FD": "mm"},
         paired_carpet=dtype == "cifti",
     ).plot()

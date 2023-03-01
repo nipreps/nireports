@@ -122,9 +122,7 @@ def plot_melodic_components(
     # Only if the components file has been provided, a warning banner will
     # be issued if all or none of the components were classified as noise
     if noise_components_file:
-        noise_components = np.loadtxt(
-            noise_components_file, dtype=int, delimiter=",", ndmin=1
-        )
+        noise_components = np.loadtxt(noise_components_file, dtype=int, delimiter=",", ndmin=1)
         # Activate warning row if pertinent
         warning_row = int(noise_components.size in (0, n_components))
         classified_colors = {True: "r", False: "g"}
@@ -175,12 +173,10 @@ def plot_melodic_components(
 
         data = img.get_fdata()
         for j in range(3):
-            ax1 = fig.add_subplot(gs[l_row:l_row + 2, j + col * 5])
+            ax1 = fig.add_subplot(gs[l_row : l_row + 2, j + col * 5])
             sl = transform_to_2d(data, j)
             m = np.abs(sl).max()
-            ax1.imshow(
-                sl, vmin=-m, vmax=+m, cmap=cold_white_hot, interpolation="nearest"
-            )
+            ax1.imshow(sl, vmin=-m, vmax=+m, cmap=cold_white_hot, interpolation="nearest")
             ax1.contour(mask_sl[j], levels=[0.5], colors="k", linewidths=0.5)
             plt.axis("off")
             ax1.autoscale_view("tight")

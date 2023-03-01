@@ -148,7 +148,7 @@ def cifti_surfaces_plot(
                 vmax=mx,
                 axes=ax,
                 **hemi_kwargs,
-                **kwargs
+                **kwargs,
             )
             # plot_surf sets this to 8, which seems a little far out, but 6 starts clipping
             ax.dist = 7
@@ -167,6 +167,6 @@ def _concat_brain_struct_data(structs, data):
     concat_data = np.array([], dtype=data.dtype)
     for struct in structs:
         struct_upper_bound = struct.index_offset + struct.index_count
-        struct_data = data[struct.index_offset:struct_upper_bound]
+        struct_data = data[struct.index_offset : struct_upper_bound]
         concat_data = np.concatenate((concat_data, struct_data))
     return concat_data

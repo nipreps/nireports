@@ -54,7 +54,7 @@ def plot_segs(
     masked=False,
     colors=None,
     compress="auto",
-    **plot_params
+    **plot_params,
 ):
     """
     Generate a static mosaic with ROIs represented by their delimiting contour.
@@ -76,8 +76,7 @@ def plot_segs(
     plot_params = robust_set_limits(data, plot_params)
 
     bbox_nii = (
-        image_nii if bbox_nii is None
-        else rotate_affine(_3d_in_file(bbox_nii), rot=canonical_r)
+        image_nii if bbox_nii is None else rotate_affine(_3d_in_file(bbox_nii), rot=canonical_r)
     )
 
     if masked:
@@ -89,9 +88,7 @@ def plot_segs(
     for d in plot_params.pop("dimensions", ("z", "x", "y")):
         plot_params["display_mode"] = d
         plot_params["cut_coords"] = cuts[d]
-        svg = _plot_anat_with_contours(
-            image_nii, segs=seg_niis, compress=compress, **plot_params
-        )
+        svg = _plot_anat_with_contours(image_nii, segs=seg_niis, compress=compress, **plot_params)
         # Find and replace the figure_1 id.
         svg = svg.replace("figure_1", "segmentation-%s-%s" % (d, uuid4()), 1)
         out_files.append(fromstring(svg))

@@ -25,4 +25,3 @@ from pathlib import Path
 from niworkflows.testing import test_data_env, data_env_canary
 
 datadir = (Path(__file__).parent / "data").resolve(strict=True)
-

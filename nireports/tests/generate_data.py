@@ -15,7 +15,7 @@ def _create_dtseries_cifti(timepoints, models):
             series_exponent=0,
             series_start=0,
             series_step=1,
-            series_unit='SECOND'
+            series_unit='SECOND',
         )
 
     def create_geometry_map():
@@ -53,11 +53,14 @@ def _create_dtseries_cifti(timepoints, models):
             )
         )
 
-        return ci.Cifti2MatrixIndicesMap(
-            (1,),
-            "CIFTI_INDEX_TYPE_BRAIN_MODELS",
-            maps=brain_models,
-        ), timeseries
+        return (
+            ci.Cifti2MatrixIndicesMap(
+                (1,),
+                "CIFTI_INDEX_TYPE_BRAIN_MODELS",
+                maps=brain_models,
+            ),
+            timeseries,
+        )
 
     matrix = ci.Cifti2Matrix()
     series_map = create_series_map()

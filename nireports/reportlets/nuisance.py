@@ -267,9 +267,7 @@ def plot_carpet(
 
     """
     if segments is None:
-        segments = {
-            "whole brain (voxels)": list(range(data.shape[0]))
-        }
+        segments = {"whole brain (voxels)": list(range(data.shape[0]))}
 
     nsegments = len(segments)
     if nsegments == 1:
@@ -284,6 +282,7 @@ def plot_carpet(
 
     if detrend:
         from nilearn.signal import clean
+
         data = clean(data.T, t_r=tr, filter=False).T
 
     # We want all subplots to have the same dynamic range
@@ -335,7 +334,7 @@ def plot_carpet(
         1,
         subplot_spec=subplot,
         hspace=0.05,
-        height_ratios=[len(v) for v in segments.values()]
+        height_ratios=[len(v) for v in segments.values()],
     )
 
     for i, (label, indices) in enumerate(segments.items()):
@@ -383,7 +382,7 @@ def plot_carpet(
             ax.set_xticklabels(xticklabels)
             ax.spines["bottom"].set_position(("outward", 5))
             ax.spines["bottom"].set_color("k")
-            ax.spines["bottom"].set_linewidth(.8)
+            ax.spines["bottom"].set_linewidth(0.8)
         else:
             ax.set_xticklabels([])
             ax.set_xticks([])
@@ -416,17 +415,14 @@ def plot_carpet(
             axlegend.spines[loc].set_visible(False)
 
         axlegend.legend(
-            handles=[
-                Patch(color=colors[i], label=l)
-                for i, l in enumerate(segments.keys())
-            ],
+            handles=[Patch(color=colors[i], label=l) for i, l in enumerate(segments.keys())],
             loc="upper center",
             bbox_to_anchor=(0.5, 0),
             shadow=False,
             fancybox=False,
             ncol=min(len(segments.keys()), 5),
             frameon=False,
-            prop={'size': 8}
+            prop={'size': 8},
         )
 
     if output_file is not None:

@@ -103,9 +103,7 @@ class fMRIPlot:
         nrows = 1 + nconfounds + nspikes
 
         # Create grid
-        grid = GridSpec(
-            nrows, 1, wspace=0.0, hspace=0.05, height_ratios=[1] * (nrows - 1) + [5]
-        )
+        grid = GridSpec(nrows, 1, wspace=0.0, hspace=0.05, height_ratios=[1] * (nrows - 1) + [5])
 
         grid_id = 0
         for tsz, name, iszs in self.spikes:
