@@ -61,13 +61,13 @@ jobs:
             architecture: x86
           # Only run newest on Windows/Mac
           - os: windows-latest
-            python-version: [3.8, 3.9]
+            python-version: 3.8
+          - os: windows-latest
+            python-version: 3.9
           - os: macos-latest
-            python-version: [3.8, 3.9]
-          # Only install minimum requirements for one installation type
-          # Doesn't matter which
-          - package: 'dist/*.whl'
-          - package: 'dist/*.tar.gz'
+            python-version: 3.8
+          - os: macos-latest
+            python-version: 3.9
           # Skip 32-bit Windows with Python 3.10 (see #42)
           - os: windows-latest
             architecture: x86
