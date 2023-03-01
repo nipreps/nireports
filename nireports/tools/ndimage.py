@@ -25,7 +25,7 @@
 # The original file this work derives from is found at:
 # https://github.com/nipreps/niworkflows/blob/fa273d004c362d9562616253180e95694f07be3b/
 # niworkflows/utils/images.py
-"""Miscellaneous supporting utilities."""
+"""Tooling to manipulate n-dimensional images."""
 
 import nibabel as nb
 import numpy as np
@@ -50,3 +50,13 @@ def rotate_affine(img, rot=None):
     affine = np.eye(4)
     affine[:3] = rot @ img.affine[:3]
     return img.__class__(img.dataobj, affine, img.header)
+
+
+def _get_values_inside_a_mask(main_file, mask_file):
+    main_nii = nb.load(main_file)
+    main_data = main_nii.get_fdata()
+    nan_mask = np.logical_not(np.isnan(main_data))
+    mask = nb.load(mask_file).get_fdata() > 0
+
+    data = main_data[np.logical_and(nan_mask, mask)]
+    return data

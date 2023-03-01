@@ -1,3 +1,0 @@
-"""
-JS animated registration plots.
-"""

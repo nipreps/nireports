@@ -20,129 +20,197 @@
 #
 #     https://www.nipreps.org/community/licensing/
 #
-# STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
-# another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
-# The original file this work derives from is found at:
-# https://github.com/nipreps/niworkflows/blob/fa273d004c362d9562616253180e95694f07be3b/
-# niworkflows/viz/plots.py
-"""Plotting tools shared across MRIQC and fMRIPrep."""
+# STATEMENT OF CHANGES: This file was ported carrying over full git history from
+# other NiPreps projects licensed under the Apache-2.0 terms.
+"""Plotting distributions."""
+import math
+import os.path as op
 
 import numpy as np
-import nibabel as nb
-import pandas as pd
-
 import matplotlib.pyplot as plt
-from matplotlib import gridspec as mgs
-import matplotlib.cm as cm
+from matplotlib.cm import get_cmap
+import seaborn as sns
+from matplotlib.backends.backend_pdf import FigureCanvasPdf as FigureCanvas
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 from matplotlib.colors import Normalize
 from matplotlib.colorbar import ColorbarBase
+from nireports.tools.ndimage import _get_values_inside_a_mask
 
-from nireports.reportlets.utils import transform_to_2d
-
+DEFAULT_DPI = 300
 DINA4_LANDSCAPE = (11.69, 8.27)
+DINA4_PORTRAIT = (8.27, 11.69)
 
 
-class fMRIPlot:
-    """Generates the fMRI Summary Plot."""
+def plot_fd(fd_file, fd_radius, mean_fd_dist=None, figsize=DINA4_LANDSCAPE):
 
-    __slots__ = (
-        "timeseries",
-        "segments",
-        "tr",
-        "confounds",
-        "spikes",
-        "nskip",
-        "sort_carpet",
-        "paired_carpet",
+    fd_power = _calc_fd(fd_file, fd_radius)
+
+    fig = plt.Figure(figsize=figsize)
+    FigureCanvas(fig)
+
+    if mean_fd_dist:
+        grid = GridSpec(2, 4)
+    else:
+        grid = GridSpec(1, 2, width_ratios=[3, 1])
+        grid.update(hspace=1.0, right=0.95, left=0.1, bottom=0.2)
+
+    ax = fig.add_subplot(grid[0, :-1])
+    ax.plot(fd_power)
+    ax.set_xlim((0, len(fd_power)))
+    ax.set_ylabel("Frame Displacement [mm]")
+    ax.set_xlabel("Frame number")
+    ylim = ax.get_ylim()
+
+    ax = fig.add_subplot(grid[0, -1])
+    sns.distplot(fd_power, vertical=True, ax=ax)
+    ax.set_ylim(ylim)
+
+    if mean_fd_dist:
+        ax = fig.add_subplot(grid[1, :])
+        sns.distplot(mean_fd_dist, ax=ax)
+        ax.set_xlabel("Mean Frame Displacement (over all subjects) [mm]")
+        mean_fd = fd_power.mean()
+        label = r"$\overline{{\text{{FD}}}}$ = {0:g}".format(mean_fd)
+        plot_vline(mean_fd, label, ax=ax)
+
+    return fig
+
+
+def plot_dist(
+    main_file,
+    mask_file,
+    xlabel,
+    distribution=None,
+    xlabel2=None,
+    figsize=DINA4_LANDSCAPE,
+):
+    data = _get_values_inside_a_mask(main_file, mask_file)
+
+    fig = plt.Figure(figsize=figsize)
+    FigureCanvas(fig)
+
+    gsp = GridSpec(2, 1)
+    ax = fig.add_subplot(gsp[0, 0])
+    sns.distplot(data.astype(np.double), kde=False, bins=100, ax=ax)
+    ax.set_xlabel(xlabel)
+
+    ax = fig.add_subplot(gsp[1, 0])
+    sns.distplot(np.array(distribution).astype(np.double), ax=ax)
+    cur_val = np.median(data)
+    label = "{0!g}".format(cur_val)
+    plot_vline(cur_val, label, ax=ax)
+    ax.set_xlabel(xlabel2)
+
+    return fig
+
+
+def plot_vline(cur_val, label, ax):
+    ax.axvline(cur_val)
+    ylim = ax.get_ylim()
+    vloc = (ylim[0] + ylim[1]) / 2.0
+    xlim = ax.get_xlim()
+    pad = (xlim[0] + xlim[1]) / 100.0
+    ax.text(
+        cur_val - pad,
+        vloc,
+        label,
+        color="blue",
+        rotation=90,
+        verticalalignment="center",
+        horizontalalignment="right",
     )
 
-    def __init__(
-        self,
-        timeseries,
-        segments,
-        confounds=None,
-        conf_file=None,
-        tr=None,
-        usecols=None,
-        units=None,
-        vlines=None,
-        spikes_files=None,
-        nskip=0,
-        sort_carpet=True,
-        paired_carpet=False,
-    ):
-        self.timeseries = timeseries
-        self.segments = segments
-        self.tr = tr
-        self.nskip = nskip
-        self.sort_carpet = sort_carpet
-        self.paired_carpet = paired_carpet
 
-        if units is None:
-            units = {}
-        if vlines is None:
-            vlines = {}
-        self.confounds = {}
-        if confounds is None and conf_file:
-            confounds = pd.read_csv(conf_file, sep=r"[\t\s]+", usecols=usecols, index_col=False)
+def _calc_rows_columns(ratio, n_images):
+    rows = 2
+    for _ in range(100):
+        columns = math.floor(ratio * rows)
+        total = (rows - 1) * columns
+        if total > n_images:
+            rows = np.ceil(n_images / columns) + 1
+            break
+        rows += 1
+    return int(rows), int(columns)
 
-        if confounds is not None:
-            for name in confounds.columns:
-                self.confounds[name] = {
-                    "values": confounds[[name]].values.squeeze().tolist(),
-                    "units": units.get(name),
-                    "cutoff": vlines.get(name),
-                }
 
-        self.spikes = []
-        if spikes_files:
-            for sp_file in spikes_files:
-                self.spikes.append((np.loadtxt(sp_file), None, False))
+def _calc_fd(fd_file, fd_radius):
+    from math import pi
 
-    def plot(self, figure=None):
-        """Main plotter"""
-        import seaborn as sns
+    lines = open(fd_file, "r").readlines()
+    rows = [[float(x) for x in line.split()] for line in lines]
+    cols = np.array([list(col) for col in zip(*rows)])
 
-        sns.set_style("whitegrid")
-        sns.set_context("paper", font_scale=0.8)
+    translations = np.transpose(np.abs(np.diff(cols[0:3, :])))
+    rotations = np.transpose(np.abs(np.diff(cols[3:6, :])))
 
-        if figure is None:
-            figure = plt.gcf()
+    fd_power = np.sum(translations, axis=1) + (fd_radius * pi / 180) * np.sum(rotations, axis=1)
 
-        nconfounds = len(self.confounds)
-        nspikes = len(self.spikes)
-        nrows = 1 + nconfounds + nspikes
+    # FD is zero for the first time point
+    fd_power = np.insert(fd_power, 0, 0)
 
-        # Create grid
-        grid = mgs.GridSpec(
-            nrows, 1, wspace=0.0, hspace=0.05, height_ratios=[1] * (nrows - 1) + [5]
-        )
+    return fd_power
 
-        grid_id = 0
-        for tsz, name, iszs in self.spikes:
-            spikesplot(tsz, title=name, outer_gs=grid[grid_id], tr=self.tr, zscored=iszs)
-            grid_id += 1
 
-        if self.confounds:
-            from seaborn import color_palette
+def _get_mean_fd_distribution(fd_files, fd_radius):
+    mean_fds = []
+    max_fds = []
+    for fd_file in fd_files:
+        fd_power = _calc_fd(fd_file, fd_radius)
+        mean_fds.append(fd_power.mean())
+        max_fds.append(fd_power.max())
 
-            palette = color_palette("husl", nconfounds)
+    return mean_fds, max_fds
 
-        for i, (name, kwargs) in enumerate(self.confounds.items()):
-            tseries = kwargs.pop("values")
-            confoundplot(tseries, grid[grid_id], tr=self.tr, color=palette[i], name=name, **kwargs)
-            grid_id += 1
 
-        plot_carpet(
-            self.timeseries,
-            segments=self.segments,
-            subplot=grid[-1],
-            tr=self.tr,
-            sort_rows=self.sort_carpet,
-            drop_trs=self.nskip,
-            cmap="paired" if self.paired_carpet else None,
-        )
-        return figure
+def plot_qi2(x_grid, ref_pdf, fit_pdf, ref_data, cutoff_idx, out_file=None):
+    fig, ax = plt.subplots()
+
+    ax.plot(
+        x_grid,
+        ref_pdf,
+        linewidth=2,
+        alpha=0.5,
+        label="background",
+        color="dodgerblue",
+    )
+
+    refmax = np.percentile(ref_data, 99.95)
+    x_max = x_grid[-1]
+
+    ax.hist(
+        ref_data,
+        40 * max(int(refmax / x_max), 1),
+        fc="dodgerblue",
+        histtype="stepfilled",
+        alpha=0.2,
+        density=True,
+    )
+    fit_pdf[fit_pdf > 1.0] = np.nan
+    ax.plot(
+        x_grid,
+        fit_pdf,
+        linewidth=2,
+        alpha=0.5,
+        label="chi2",
+        color="darkorange",
+    )
+
+    ylims = ax.get_ylim()
+    ax.axvline(
+        x_grid[-cutoff_idx],
+        ymax=ref_pdf[-cutoff_idx] / ylims[1],
+        color="dodgerblue",
+    )
+    plt.xlabel('Intensity within "hat" mask')
+    plt.ylabel("Frequency")
+    ax.set_xlim([0, x_max])
+    plt.legend()
+
+    if out_file is None:
+        out_file = op.abspath("qi2_plot.svg")
+
+    fig.savefig(out_file, bbox_inches="tight", pad_inches=0, dpi=300)
+    return out_file
 
 
 def plot_carpet(
@@ -208,9 +276,9 @@ def plot_carpet(
         legend = False
 
     if cmap is None:
-        colors = cm.get_cmap("tab10").colors
+        colors = get_cmap("tab10").colors
     elif cmap == "paired":
-        colors = list(cm.get_cmap("Paired").colors)
+        colors = list(get_cmap("Paired").colors)
         colors[0], colors[1] = colors[1], colors[0]
         colors[2], colors[7] = colors[7], colors[2]
 
@@ -252,7 +320,7 @@ def plot_carpet(
 
     # If subplot is not defined
     if subplot is None:
-        subplot = mgs.GridSpec(1, 1)[0]
+        subplot = GridSpec(1, 1)[0]
 
     # Length before decimation
     n_trs = data.shape[-1] - drop_trs
@@ -262,7 +330,7 @@ def plot_carpet(
     data = data[:, drop_trs::t_dec]
 
     # Define nested GridSpec
-    gs = mgs.GridSpecFromSubplotSpec(
+    gs = GridSpecFromSubplotSpec(
         nsegments,
         1,
         subplot_spec=subplot,
@@ -391,7 +459,7 @@ def spikesplot(
         ax = plt.gca()
 
     if outer_gs is not None:
-        gs = mgs.GridSpecFromSubplotSpec(
+        gs = GridSpecFromSubplotSpec(
             1, 2, subplot_spec=outer_gs, width_ratios=[1, 100], wspace=0.0
         )
         ax = plt.subplot(gs[1])
@@ -405,7 +473,7 @@ def spikesplot(
     ntsteps = ts_z.shape[1]
 
     # Load a colormap
-    my_cmap = cm.get_cmap(cmap)
+    my_cmap = get_cmap(cmap)
     norm = Normalize(vmin=0, vmax=float(nslices - 1))
     colors = [my_cmap(norm(sl)) for sl in range(nslices)]
 
@@ -533,7 +601,7 @@ def spikesplot_cb(position, cmap="viridis", fig=None):
     cax = fig.add_axes(position)
     cb = ColorbarBase(
         cax,
-        cmap=cm.get_cmap(cmap),
+        cmap=get_cmap(cmap),
         spacing="proportional",
         orientation="horizontal",
         drawedges=False,
@@ -569,7 +637,7 @@ def confoundplot(
     tseries = np.array(tseries)
 
     # Define nested GridSpec
-    gs = mgs.GridSpecFromSubplotSpec(1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0)
+    gs = GridSpecFromSubplotSpec(1, 2, subplot_spec=gs_ts, width_ratios=[1, 100], wspace=0.0)
 
     ax_ts = plt.subplot(gs[1])
     ax_ts.grid(False)
@@ -727,347 +795,18 @@ def confoundplot(
     return ax_ts, gs
 
 
-def plot_melodic_components(
-    melodic_dir,
-    in_file,
-    tr=None,
-    out_file="melodic_reportlet.svg",
-    compress="auto",
-    report_mask=None,
-    noise_components_file=None,
-):
-    """
-    Plots the spatiotemporal components extracted by FSL MELODIC
-    from functional MRI data.
+def _ward_to_linkage(children, n_leaves, distances):
+    """Create linkage matrix from the output of Ward clustering."""
+    # create the counts of samples under each node
+    counts = np.zeros(children.shape[0])
+    n_samples = n_leaves
+    for i, merge in enumerate(children):
+        current_count = 0
+        for child_idx in merge:
+            current_count += 1 if child_idx < n_samples else counts[child_idx - n_samples]
+        counts[i] = current_count
 
-    Parameters
-    ----------
-    melodic_dir : str
-        Path pointing to the outputs of MELODIC
-    in_file :  str
-        Path pointing to the reference fMRI dataset. This file
-        will be used to extract the TR value, if the ``tr`` argument
-        is not set. This file will be used to calculate a mask
-        if ``report_mask`` is not provided.
-    tr : float
-        Repetition time in seconds
-    out_file : str
-        Path where the resulting SVG file will be stored
-    compress : ``'auto'`` or bool
-        Whether SVG should be compressed. If ``'auto'``, compression
-        will be executed if dependencies are installed (SVGO)
-    report_mask : str
-        Path to a brain mask corresponding to ``in_file``
-    noise_components_file : str
-        A CSV file listing the indexes of components classified as noise
-        by some manual or automated (e.g. ICA-AROMA) procedure. If a
-        ``noise_components_file`` is provided, then components will be
-        plotted with red/green colors (correspondingly to whether they
-        are in the file -noise components, red-, or not -signal, green-).
-        When all or none of the components are in the file, a warning
-        is printed at the top.
-
-    """
-    from nilearn.image import index_img, iter_img
-    import nibabel as nb
-    import numpy as np
-    import pylab as plt
-    import seaborn as sns
-    from matplotlib.gridspec import GridSpec
-    import os
-
-    sns.set_style("white")
-    current_palette = sns.color_palette()
-    in_nii = nb.load(in_file)
-    if not tr:
-        tr = in_nii.header.get_zooms()[3]
-        units = in_nii.header.get_xyzt_units()
-        if units and units in ("msec", "usec"):
-            tr = tr / (1000.0 if units[-1] == "msec" else 1000000.0)
-
-    from nilearn.input_data import NiftiMasker
-    from nilearn.plotting import cm
-
-    if not report_mask:
-        nifti_masker = NiftiMasker(mask_strategy="epi")
-        nifti_masker.fit(index_img(in_nii, range(2)))
-        mask_img = nifti_masker.mask_img_
-    else:
-        mask_img = nb.load(report_mask)
-
-    mask_sl = []
-    for j in range(3):
-        mask_sl.append(transform_to_2d(mask_img.get_fdata(), j))
-
-    timeseries = np.loadtxt(os.path.join(melodic_dir, "melodic_mix"))
-    power = np.loadtxt(os.path.join(melodic_dir, "melodic_FTmix"))
-    stats = np.loadtxt(os.path.join(melodic_dir, "melodic_ICstats"))
-    n_components = stats.shape[0]
-    Fs = 1.0 / tr
-    Ny = Fs / 2
-    f = Ny * (np.array(list(range(1, power.shape[0] + 1)))) / (power.shape[0])
-
-    # Set default colors
-    color_title = "k"
-    color_time = current_palette[0]
-    color_power = current_palette[1]
-    classified_colors = None
-
-    warning_row = 0  # Do not allocate warning row
-    # Only if the components file has been provided, a warning banner will
-    # be issued if all or none of the components were classified as noise
-    if noise_components_file:
-        noise_components = np.loadtxt(
-            noise_components_file, dtype=int, delimiter=",", ndmin=1
-        )
-        # Activate warning row if pertinent
-        warning_row = int(noise_components.size in (0, n_components))
-        classified_colors = {True: "r", False: "g"}
-
-    n_rows = int((n_components + (n_components % 2)) / 2)
-    fig = plt.figure(figsize=(6.5 * 1.5, (n_rows + warning_row) * 0.85))
-    gs = GridSpec(
-        n_rows * 2 + warning_row,
-        9,
-        width_ratios=[1, 1, 1, 4, 0.001, 1, 1, 1, 4],
-        height_ratios=[5] * warning_row + [1.1, 1] * n_rows,
-    )
-
-    if warning_row:
-        ax = fig.add_subplot(gs[0, :])
-        ncomps = "NONE of the"
-        if noise_components.size == n_components:
-            ncomps = "ALL"
-        ax.annotate(
-            "WARNING: {} components were classified as noise".format(ncomps),
-            xy=(0.0, 0.5),
-            xycoords="axes fraction",
-            xytext=(0.01, 0.5),
-            textcoords="axes fraction",
-            size=12,
-            color="#ea8800",
-            bbox=dict(boxstyle="round", fc="#f7dcb7", ec="#FC990E"),
-        )
-        ax.axes.get_xaxis().set_visible(False)
-        ax.axes.get_yaxis().set_visible(False)
-
-    titlefmt = "C{id:d}{noise}: Tot. var. expl. {var:.2g}%".format
-    ICs = nb.load(os.path.join(melodic_dir, "melodic_IC.nii.gz"))
-    # Ensure 4D
-    if ICs.ndim == 3:
-        ICs = ICs.slicer[..., None]
-    for i, img in enumerate(iter_img(ICs)):
-
-        col = i % 2
-        row = i // 2
-        l_row = row * 2 + warning_row
-        is_noise = False
-
-        if classified_colors:
-            # If a noise components list is provided, assign red/green
-            is_noise = (i + 1) in noise_components
-            color_title = color_time = color_power = classified_colors[is_noise]
-
-        data = img.get_fdata()
-        for j in range(3):
-            ax1 = fig.add_subplot(gs[l_row:l_row + 2, j + col * 5])
-            sl = transform_to_2d(data, j)
-            m = np.abs(sl).max()
-            ax1.imshow(
-                sl, vmin=-m, vmax=+m, cmap=cm.cold_white_hot, interpolation="nearest"
-            )
-            ax1.contour(mask_sl[j], levels=[0.5], colors="k", linewidths=0.5)
-            plt.axis("off")
-            ax1.autoscale_view("tight")
-            if j == 0:
-                ax1.set_title(
-                    titlefmt(id=i + 1, noise=" [noise]" * is_noise, var=stats[i, 1]),
-                    x=0,
-                    y=1.18,
-                    fontsize=7,
-                    horizontalalignment="left",
-                    verticalalignment="top",
-                    color=color_title,
-                )
-
-        ax2 = fig.add_subplot(gs[l_row, 3 + col * 5])
-        ax3 = fig.add_subplot(gs[l_row + 1, 3 + col * 5])
-
-        ax2.plot(
-            np.arange(len(timeseries[:, i])) * tr,
-            timeseries[:, i],
-            linewidth=min(200 / len(timeseries[:, i]), 1.0),
-            color=color_time,
-        )
-        ax2.set_xlim([0, len(timeseries[:, i]) * tr])
-        ax2.axes.get_yaxis().set_visible(False)
-        ax2.autoscale_view("tight")
-        ax2.tick_params(axis="both", which="major", pad=0)
-        sns.despine(left=True, bottom=True)
-        for tick in ax2.xaxis.get_major_ticks():
-            tick.label.set_fontsize(6)
-            tick.label.set_color(color_time)
-
-        ax3.plot(
-            f[0:],
-            power[0:, i],
-            color=color_power,
-            linewidth=min(100 / len(power[0:, i]), 1.0),
-        )
-        ax3.set_xlim([f[0], f.max()])
-        ax3.axes.get_yaxis().set_visible(False)
-        ax3.autoscale_view("tight")
-        ax3.tick_params(axis="both", which="major", pad=0)
-        for tick in ax3.xaxis.get_major_ticks():
-            tick.label.set_fontsize(6)
-            tick.label.set_color(color_power)
-        sns.despine(left=True, bottom=True)
-
-    plt.subplots_adjust(hspace=0.5)
-    fig.savefig(
-        out_file,
-        dpi=300,
-        format="svg",
-        transparent=True,
-        bbox_inches="tight",
-        pad_inches=0.01,
-    )
-    fig.clf()
-
-
-def compcor_variance_plot(
-    metadata_files,
-    metadata_sources=None,
-    output_file=None,
-    varexp_thresh=(0.5, 0.7, 0.9),
-    fig=None,
-):
-    """
-    Parameters
-    ----------
-    metadata_files: list
-        List of paths to files containing component metadata. If more than one
-        decomposition has been performed (e.g., anatomical and temporal
-        CompCor decompositions), then all metadata files can be provided in
-        the list. However, each metadata file should have a corresponding
-        entry in `metadata_sources`.
-    metadata_sources: list or None
-        List of source names (e.g., ['aCompCor']) for decompositions. This
-        list should be of the same length as `metadata_files`.
-    output_file: str or None
-        Path where the output figure should be saved. If this is not defined,
-        then the plotting axes will be returned instead of the saved figure
-        path.
-    varexp_thresh: tuple
-        Set of variance thresholds to include in the plot (default 0.5, 0.7,
-        0.9).
-    fig: figure or None
-        Existing figure on which to plot.
-
-    Returns
-    -------
-    ax: axes
-        Plotting axes. Returned only if the `output_file` parameter is None.
-    output_file: str
-        The file where the figure is saved.
-    """
-    metadata = {}
-    if metadata_sources is None:
-        if len(metadata_files) == 1:
-            metadata_sources = ["CompCor"]
-        else:
-            metadata_sources = ["Decomposition {:d}".format(i) for i in range(len(metadata_files))]
-    for file, source in zip(metadata_files, metadata_sources):
-        metadata[source] = pd.read_csv(str(file), sep=r"\s+")
-        metadata[source]["source"] = source
-    metadata = pd.concat(list(metadata.values()))
-    bbox_txt = {
-        "boxstyle": "round",
-        "fc": "white",
-        "ec": "none",
-        "color": "none",
-        "linewidth": 0,
-        "alpha": 0.8,
-    }
-
-    decompositions = []
-    data_sources = list(metadata.groupby(["source", "mask"]).groups.keys())
-    for source, mask in data_sources:
-        if not np.isnan(
-            metadata.loc[(metadata["source"] == source) & (metadata["mask"] == mask)][
-                "singular_value"
-            ].values[0]
-        ):
-            decompositions.append((source, mask))
-
-    if fig is not None:
-        ax = [fig.add_subplot(1, len(decompositions), i + 1) for i in range(len(decompositions))]
-    elif len(decompositions) > 1:
-        fig, ax = plt.subplots(1, len(decompositions), figsize=(5 * len(decompositions), 5))
-    else:
-        ax = [plt.axes()]
-
-    for m, (source, mask) in enumerate(decompositions):
-        components = metadata[(metadata["mask"] == mask) & (metadata["source"] == source)]
-        if len([m for s, m in decompositions if s == source]) > 1:
-            title_mask = " ({} mask)".format(mask)
-        else:
-            title_mask = ""
-        fig_title = "{}{}".format(source, title_mask)
-
-        ax[m].plot(
-            np.arange(components.shape[0] + 1),
-            [0] + list(100 * components["cumulative_variance_explained"]),
-            color="purple",
-            linewidth=2.5,
-        )
-        ax[m].grid(False)
-        ax[m].set_xlabel("number of components in model")
-        ax[m].set_ylabel("cumulative variance explained (%)")
-        ax[m].set_title(fig_title)
-
-        varexp = {}
-
-        for i, thr in enumerate(varexp_thresh):
-            varexp[thr] = (
-                np.atleast_1d(np.searchsorted(components["cumulative_variance_explained"], thr))
-                + 1
-            )
-            ax[m].axhline(y=100 * thr, color="lightgrey", linewidth=0.25)
-            ax[m].axvline(x=varexp[thr], color="C{}".format(i), linewidth=2, linestyle=":")
-            ax[m].text(
-                0,
-                100 * thr,
-                "{:.0f}".format(100 * thr),
-                fontsize="x-small",
-                bbox=bbox_txt,
-            )
-            ax[m].text(
-                varexp[thr][0],
-                25,
-                "{} components explain\n{:.0f}% of variance".format(varexp[thr][0], 100 * thr),
-                rotation=90,
-                horizontalalignment="center",
-                fontsize="xx-small",
-                bbox=bbox_txt,
-            )
-
-        ax[m].set_yticks([])
-        ax[m].set_yticklabels([])
-        for tick in ax[m].xaxis.get_major_ticks():
-            tick.label.set_fontsize("x-small")
-            tick.label.set_rotation("vertical")
-        for side in ["top", "right", "left"]:
-            ax[m].spines[side].set_color("none")
-            ax[m].spines[side].set_visible(False)
-
-    if output_file is not None:
-        figure = plt.gcf()
-        figure.savefig(output_file, bbox_inches="tight")
-        plt.close(figure)
-        figure = None
-        return output_file
-    return ax
+    return np.column_stack([children, distances, counts]).astype(float)
 
 
 def confounds_correlation_plot(
@@ -1113,6 +852,7 @@ def confounds_correlation_plot(
     output_file: :obj:`str`
         The file where the figure is saved.
     """
+    import pandas as pd
     import seaborn as sns
 
     confounds_data = pd.read_table(confounds_file)
@@ -1141,7 +881,7 @@ def confounds_correlation_plot(
 
     if figure is None:
         plt.figure(figsize=(15, 5))
-    gs = mgs.GridSpec(1, 21)
+    gs = GridSpec(1, 21)
     ax0 = plt.subplot(gs[0, :10])
     ax1 = plt.subplot(gs[0, 11:])
 
@@ -1185,158 +925,3 @@ def confounds_correlation_plot(
         figure = None
         return output_file
     return [ax0, ax1], gs
-
-
-def cifti_surfaces_plot(
-    in_cifti,
-    density="32k",
-    surface_type="inflated",
-    clip_range=(0, None),
-    output_file=None,
-    **kwargs,
-):
-    """
-    Plots a CIFTI-2 dense timeseries onto left/right mesh surfaces.
-
-    Parameters
-    ----------
-    in_cifti : str
-        CIFTI-2 dense timeseries (.dtseries.nii)
-    density : str
-        Surface density
-    surface_type : str
-        Inflation level of mesh surfaces. Supported: midthickness, inflated, veryinflated
-    clip_range : tuple or None
-        Range to clip `in_cifti` data prior to plotting.
-        If not None, two values must be provided as lower and upper bounds.
-        If values are None, no clipping is performed for that bound.
-    output_file: :obj:`str` or :obj:`None`
-        Path where the output figure should be saved. If this is not defined,
-        then the figure will be returned.
-    kwargs : dict
-        Keyword arguments for :obj:`nilearn.plotting.plot_surf`
-
-    Outputs
-    -------
-    figure : matplotlib.pyplot.figure
-        Surface plot figure. Returned only if ``output_file`` is ``None``.
-    output_file: :obj:`str`
-        The file where the figure is saved.
-    """
-    from nilearn.plotting import plot_surf
-
-    def get_surface_meshes(density, surface_type):
-        import templateflow.api as tf
-
-        lh, rh = tf.get("fsLR", density=density, suffix=surface_type, extension=[".surf.gii"])
-        return str(lh), str(rh)
-
-    if density != "32k":
-        raise NotImplementedError("Only 32k density is currently supported.")
-
-    img = nb.cifti2.load(in_cifti)
-    if img.nifti_header.get_intent()[0] != "ConnDenseSeries":
-        raise TypeError(f"{in_cifti} is not a dense timeseries CIFTI file")
-
-    geo = img.header.get_index_map(1)
-    left_cortex, right_cortex = None, None
-    for bm in geo.brain_models:
-        if bm.brain_structure == "CIFTI_STRUCTURE_CORTEX_LEFT":
-            left_cortex = bm
-        elif bm.brain_structure == "CIFTI_STRUCTURE_CORTEX_RIGHT":
-            right_cortex = bm
-
-    if left_cortex is None or right_cortex is None:
-        raise RuntimeError("CIFTI is missing cortex information")
-
-    # calculate an average of the BOLD data, excluding the first 5 volumes
-    # as potential nonsteady states
-    data = img.dataobj[5:20].mean(axis=0)
-
-    counts = (left_cortex.index_count, right_cortex.index_count)
-    if density == "32k" and counts != (29696, 29716):
-        raise ValueError("Cortex data is not in fsLR space")
-
-    # medial wall needs to be added back in
-    lh_data = np.full(left_cortex.surface_number_of_vertices, np.nan)
-    rh_data = np.full(right_cortex.surface_number_of_vertices, np.nan)
-    lh_data[left_cortex.vertex_indices] = _concat_brain_struct_data([left_cortex], data)
-    rh_data[right_cortex.vertex_indices] = _concat_brain_struct_data([right_cortex], data)
-
-    if clip_range:
-        lh_data = np.clip(lh_data, clip_range[0], clip_range[1], out=lh_data)
-        rh_data = np.clip(rh_data, clip_range[0], clip_range[1], out=rh_data)
-        mn, mx = clip_range
-    else:
-        mn, mx = None, None
-
-    if mn is None:
-        mn = np.min(data)
-    if mx is None:
-        mx = np.max(data)
-
-    cmap = kwargs.pop('cmap', 'YlOrRd_r')
-    cbar_map = cm.ScalarMappable(norm=Normalize(mn, mx), cmap=cmap)
-
-    # Make background maps that rescale to a medium gray
-    lh_bg = np.zeros(lh_data.shape, 'int8')
-    rh_bg = np.zeros(rh_data.shape, 'int8')
-    lh_bg[:2] = [3, -2]
-    rh_bg[:2] = [3, -2]
-
-    lh_mesh, rh_mesh = get_surface_meshes(density, surface_type)
-    lh_kwargs = dict(surf_mesh=lh_mesh, surf_map=lh_data, bg_map=lh_bg)
-    rh_kwargs = dict(surf_mesh=rh_mesh, surf_map=rh_data, bg_map=rh_bg)
-
-    # Build the figure
-    figure = plt.figure(figsize=plt.figaspect(0.25), constrained_layout=True)
-    for i, view in enumerate(('lateral', 'medial')):
-        for j, hemi in enumerate(('left', 'right')):
-            title = f'{hemi.title()} - {view.title()}'
-            ax = figure.add_subplot(1, 4, i * 2 + j + 1, projection='3d', rasterized=True)
-            hemi_kwargs = (lh_kwargs, rh_kwargs)[j]
-            plot_surf(
-                hemi=hemi,
-                view=view,
-                title=title,
-                cmap=cmap,
-                vmin=mn,
-                vmax=mx,
-                axes=ax,
-                **hemi_kwargs,
-                **kwargs
-            )
-            # plot_surf sets this to 8, which seems a little far out, but 6 starts clipping
-            ax.dist = 7
-
-    figure.colorbar(cbar_map, shrink=0.2, ax=figure.axes, location='bottom')
-
-    if output_file is not None:
-        figure.savefig(output_file, bbox_inches="tight", dpi=400)
-        plt.close(figure)
-        return output_file
-
-    return figure
-
-
-def _concat_brain_struct_data(structs, data):
-    concat_data = np.array([], dtype=data.dtype)
-    for struct in structs:
-        struct_upper_bound = struct.index_offset + struct.index_count
-        struct_data = data[struct.index_offset:struct_upper_bound]
-        concat_data = np.concatenate((concat_data, struct_data))
-    return concat_data
-
-
-def _ward_to_linkage(children, n_leaves, distances):
-    """Create linkage matrix from the output of Ward clustering."""
-    # create the counts of samples under each node
-    counts = np.zeros(children.shape[0])
-    n_samples = n_leaves
-    for i, merge in enumerate(children):
-        current_count = 0
-        for child_idx in merge:
-            current_count += 1 if child_idx < n_samples else counts[child_idx - n_samples]
-        counts[i] = current_count
-
-    return np.column_stack([children, distances, counts]).astype(float)

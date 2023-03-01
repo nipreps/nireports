@@ -30,10 +30,14 @@ import pandas as pd
 import pytest
 
 from .conftest import datadir
-from .generate_data import _create_dtseries_cifti 
-from nireports.reportlets.plots import fMRIPlot, plot_carpet
+from .generate_data import _create_dtseries_cifti
 from niworkflows.utils.timeseries import _cifti_timeseries, _nifti_timeseries
 from niworkflows.interfaces.plotting import _get_tr
+
+from nireports.reportlets.nuisance import plot_carpet
+from nireports.reportlets.surface import cifti_surfaces_plot
+from nireports.reportlets.xca import compcor_variance_plot, plot_melodic_components
+from nireports.reportlets.modality.func import fMRIPlot
 
 
 @pytest.mark.parametrize("tr", (None, 0.7))
@@ -44,7 +48,7 @@ def test_carpetplot(tr, sorting):
 
     rng = np.random.default_rng(2010)
 
-    viz.plot_carpet(
+    plot_carpet(
         rng.normal(100, 20, size=(18000, 1900)),
         title="carpetplot with title",
         tr=tr,
@@ -77,7 +81,7 @@ def test_carpetplot(tr, sorting):
         )
         start += size
 
-    viz.plot_carpet(
+    plot_carpet(
         data,
         segments,
         tr=tr,
@@ -101,7 +105,7 @@ def test_carpetplot(tr, sorting):
         data[indexes[start:start + size]] = i
         start += size
 
-    viz.plot_carpet(
+    plot_carpet(
         data,
         segments,
         detrend=False,
@@ -208,7 +212,7 @@ def test_plot_melodic_components(tmp_path):
     report_mask.to_filename(report_fname)
 
     # run command with all noise components
-    viz.utils.plot_melodic_components(
+    plot_melodic_components(
         str(melodic_dir),
         in_fname,
         tr=2.0,
@@ -217,7 +221,7 @@ def test_plot_melodic_components(tmp_path):
         out_file=all_noise,
     )
     # run command with no noise components
-    viz.utils.plot_melodic_components(
+    plot_melodic_components(
         str(melodic_dir),
         in_fname,
         tr=2.0,
@@ -227,7 +231,7 @@ def test_plot_melodic_components(tmp_path):
     )
 
     # run command without noise components file
-    viz.utils.plot_melodic_components(
+    plot_melodic_components(
         str(melodic_dir),
         in_fname,
         tr=2.0,
@@ -241,7 +245,7 @@ def test_compcor_variance_plot(tmp_path):
     out_dir = Path(os.getenv("SAVE_CIRCLE_ARTIFACTS", str(tmp_path)))
     out_file = str(out_dir / "variance_plot_short.svg")
     metadata_file = os.path.join(datadir, "confounds_metadata_short_test.tsv")
-    viz.plots.compcor_variance_plot([metadata_file], output_file=out_file)
+    compcor_variance_plot([metadata_file], output_file=out_file)
 
 
 @pytest.fixture
@@ -263,4 +267,4 @@ def test_cifti_surfaces_plot(tmp_path, create_surface_dtseries):
     os.chdir(tmp_path)
     out_dir = Path(os.getenv("SAVE_CIRCLE_ARTIFACTS", str(tmp_path)))
     out_file = str(out_dir / "cifti_surfaces_plot.svg")
-    viz.plots.cifti_surfaces_plot(create_surface_dtseries, output_file=out_file)
+    cifti_surfaces_plot(create_surface_dtseries, output_file=out_file)

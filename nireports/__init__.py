@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 #
-# Copyright 2022 The NiPreps Developers <nipreps@gmail.com>
+# Copyright 2023 The NiPreps Developers <nipreps@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #
 """Add metadata on import."""
 __packagename__ = "nireports"
-__copyright__ = "2022, The NiPreps developers"
+__copyright__ = "2023, The NiPreps developers"
 
 try:
     from ._version import __version__
@@ -35,9 +35,3 @@ except ModuleNotFoundError:
         __version__ = "unknown"
     del get_distribution
     del DistributionNotFound
-
-__all__ = (
-    "__copyright__",
-    "__packagename__",
-    "__version__",
-)
