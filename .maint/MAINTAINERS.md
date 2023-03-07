@@ -9,5 +9,6 @@ If you are participating because of your affiliation with another organization (
 
 | **Lastname** | **Name** | **Handle** | **ORCID**           | **Affiliation**                                                                 | **Role** |
 |--------------|----------|------------|---------------------|---------------------------------------------------------------------------------| --- |
-| Céline       | Provins  | @celprov   | 0000-0002-1668-9629 | Lausanne University Hospital and University of Lausanne, Lausanne, Switzerland  |  |
+| Céline       | Provins  | @celprov   | 0000-0002-1668-9629 | Department of Radiology, Lausanne University Hospital and University of Lausanne, Switzerland |  |
+| Elodie      | Savary | @esavary   | 0000-0002-3896-6906 | Department of Radiology, Lausanne University Hospital and University of Lausanne, Switzerland  |  |
 
