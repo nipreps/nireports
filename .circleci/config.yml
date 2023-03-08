@@ -10,9 +10,9 @@ jobs:
           username: $DOCKER_USER
           password: $DOCKER_PAT
 
-    working_directory: /tmp/tests
     environment:
       - TEST_OUTPUT_DIR: /tmp/test_output
+      - TEST_SUMMARY_DIR: /tmp/test_summaries
     steps:
       - checkout
       - run:
@@ -23,22 +23,23 @@ jobs:
           name: Run unit tests
           no_output_timeout: 2h
           command: |
-            mkdir -p ${TEST_OUTPUT_DIR} $PWD/summaries
-            python -m pytest --junit-xml=/tmp/summaries/pytest.xml \
-                   --cov nireports --cov-report xml:/tmp/summaries/unittests.xml \
+            mkdir -p ${TEST_OUTPUT_DIR} ${TEST_SUMMARY_DIR}
+            python -m pytest --junit-xml=${TEST_SUMMARY_DIR}/pytest.xml \
+                   --cov nireports --cov-report xml:${TEST_SUMMARY_DIR}/unittests.xml \
                    nireports/
+
+      - store_artifacts:
+          path: /tmp/test_output
+
+      - store_test_results:
+          path: /tmp/test_summaries/
 
       - run:
           name: Submit unit test coverage
           command: |
-            python -m codecov --file /tmp/tests/summaries/unittests.xml \
+            python -m codecov --file ${TEST_SUMMARY_DIR}/unittests.xml \
                 --flags unittests -e CIRCLE_JOB
 
-      - store_artifacts:
-          path: /tmp/tests_output
-
-      - store_test_results:
-          path: /tmp/tests/summaries/
 
   build_docs:
     docker: # executor type
