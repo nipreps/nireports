@@ -32,7 +32,7 @@ jobs:
           path: /tmp/tests/output
 
       - store_test_results:
-          path: /tmp/tests/sumary/
+          path: /tmp/tests/summary/
 
       - run:
           name: Submit unit test coverage
