@@ -3,233 +3,30 @@ orbs:
   docker: circleci/docker@1.6.0
 
 jobs:
-  build:
-    machine:
-      # https://discuss.circleci.com/t/linux-machine-executor-images-2021-april-q2-update/39928
-      # upgrade Docker version
-      image: ubuntu-2004:202104-01
-    working_directory: /tmp/src/nireports
-    environment:
-      TZ: "/usr/share/zoneinfo/America/Los_Angeles"
-      SCRATCH: "/scratch"
-    steps:
-      - restore_cache:
-          keys:
-            - build-v1-{{ .Branch }}-{{ .Revision }}
-            - build-v1--{{ .Revision }}
-            - build-v1-{{ .Branch }}-
-            - build-v1-master-
-            - build-v1-
-          paths:
-            - /tmp/docker
-            - /tmp/images
-      - run:
-          name: Docker authentication
-          command: |
-            if [[ -n $DOCKER_PAT ]]; then
-              echo "$DOCKER_PAT" | docker login -u $DOCKER_USER --password-stdin
-            fi
-      - run:
-          name: Set up Docker registry
-          command: |
-            if [[ -f /tmp/images/registry.tar.gz ]]; then
-              echo "Loading saved registry image"
-              docker load < /tmp/images/registry.tar.gz
-            else
-              echo "Pulling registry image from DockerHub"
-              docker pull registry:2
-              mkdir -p /tmp/images
-              docker save registry:2 | gzip > /tmp/images/registry.tar.gz
-            fi
-            docker run -d -p 5000:5000 --restart=always --name=registry \
-                -v /tmp/docker:/var/lib/registry registry:2
-      - run:
-          name: Pull existing images
-          command: |
-            set +e
-            docker pull localhost:5000/ubuntu
-            success=$?
-            set -e
-            if [[ "$success" = "0" ]]; then
-                echo "Pulling from local registry"
-                docker tag localhost:5000/ubuntu ubuntu:focal-20210416
-                docker pull localhost:5000/nireports
-                docker tag localhost:5000/nireports nireports:latest
-            else
-                echo "Pulling from Docker Hub"
-                docker pull ubuntu:focal-20210416
-                docker tag ubuntu:focal-20210416 localhost:5000/ubuntu
-                docker push localhost:5000/ubuntu
-            fi
-
-      - checkout
-      - run:
-          name: Build Docker image & push to registry
-          no_output_timeout: 60m
-          command: |
-            e=1 && for i in {1..5}; do
-              docker build --rm --cache-from=nireports:latest \
-                -t nireports:latest \
-                --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
-                --build-arg VCS_REF=`git rev-parse --short HEAD` \
-                --build-arg VERSION=`python3 get_version.py` . \
-              && e=0 && break || sleep 15
-            done && [ "$e" -eq "0" ]
-            docker tag nireports:latest localhost:5000/nireports
-            docker push localhost:5000/nireports
-      - run:
-          name: Docker registry garbage collection
-          command: |
-            docker exec -it registry /bin/registry garbage-collect --delete-untagged \
-                /etc/docker/registry/config.yml
-      - save_cache:
-          key: build-v1-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - /tmp/docker
-            - /tmp/images
-
-  get_data:
-    docker:
-      - image: continuumio/miniconda3:4.9.2-alpine
-    working_directory: /tmp/data
-    environment:
-      - TEMPLATEFLOW_HOME: /tmp/templateflow
-    steps:
-      - restore_cache:
-          keys:
-            - env-v2-{{ .Branch }}-
-            - env-v2-master-
-            - env-v2-
-      - run:
-          name: Setup git-annex, DataLad & TemplateFlow
-          command: |
-            apk update && apk add --no-cache coreutils
-            conda install -y -c conda-forge python=*=*cpython datalad git wget
-            python -m pip install --no-cache-dir -U datalad-osf templateflow
-            git config --global user.name 'NiPreps Bot'
-            git config --global user.email 'nipreps@gmail.com'
-      - save_cache:
-          key: env-v2-{{ .Branch }}-{{ .BuildNum }}
-          paths:
-            - /opt/conda
-
-      - restore_cache:
-          keys:
-            - data-v3-{{ .Branch }}-{{ epoch }}
-            - data-v3-{{ .Branch }}-
-            - data-v3-master-
-            - data-v3-
-      - run:
-          name: Get test data from ds000003
-          command: |
-            if [[ ! -d ds000003 ]]; then
-              datalad install -r https://github.com/nipreps-data/ds000003.git
-            fi
-            datalad update -r --merge -d ds000003/
-            datalad get -J 2 -r -d ds000003/ ds000003/*
-
-      - run:
-          name: Get test data from ds000030
-          command: |
-            if [[ ! -d ds000030 ]]; then
-              datalad install -r https://github.com/nipreps-data/ds000030.git
-            fi
-            datalad update -r --merge -d ds000030/
-            datalad get -J 2 -r -d ds000030/ ds000030/sub-10228/func/*
-
-      - run:
-          name: Get BIDS test data stub
-          command: |
-            mkdir -p /tmp/data
-            if [[ ! -d /tmp/data/BIDS-examples-1-enh-ds054 ]]; then
-              wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 -t 0 -q \
-                -O BIDS-examples-1-enh-ds054.zip "http://github.com/chrisfilo/BIDS-examples-1/archive/enh/ds054.zip"
-              unzip BIDS-examples-1-enh-ds054.zip -d /tmp/data/
-            else
-              echo "BIDS stub was cached"
-            fi
-      - save_cache:
-         key: data-v3-{{ .Branch }}-{{ epoch }}
-         paths:
-            - /tmp/data/ds000003
-            - /tmp/data/ds000030
-            - /tmp/data/BIDS-examples-1-enh-ds054
-      - run:
-          name: Store FreeSurfer license file
-          command: |
-            mkdir -p /tmp/fslicense
-            cd /tmp/fslicense
-            echo "cHJpbnRmICJrcnp5c3p0b2YuZ29yZ29sZXdza2lAZ21haWwuY29tXG41MTcyXG4gKkN2dW12RVYzelRmZ1xuRlM1Si8yYzFhZ2c0RVxuIiA+IGxpY2Vuc2UudHh0Cg==" | base64 -d | sh
-
-      - checkout:
-          path: /tmp/src/nireports
-
-      - persist_to_workspace:
-          root: /tmp
-          paths:
-            - fslicense
-            - src/
-
   test_pytest:
-    machine:
-      image: ubuntu-2004:202104-01
+    docker: # executor type
+      - image: nipreps/miniconda:py39_2209.01
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PAT
+
     working_directory: /tmp/tests
+    environment:
+      - TEST_OUTPUT_DIR: /tmp/test_output
     steps:
-      - attach_workspace:
-          at: /tmp
+      - checkout
       - run:
           name: Get codecov
           command: python -m pip install codecov
-      - restore_cache:
-          keys:
-            - build-v1-{{ .Branch }}-{{ .Revision }}
-      - run:
-          name: Docker authentication
-          command: |
-            if [[ -n $DOCKER_PAT ]]; then
-              echo "$DOCKER_PAT" | docker login -u $DOCKER_USER --password-stdin
-            fi
-      - run:
-          name: Set up Docker registry
-          command: |
-            if [[ -f /tmp/images/registry.tar.gz ]]; then
-              echo "Loading saved registry image"
-              docker load < /tmp/images/registry.tar.gz
-            else
-              echo "Pulling registry image from DockerHub"
-              docker pull registry:2
-            fi
-            docker run -d -p 5000:5000 --restart=always --name=registry \
-                -v /tmp/docker:/var/lib/registry registry:2
-      - run:
-          name: Pull images from registry
-          command: |
-            docker pull localhost:5000/nireports
-            docker tag localhost:5000/nireports nireports:latest
-
-      - restore_cache:
-          keys:
-            - data-v3-{{ .Branch }}-{{ epoch }}
-            - data-v3-{{ .Branch }}-
-            - data-v3-master-
 
       - run:
           name: Run unit tests
           no_output_timeout: 2h
           command: |
             mkdir -p $PWD/artifacts $PWD/summaries
-            docker run -u $( id -u ):$( id -g ) -it --rm -w /src/nireports \
-              -e COVERAGE_FILE=/tmp/summaries/.pytest.coverage \
-              -e SAVE_CIRCLE_ARTIFACTS="/tmp/artifacts/" \
-              -e TEST_DATA_HOME=/data -v /tmp/data:/data \
-              -e FS_LICENSE=/etc/fslicense.txt \
-              -v /tmp/fslicense/license.txt:/etc/fslicense.txt:ro \
-              -v ${PWD}:/tmp nireports:latest \
-              pytest --junit-xml=/tmp/summaries/pytest.xml \
-                     --cov nireports --cov-report xml:/tmp/summaries/unittests.xml \
-                     --ignore=nireports/tests/ \
-                     --ignore=nireports/func/tests/ \
-                     nireports/
+            python -m pytest --junit-xml=/tmp/summaries/pytest.xml \
+                   --cov nireports --cov-report xml:/tmp/summaries/unittests.xml \
+                   nireports/
 
       - run:
           name: Submit unit test coverage
@@ -238,134 +35,19 @@ jobs:
             python -m codecov --file /tmp/tests/summaries/unittests.xml \
                 --flags unittests -e CIRCLE_JOB
 
-      - run:
-          name: Run reportlet tests
-          no_output_timeout: 2h
-          command: |
-            docker run -u $( id -u ):$( id -g ) -it --rm -w /src/nireports \
-              -e COVERAGE_FILE=/tmp/summaries/.reportlets.coverage \
-              -e SAVE_CIRCLE_ARTIFACTS="/tmp/artifacts/" \
-              -e TEST_DATA_HOME=/data -v /tmp/data:/data \
-              -v /tmp/fslicense/license.txt:/opt/freesurfer/license.txt:ro \
-              -v ${PWD}:/tmp nireports:latest \
-              pytest -n auto --junit-xml=/tmp/summaries/reportlets.xml \
-                     --cov nireports --cov-report xml:/tmp/summaries/reportlets.xml \
-                     nireports/tests/
-      - run:
-          name: Submit reportlet test coverage
-          command: |
-            cd /tmp/src/nireports
-            python -m codecov --file /tmp/tests/summaries/reportlets.xml \
-                --flags reportlettests -e CIRCLE_JOB
-
-      - run:
-          name: Clean up tests directory
-          command: |
-            rm -rf /tmp/tests/pytest-of-root
-
       - store_artifacts:
-          path: /tmp/tests/artifacts
+          path: /tmp/tests_output
 
       - store_test_results:
           path: /tmp/tests/summaries/
 
-  test_package:
-    docker:
-      - image: cimg/python:3.9
-    working_directory: /tmp/src/nireports
-    steps:
-      - checkout
-      - run:
-          name: Install build depends
-          command: python -m pip install "setuptools>=40.8.0" "pip>=19" "twine<2.0" docutils
-      - run:
-          name: Build and check
-          command: |
-            python setup.py sdist
-            python -m twine check dist/*
-      - run:
-          name: Validate version
-          command: |
-            THISVERSION=$( python get_version.py )
-            python -m pip install dist/*.tar.gz
-            mkdir empty
-            cd empty
-            INSTALLED=$( python -c 'import nireports; print(nireports.__version__)' )
-            test "${CIRCLE_TAG:-$THISVERSION}" == "$INSTALLED"
-
-  deploy_pypi:
-    docker:
-      - image: cimg/python:3.9
-    working_directory: /tmp/src/nireports
-    steps:
-      - checkout
-      - run:
-          name: Install build depends
-          command: python -m pip install "setuptools>=40.8.0" "pip>=19" "twine<2.0" docutils
-      - run:
-          name: Build and check
-          command: |
-            python -m build -s -w
-            python -m twine check dist/*
-      - run:
-          name: Validate version
-          command: |
-            THISVERSION=$( python3 get_version.py )
-            python -m pip install dist/*.tar.gz
-            mkdir empty
-            cd empty
-            INSTALLED=$( python -c 'import nireports; print(nireports.__version__)' )
-            test "${CIRCLE_TAG:-$THISVERSION}" == "$INSTALLED"
-      - run:
-          name: Upload to PyPi
-          command: |
-            python -m twine upload dist/*
-
-  deploy_docker:
-    machine:
-      image: ubuntu-2004:202104-01
-    working_directory: /tmp/src/
-    steps:
-      - restore_cache:
-          keys:
-            - build-v1-{{ .Branch }}-{{ .Revision }}
-          paths:
-            - /tmp/docker
-            - /tmp/images
-      - run:
-          name: Docker authentication
-          command: |
-            if [[ -n $DOCKER_PAT ]]; then
-              echo "$DOCKER_PAT" | docker login -u $DOCKER_USER --password-stdin
-            fi
-      - run:
-          name: Set up Docker registry
-          command: |
-            if [[ -f /tmp/images/registry.tar.gz ]]; then
-              echo "Loading saved registry image"
-              docker load < /tmp/images/registry.tar.gz
-            else
-              echo "Pulling registry image from DockerHub"
-              docker pull registry:2
-            fi
-            docker run -d -p 5000:5000 --restart=always --name=registry \
-                -v /tmp/docker:/var/lib/registry registry:2
-      - run:
-          name: Pull images from local registry
-          command: |
-            docker pull localhost:5000/nireports
-            docker tag localhost:5000/nireports nipreps/nireports:latest
-      - run:
-          name: Deploy to Docker Hub
-          no_output_timeout: 40m
-          command: |
-            docker push nipreps/nireports:latest
-            docker tag nipreps/nireports nipreps/nireports:$CIRCLE_TAG
-            docker push nipreps/nireports:$CIRCLE_TAG
-
   build_docs:
-    docker:
-      - image: cimg/python:3.9
+    docker: # executor type
+      - image: nipreps/miniconda:py39_2209.01
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PAT
+
     environment:
       - FSLOUTPUTTYPE: NIFTI
       - SUBJECTS_DIR: /tmp/subjects
@@ -375,9 +57,6 @@ jobs:
           name: Create subjects folder
           command: mkdir -p $SUBJECTS_DIR
       - run:
-          name: Install Graphviz
-          command: sudo apt update && sudo apt -y install graphviz
-      - run:
           name: Install deps
           command: |
             python -m pip install --no-cache-dir -U "pip>=20.3"
@@ -386,84 +65,33 @@ jobs:
       - run:
           name: Install Nireports
           command: |
-            python -m pip install .
+            python -m pip install .[docs]
       - run:
           name: Build only this commit
           command: |
             BRANCH=$( echo $CIRCLE_BRANCH | sed 's+/+_+g' )
-            make -C docs SPHINXOPTS="-W" BUILDDIR="$HOME/docs" OUTDIR=${CIRCLE_TAG:-$BRANCH} html
+            make -C docs SPHINXOPTS="-W" BUILDDIR="/tmp/docs" OUTDIR=${CIRCLE_TAG:-$BRANCH} html
       - store_artifacts:
-          path: ~/docs
+          path: /tmp/docs
 
 workflows:
   version: 2
   build_test_deploy:
     jobs:
-      - build:
-          context:
-            - nipreps-common
-          filters:
-            tags:
-              only: /.*/
-      - get_data:
-          filters:
-            tags:
-              only: /.*/
-
-      - test_package:
-          context:
-            - nipreps-common
-          filters:
-            branches:
-              ignore:
-                - /masks?\/.*/
-            tags:
-              only: /.*/
-
       - test_pytest:
           context:
             - nipreps-common
-          requires:
-            - build
-            - get_data
           filters:
+            tags:
+              only: /.*/
             branches:
               ignore:
                 - /docs?\/.*/
-                - /masks?\/.*/
-            tags:
-              only: /.*/
-
-      - deploy_pypi:
-          context:
-            - nipreps-common
-          requires:
-            - test_pytest
-            - test_package
-            - build_docs
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
-
-      - deploy_docker:
-          context:
-            - nipreps-common
-          requires:
-            - deploy_pypi
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /.*/
 
       - build_docs:
           filters:
             branches:
               ignore:
                 - /tests?\/.*/
-                - /ds005\/.*/
-                - /ds054\/.*/
             tags:
               only: /.*/
