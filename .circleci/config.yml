@@ -10,9 +10,8 @@ jobs:
           username: $DOCKER_USER
           password: $DOCKER_PAT
 
-    working_directory: /tmp/tests
     environment:
-      - TEST_OUTPUT_DIR: /tmp/test_output
+      - TEST_DIR: /tmp/tests
     steps:
       - checkout
       - run:
@@ -23,23 +22,24 @@ jobs:
           name: Run unit tests
           no_output_timeout: 2h
           command: |
-            mkdir -p $PWD/artifacts $PWD/summaries
-            python -m pytest --junit-xml=/tmp/summaries/pytest.xml \
-                   --cov nireports --cov-report xml:/tmp/summaries/unittests.xml \
+            export TEST_OUTPUT_DIR=${TEST_DIR}/output
+            mkdir -p ${TEST_OUTPUT_DIR} ${TEST_DIR}/summary ${TEST_DIR}/coverage
+            python -m pytest --junit-xml=${TEST_DIR}/summary/pytest.xml \
+                   --cov nireports --cov-report xml:${TEST_DIR}/coverage/unittests.xml \
                    nireports/
+
+      - store_artifacts:
+          path: /tmp/tests/output
+
+      - store_test_results:
+          path: /tmp/tests/sumary/
 
       - run:
           name: Submit unit test coverage
           command: |
-            cd /tmp/src/nireports
-            python -m codecov --file /tmp/tests/summaries/unittests.xml \
+            python -m codecov --file ${TEST_DIR}/coverage/unittests.xml \
                 --flags unittests -e CIRCLE_JOB
 
-      - store_artifacts:
-          path: /tmp/tests_output
-
-      - store_test_results:
-          path: /tmp/tests/summaries/
 
   build_docs:
     docker: # executor type
@@ -60,8 +60,6 @@ jobs:
           name: Install deps
           command: |
             python -m pip install --no-cache-dir -U "pip>=20.3"
-            python -m pip install --no-cache-dir -r docs/requirements.txt
-            eval "$(pyenv init -)"
       - run:
           name: Install Nireports
           command: |
