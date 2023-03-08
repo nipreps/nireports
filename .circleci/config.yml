@@ -1,4 +1,3 @@
-
 version: 2.1
 orbs:
   docker: circleci/docker@1.6.0
@@ -62,6 +61,7 @@ jobs:
                 docker tag ubuntu:focal-20210416 localhost:5000/ubuntu
                 docker push localhost:5000/ubuntu
             fi
+
       - checkout
       - run:
           name: Build Docker image & push to registry
@@ -87,7 +87,6 @@ jobs:
           paths:
             - /tmp/docker
             - /tmp/images
-
 
   get_data:
     docker:
@@ -128,6 +127,7 @@ jobs:
             fi
             datalad update -r --merge -d ds000003/
             datalad get -J 2 -r -d ds000003/ ds000003/*
+
       - run:
           name: Get test data from ds000030
           command: |
@@ -136,6 +136,7 @@ jobs:
             fi
             datalad update -r --merge -d ds000030/
             datalad get -J 2 -r -d ds000030/ ds000030/sub-10228/func/*
+
       - run:
           name: Get BIDS test data stub
           command: |
@@ -148,8 +149,8 @@ jobs:
               echo "BIDS stub was cached"
             fi
       - save_cache:
-          key: data-v3-{{ .Branch }}-{{ epoch }}
-          paths:
+         key: data-v3-{{ .Branch }}-{{ epoch }}
+         paths:
             - /tmp/data/ds000003
             - /tmp/data/ds000030
             - /tmp/data/BIDS-examples-1-enh-ds054
@@ -159,6 +160,7 @@ jobs:
             mkdir -p /tmp/fslicense
             cd /tmp/fslicense
             echo "cHJpbnRmICJrcnp5c3p0b2YuZ29yZ29sZXdza2lAZ21haWwuY29tXG41MTcyXG4gKkN2dW12RVYzelRmZ1xuRlM1Si8yYzFhZ2c0RVxuIiA+IGxpY2Vuc2UudHh0Cg==" | base64 -d | sh
+
       - checkout:
           path: /tmp/src/nireports
 
@@ -204,6 +206,7 @@ jobs:
           command: |
             docker pull localhost:5000/nireports
             docker tag localhost:5000/nireports nireports:latest
+
       - restore_cache:
           keys:
             - data-v3-{{ .Branch }}-{{ epoch }}
@@ -227,12 +230,14 @@ jobs:
                      --ignore=nireports/tests/ \
                      --ignore=nireports/func/tests/ \
                      nireports/
+
       - run:
           name: Submit unit test coverage
           command: |
             cd /tmp/src/nireports
             python -m codecov --file /tmp/tests/summaries/unittests.xml \
                 --flags unittests -e CIRCLE_JOB
+
       - run:
           name: Run reportlet tests
           no_output_timeout: 2h
@@ -252,10 +257,12 @@ jobs:
             cd /tmp/src/nireports
             python -m codecov --file /tmp/tests/summaries/reportlets.xml \
                 --flags reportlettests -e CIRCLE_JOB
+
       - run:
           name: Clean up tests directory
           command: |
             rm -rf /tmp/tests/pytest-of-root
+
       - store_artifacts:
           path: /tmp/tests/artifacts
 
@@ -285,6 +292,7 @@ jobs:
             cd empty
             INSTALLED=$( python -c 'import nireports; print(nireports.__version__)' )
             test "${CIRCLE_TAG:-$THISVERSION}" == "$INSTALLED"
+
   deploy_pypi:
     docker:
       - image: cimg/python:3.9
@@ -313,6 +321,7 @@ jobs:
           name: Upload to PyPi
           command: |
             python -m twine upload dist/*
+
   deploy_docker:
     machine:
       image: ubuntu-2004:202104-01
@@ -354,6 +363,7 @@ jobs:
             docker push nipreps/nireports:latest
             docker tag nipreps/nireports nipreps/nireports:$CIRCLE_TAG
             docker push nipreps/nireports:$CIRCLE_TAG
+
   build_docs:
     docker:
       - image: cimg/python:3.9
@@ -386,75 +396,75 @@ jobs:
       - store_artifacts:
           path: ~/docs
 
-  workflows:
-    version: 2
-    build_test_deploy:
-      jobs:
-        - build:
-            context:
-              - nipreps-common
-            filters:
-              tags:
-                only: /.*/
-        - get_data:
-            filters:
-              tags:
-                only: /.*/
+workflows:
+  version: 2
+  build_test_deploy:
+    jobs:
+      - build:
+          context:
+            - nipreps-common
+          filters:
+            tags:
+              only: /.*/
+      - get_data:
+          filters:
+            tags:
+              only: /.*/
 
-        - test_package:
-            context:
-              - nipreps-common
-            filters:
-              branches:
-                ignore:
-                  - /masks?\/.*/
-              tags:
-                only: /.*/
+      - test_package:
+          context:
+            - nipreps-common
+          filters:
+            branches:
+              ignore:
+                - /masks?\/.*/
+            tags:
+              only: /.*/
 
-        - test_pytest:
-            context:
-              - nipreps-common
-            requires:
-              - build
-              - get_data
-            filters:
-              branches:
-                ignore:
-                  - /docs?\/.*/
-                  - /masks?\/.*/
-              tags:
-                only: /.*/
+      - test_pytest:
+          context:
+            - nipreps-common
+          requires:
+            - build
+            - get_data
+          filters:
+            branches:
+              ignore:
+                - /docs?\/.*/
+                - /masks?\/.*/
+            tags:
+              only: /.*/
 
-        - deploy_pypi:
-            context:
-              - nipreps-common
-            requires:
-              - test_pytest
-              - test_package
-              - build_docs
-            filters:
-              branches:
-                ignore: /.*/
-              tags:
-                only: /.*/
+      - deploy_pypi:
+          context:
+            - nipreps-common
+          requires:
+            - test_pytest
+            - test_package
+            - build_docs
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
 
-        - deploy_docker:
-            context:
-              - nipreps-common
-            requires:
-              - deploy_pypi
-            filters:
-              branches:
-                ignore: /.*/
-              tags:
-                only: /.*/
+      - deploy_docker:
+          context:
+            - nipreps-common
+          requires:
+            - deploy_pypi
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /.*/
 
-        - build_docs:
-            filters:
-              branches:
-                ignore:
-                  - /tests?\/.*/
-                  - /ds005\/.*/
-                  - /ds054\/.*/
-              tags:
-                only: /.*/
+      - build_docs:
+          filters:
+            branches:
+              ignore:
+                - /tests?\/.*/
+                - /ds005\/.*/
+                - /ds054\/.*/
+            tags:
+              only: /.*/
