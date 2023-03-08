@@ -11,8 +11,7 @@ jobs:
           password: $DOCKER_PAT
 
     environment:
-      - TEST_OUTPUT_DIR: /tmp/test_output
-      - TEST_SUMMARY_DIR: /tmp/test_summaries
+      - TEST_DIR: /tmp/tests
     steps:
       - checkout
       - run:
@@ -23,21 +22,22 @@ jobs:
           name: Run unit tests
           no_output_timeout: 2h
           command: |
-            mkdir -p ${TEST_OUTPUT_DIR} ${TEST_SUMMARY_DIR}
-            python -m pytest --junit-xml=${TEST_SUMMARY_DIR}/pytest.xml \
-                   --cov nireports --cov-report xml:${TEST_SUMMARY_DIR}/unittests.xml \
+            export TEST_OUTPUT_DIR=${TEST_DIR}/output
+            mkdir -p ${TEST_OUTPUT_DIR} ${TEST_DIR}/summary ${TEST_DIR}/coverage
+            python -m pytest --junit-xml=${TEST_DIR}/summary/pytest.xml \
+                   --cov nireports --cov-report xml:${TEST_DIR}/coverage/unittests.xml \
                    nireports/
 
       - store_artifacts:
-          path: /tmp/test_output
+          path: /tmp/tests/output
 
       - store_test_results:
-          path: /tmp/test_summaries/
+          path: /tmp/tests/sumary/
 
       - run:
           name: Submit unit test coverage
           command: |
-            python -m codecov --file ${TEST_SUMMARY_DIR}/unittests.xml \
+            python -m codecov --file ${TEST_DIR}/coverage/unittests.xml \
                 --flags unittests -e CIRCLE_JOB
 
 
