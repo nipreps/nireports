@@ -25,7 +25,7 @@
 # The original file this work derives from is found at:
 # https://github.com/nipreps/mriqc/blob/1ffd4c8d1a20b44ebfea648a7b12bb32a425d4ec/
 # mriqc/interfaces/viz.py
-"""Visualization interfaces."""
+"""Visualization of n-D images with mosaics cutting through planes."""
 from pathlib import Path
 
 import numpy as np
@@ -38,10 +38,11 @@ from nipype.interfaces.base import (
     traits,
 )
 
+from nireports.interfaces.base import _PlotBaseInputSpec
 from nireports.reportlets.mosaic import plot_mosaic, plot_segmentation, plot_spikes
 
 
-class PlotContoursInputSpec(BaseInterfaceInputSpec):
+class _PlotContoursInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="File to be plotted")
     in_contours = File(exists=True, mandatory=True, desc="file to pick the contours from")
     cut_coords = traits.Int(8, usedefault=True, desc="number of slices")
@@ -69,15 +70,15 @@ class PlotContoursInputSpec(BaseInterfaceInputSpec):
     vmax = traits.Float(desc="maximum intensity")
 
 
-class PlotContoursOutputSpec(TraitedSpec):
+class _PlotContoursOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output svg file")
 
 
 class PlotContours(SimpleInterface):
     """Plot contours"""
 
-    input_spec = PlotContoursInputSpec
-    output_spec = PlotContoursOutputSpec
+    input_spec = _PlotContoursInputSpec
+    output_spec = _PlotContoursOutputSpec
 
     def _run_interface(self, runtime):
         in_file_ref = Path(self.inputs.in_file)
@@ -108,28 +109,12 @@ class PlotContours(SimpleInterface):
         return runtime
 
 
-class PlotBaseInputSpec(BaseInterfaceInputSpec):
-    in_file = File(exists=True, mandatory=True, desc="File to be plotted")
-    title = traits.Str(desc="a title string for the plot")
-    annotate = traits.Bool(True, usedefault=True, desc="annotate left/right")
-    figsize = traits.Tuple(
-        (11.69, 8.27),
-        traits.Float,
-        traits.Float,
-        usedefault=True,
-        desc="Figure size",
-    )
-    dpi = traits.Int(300, usedefault=True, desc="Desired DPI of figure")
-    out_file = File("mosaic.svg", usedefault=True, desc="output file name")
-    cmap = traits.Str("Greys_r", usedefault=True)
-
-
-class PlotMosaicInputSpec(PlotBaseInputSpec):
+class _PlotMosaicInputSpec(_PlotBaseInputSpec):
     bbox_mask_file = File(exists=True, desc="brain mask")
     only_noise = traits.Bool(False, desc="plot only noise")
 
 
-class PlotMosaicOutputSpec(TraitedSpec):
+class _PlotMosaicOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output pdf file")
 
 
@@ -139,8 +124,8 @@ class PlotMosaic(SimpleInterface):
     Plots slices of a 3D volume into a pdf file
     """
 
-    input_spec = PlotMosaicInputSpec
-    output_spec = PlotMosaicOutputSpec
+    input_spec = _PlotMosaicInputSpec
+    output_spec = _PlotMosaicOutputSpec
 
     def _run_interface(self, runtime):
         mask = None
@@ -164,20 +149,20 @@ class PlotMosaic(SimpleInterface):
         return runtime
 
 
-class PlotSpikesInputSpec(PlotBaseInputSpec):
+class _PlotSpikesInputSpec(_PlotBaseInputSpec):
     in_spikes = File(exists=True, mandatory=True, desc="tsv file of spikes")
     in_fft = File(exists=True, mandatory=True, desc="nifti file with the 4D FFT")
 
 
-class PlotSpikesOutputSpec(TraitedSpec):
+class _PlotSpikesOutputSpec(TraitedSpec):
     out_file = File(exists=True, desc="output svg file")
 
 
 class PlotSpikes(SimpleInterface):
     """Plot slices of a dataset with spikes."""
 
-    input_spec = PlotSpikesInputSpec
-    output_spec = PlotSpikesOutputSpec
+    input_spec = _PlotSpikesInputSpec
+    output_spec = _PlotSpikesOutputSpec
 
     def _run_interface(self, runtime):
         out_file = str((Path(runtime.cwd) / self.inputs.out_file).resolve())
