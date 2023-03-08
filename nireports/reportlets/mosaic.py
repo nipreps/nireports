@@ -495,9 +495,17 @@ def plot_mosaic(
     plot_sagittal=True,
     fig=None,
     zmax=128,
+    views=("axial", "sagittal", None),
 ):
+    """Plot a mosaic of 2D cuts."""
 
-    if isinstance(img, (str, bytes)):
+    VIEW_AXES_ORDER = (2, 1, 0)
+
+    # Error with inconsistent views input
+    if views[0] is None or ((views[1] is None) and (views[2] is not None)):
+        raise RuntimeError("First view must not be None")
+
+    if not hasattr(img, "shape"):
         nii = nb.as_closest_canonical(nb.load(img))
         img_data = nii.get_fdata()
         zooms = nii.header.get_zooms()
@@ -506,20 +514,43 @@ def plot_mosaic(
         zooms = [1.0, 1.0, 1.0]
         out_file = "mosaic.svg"
 
-    # Remove extra dimensions
-    img_data = np.squeeze(img_data)
+    if views[1] is None and plot_sagittal:
+        views = (views[0], "sagittal", None)
 
-    if img_data.shape[2] > zmax and bbox_mask_file is None:
+    # Select the axis through which we cut the planes
+    axes_order = [
+        ["sagittal", "coronal", "axial"].index(views[0]),
+        ["sagittal", "coronal", "axial"].index(views[1] or "sagittal"),
+    ]
+
+    # If 3D, complete last axis
+    if img_data.ndim > 3:
+        raise RuntimeError("Dataset has more than three dimensions")
+    elif img_data.ndim == 3:
+        axes_order += list(set(range(3)) - set(axes_order))
+
+    # Remove extra dimensions
+    img_data = np.moveaxis(
+        np.squeeze(img_data),
+        axes_order,
+        VIEW_AXES_ORDER[:len(axes_order)],
+    )
+
+    # Create mask for bounding box
+    if bbox_mask_file is not None:
+        bbox_data = np.moveaxis(
+            nb.as_closest_canonical(nb.load(bbox_mask_file)).get_fdata(),
+            axes_order,
+            VIEW_AXES_ORDER[:len(axes_order)],
+        )
+        img_data = _bbox(img_data, bbox_data)
+    elif img_data.shape[-1] > zmax:
         lowthres = np.percentile(img_data, 5)
         mask_file = np.ones_like(img_data)
         mask_file[img_data <= lowthres] = 0
         img_data = _bbox(img_data, mask_file)
 
-    if bbox_mask_file is not None:
-        bbox_data = nb.as_closest_canonical(nb.load(bbox_mask_file)).get_fdata()
-        img_data = _bbox(img_data, bbox_data)
-
-    z_vals = np.array(list(range(0, img_data.shape[2])))
+    z_vals = np.arange(0, img_data.shape[-1], dtype=int)
 
     # Reduce the number of slices shown
     if len(z_vals) > zmax:
@@ -539,12 +570,15 @@ def plot_mosaic(
         z_vals = z_vals[::2]
 
     n_images = len(z_vals)
-    nrows = math.ceil(n_images / ncols)
-    if plot_sagittal:
-        nrows += 1
+    extra_rows = sum(bool(v) for v in views[1:])
+    nrows = math.ceil(n_images / ncols) + extra_rows
 
     if overlay_mask:
-        overlay_data = nb.as_closest_canonical(nb.load(overlay_mask)).get_fdata()
+        overlay_data = np.moveaxis(
+            nb.as_closest_canonical(nb.load(overlay_mask)).get_fdata(),
+            axes_order,
+            VIEW_AXES_ORDER[:len(axes_order)],
+        )
 
     # create figures
     if fig is None:
@@ -556,20 +590,22 @@ def plot_mosaic(
     if not vmax:
         vmax = est_vmax
 
+    slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[0]]
     naxis = 1
     for z_val in z_vals:
         ax = fig.add_subplot(nrows, ncols, naxis)
 
         if overlay_mask:
             ax.set_rasterized(True)
+
         plot_slice(
             img_data[:, :, z_val],
             vmin=vmin,
             vmax=vmax,
             cmap=cmap,
             ax=ax,
-            spacing=zooms[:2],
-            label="%d" % z_val,
+            spacing=slice_spacing,
+            label=f"{z_val:d}",
             annotate=annotate,
         )
 
@@ -586,31 +622,49 @@ def plot_mosaic(
                 vmax=1,
                 cmap=msk_cmap,
                 ax=ax,
-                spacing=zooms[:2],
+                spacing=slice_spacing,
             )
         naxis += 1
 
-    if plot_sagittal:
-        naxis = ncols * (nrows - 1) + 1
-
-        step = int(img_data.shape[0] / (ncols + 1))
+    if views[1] is not None:
+        slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[1]]
+        naxis = ncols * (nrows - extra_rows) + 1
+        step = max(int(img_data.shape[-2] / (ncols + 1)), 1)
         start = step
-        stop = img_data.shape[0] - step
+        stop = img_data.shape[-2] - step
 
-        if step == 0:
-            step = 1
-
-        for x_val in list(range(start, stop, step))[:ncols]:
+        for slice_val in list(range(start, stop, step))[:ncols]:
             ax = fig.add_subplot(nrows, ncols, naxis)
 
             plot_slice(
-                img_data[x_val, ...],
+                img_data[:, slice_val, :],
                 vmin=vmin,
                 vmax=vmax,
                 cmap=cmap,
                 ax=ax,
-                label="%d" % x_val,
-                spacing=[zooms[0], zooms[2]],
+                label=f"{slice_val:d}",
+                spacing=slice_spacing,
+            )
+            naxis += 1
+
+    if views[1] is not None and views[2] is not None:
+        slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[2]]
+        naxis = ncols * (nrows - extra_rows) + 1
+        step = max(int(img_data.shape[0] / (ncols + 1)), 1)
+        start = step
+        stop = img_data.shape[0] - step
+
+        for slice_val in list(range(start, stop, step))[:ncols]:
+            ax = fig.add_subplot(nrows, ncols, naxis)
+
+            plot_slice(
+                img_data[slice_val, ...],
+                vmin=vmin,
+                vmax=vmax,
+                cmap=cmap,
+                ax=ax,
+                label=f"{slice_val:d}",
+                spacing=slice_spacing,
             )
             naxis += 1
 
