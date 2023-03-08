@@ -24,22 +24,20 @@
 import os
 from pathlib import Path
 
-import numpy as np
 import nibabel as nb
+import numpy as np
 import pandas as pd
 import pytest
 
-from .generate_data import _create_dtseries_cifti
-from nireports.tools.timeseries import (
-    get_tr as _get_tr,
-    cifti_timeseries as _cifti_timeseries,
-    nifti_timeseries as _nifti_timeseries,
-)
-
+from nireports.reportlets.modality.func import fMRIPlot
 from nireports.reportlets.nuisance import plot_carpet
 from nireports.reportlets.surface import cifti_surfaces_plot
 from nireports.reportlets.xca import compcor_variance_plot, plot_melodic_components
-from nireports.reportlets.modality.func import fMRIPlot
+from nireports.tools.timeseries import cifti_timeseries as _cifti_timeseries
+from nireports.tools.timeseries import get_tr as _get_tr
+from nireports.tools.timeseries import nifti_timeseries as _nifti_timeseries
+
+from .generate_data import _create_dtseries_cifti
 
 
 @pytest.mark.parametrize("tr", (None, 0.7))
@@ -54,9 +52,13 @@ def test_carpetplot(tr, sorting, outdir):
         tr=tr,
         output_file=(
             outdir
-            / f"carpet_nosegs_{'index' if tr is None else 'time'}_"
-            / f"{'nosort' if sorting is None else sorting}.svg"
-        ) if outdir is not None else None,
+            / (
+                f"carpet_nosegs_{'index' if tr is None else 'time'}_"
+                f"{'nosort' if sorting is None else sorting}.svg"
+            )
+        )
+        if outdir is not None
+        else None,
         sort_rows=sorting,
         drop_trs=15,
     )
@@ -83,9 +85,13 @@ def test_carpetplot(tr, sorting, outdir):
         tr=tr,
         output_file=(
             outdir
-            / f"carpet_random_{'index' if tr is None else 'seg'}_"
-            / f"{'nosort' if sorting is None else sorting}.svg",
-        ) if outdir is not None else None,
+            / (
+                f"carpet_random_{'index' if tr is None else 'seg'}_"
+                f"{'nosort' if sorting is None else sorting}.svg"
+            )
+        )
+        if outdir is not None
+        else None,
         sort_rows=sorting,
     )
 
@@ -106,9 +112,13 @@ def test_carpetplot(tr, sorting, outdir):
         tr=tr,
         output_file=(
             outdir
-            / f"carpet_const_{'index' if tr is None else 'time'}_"
-            / f"{'nosort' if sorting is None else sorting}.svg"
-        ) if outdir is not None else None,
+            / (
+                f"carpet_const_{'index' if tr is None else 'time'}_"
+                f"{'nosort' if sorting is None else sorting}.svg"
+            )
+        )
+        if outdir is not None
+        else None,
         sort_rows=sorting,
     )
 
