@@ -23,7 +23,7 @@ jobs:
           name: Run unit tests
           no_output_timeout: 2h
           command: |
-            mkdir -p $PWD/artifacts $PWD/summaries
+            mkdir -p ${TEST_OUTPUT_DIR} $PWD/summaries
             python -m pytest --junit-xml=/tmp/summaries/pytest.xml \
                    --cov nireports --cov-report xml:/tmp/summaries/unittests.xml \
                    nireports/
