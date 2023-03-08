@@ -31,7 +31,6 @@ jobs:
       - run:
           name: Submit unit test coverage
           command: |
-            cd /tmp/src/nireports
             python -m codecov --file /tmp/tests/summaries/unittests.xml \
                 --flags unittests -e CIRCLE_JOB
 
