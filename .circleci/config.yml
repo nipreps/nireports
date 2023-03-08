@@ -305,8 +305,7 @@ jobs:
       - run:
           name: Build and check
           command: |
-            python setup.py check -r -s
-            python setup.py sdist
+            python -m build -s -w
             python -m twine check dist/*
       - run:
           name: Validate version
