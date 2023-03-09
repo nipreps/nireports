@@ -631,9 +631,9 @@ def plot_mosaic(
     if views[1] is not None:
         slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[1]]
         naxis = ncols * (nrows - extra_rows) + 1
-        step = max(int(img_data.shape[-2] / (ncols + 1)), 1)
+        step = max(int(img_data.shape[1] / (ncols + 1)), 1)
         start = step
-        stop = img_data.shape[-2] - step
+        stop = img_data.shape[1] - step
 
         for slice_val in list(range(start, stop, step))[:ncols]:
             ax = fig.add_subplot(nrows, ncols, naxis)
@@ -651,7 +651,6 @@ def plot_mosaic(
 
     if views[1] is not None and views[2] is not None:
         slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[2]]
-        naxis = ncols * (nrows - extra_rows) + 1
         step = max(int(img_data.shape[0] / (ncols + 1)), 1)
         start = step
         stop = img_data.shape[0] - step
