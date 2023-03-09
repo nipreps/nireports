@@ -29,6 +29,7 @@ import math
 import numpy as np
 import nibabel as nb
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 from matplotlib.cm import get_cmap
 from svgutils.transform import fromstring
 from nilearn.plotting import plot_anat
@@ -291,7 +292,8 @@ def plot_slice(
         vmin=vmin,
         vmax=vmax,
         cmap=cmap,
-        aspect=spacing[1] / spacing[0],
+        extent=[0, dslice.shape[1] * spacing[1],
+                0, dslice.shape[0] * spacing[0]],
         interpolation="none",
         origin="lower",
     )
@@ -518,6 +520,15 @@ def plot_mosaic(
         zooms = [1.0, 1.0, 1.0]
         out_file = "mosaic.svg"
 
+    shape = img_data.shape[:3]
+    view_hratios = {
+        "axial": 1.0,
+        "coronal": (zooms[2] * shape[2]) / (zooms[1] * shape[1]),
+        "sagittal": (zooms[2] * shape[2]) / (zooms[1] * shape[1]),
+    }
+    view_x = {"axial": 0, "coronal": 0, "sagittal": 1}
+    view_y = {"axial": 1, "coronal": 2, "sagittal": 2}
+
     if plot_sagittal and views[1] is None and views[0] != "sagittal":
         views = (views[0], "sagittal", None)
 
@@ -541,7 +552,6 @@ def plot_mosaic(
         axes_order,
         VIEW_AXES_ORDER[:len(axes_order)],
     )
-    new_zooms = np.take(zooms, axes_order)
 
     # Load overlay if present
     if overlay_mask:
@@ -587,16 +597,40 @@ def plot_mosaic(
 
     )
 
-    # create figures
-    if fig is None:
-        total_width = new_zooms[0] * img_data.shape[0] * ncols
-        total_height = new_zooms[1] * img_data.shape[1] * nrows
-        hw_ratio = total_width / total_height if swapaxes else total_height / total_width
-        fig = plt.figure(
-            figsize=(22, 22 * hw_ratio * 1.10)
-        )
+    nrows = [nrows, 1, 1]
 
-    root_gs = fig.add_gridspec(nrows + n_gs - 1, 1, hspace=0.01, wspace=0.005)
+    # create figures
+
+    if fig is None:
+        fig = plt.figure(layout=None)
+
+    fig_height = []
+    panel_width = []
+    for ii, vv in enumerate(views):
+        if vv is None:
+            break
+
+        axis_x = view_x[vv]
+        axis_y = view_y[vv]
+
+        fig_height.append(zooms[axis_y] * shape[axis_y] * nrows[ii])
+        panel_width.append(zooms[axis_x] * shape[axis_x])
+
+    fig_ratio = sum(fig_height) / (panel_width[0] * ncols)
+    fig.set_size_inches(20, 20 * fig_ratio)
+
+    height_ratios = [
+        view_hratios[r] * nrows[i]
+        for i, r in enumerate(views) if r is not None
+    ]
+    subfigs = GridSpec(
+        nrows=n_gs,
+        ncols=1,
+        top=0.96,
+        bottom=0.01,
+        hspace=0.08,
+        height_ratios=height_ratios if len(height_ratios) > 1 else [1],
+    )
 
     est_vmin, est_vmax = _get_limits(img_data, only_plot_noise=only_plot_noise)
     if not vmin:
@@ -607,19 +641,15 @@ def plot_mosaic(
     slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[0]]
 
     # Fill in the main mosaic panel
-    ii = 0
-    for row_slices in main_mosaic_idx:
-        row_gs = root_gs[ii].subgridspec(1, ncols)
-        ii += 1
-
+    panel_axs = subfigs[0].subgridspec(nrows[0], ncols, hspace=0.01, wspace=0.00001)
+    for ii, row_slices in enumerate(main_mosaic_idx):
         for jj, z_val in enumerate(row_slices):
             if z_val < 0:
                 break
 
-            ax = fig.add_subplot(row_gs[jj])
-
+            ax = fig.add_subplot(panel_axs[ii, jj])
             if overlay_mask:
-                ax.set_rasterized(True)
+                panel_axs[ii, jj].set_rasterized(True)
 
             plot_slice(
                 img_data[:, :, z_val],
@@ -645,23 +675,18 @@ def plot_mosaic(
                     vmin=0,
                     vmax=1,
                     cmap=msk_cmap,
-                    ax=ax,
+                    ax=panel_axs[ii, jj],
                     spacing=slice_spacing,
                     swapaxes=swapaxes,
                 )
 
-    _sag_factor = ncols // 4 if views[0] == "sagittal" else 0
     if views[1] is not None:
-        if views[1] == "sagittal":
-            _sag_factor = - ncols // 4
-
-        ncols_2 = ncols + _sag_factor
+        ncols_2 = math.floor((panel_width[0] * ncols) / panel_width[1]) - 1
         slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[1]]
         step = max(int(img_data.shape[1] / (ncols_2 + 1)), 1)
         start = step
         stop = img_data.shape[1] - step
-        row_gs = root_gs[ii].subgridspec(1, ncols_2)
-        ii += 1
+        panel_axs = subfigs[1].subgridspec(1, ncols_2, wspace=0.0001)
 
         swapaxes = views in (
             ("axial", "coronal", None),
@@ -674,8 +699,7 @@ def plot_mosaic(
 
         y_vals = np.linspace(start, stop, num=ncols_2, dtype=int, endpoint=True)
         for jj, slice_val in enumerate(y_vals):
-            ax = fig.add_subplot(row_gs[jj])
-
+            ax = fig.add_subplot(panel_axs[jj])
             plot_slice(
                 img_data[:, slice_val, :],
                 vmin=vmin,
@@ -689,15 +713,12 @@ def plot_mosaic(
             )
 
     if views[1] is not None and views[2] is not None:
-        if views[2] == "sagittal":
-            _sag_factor = - ncols // 4
-
-        ncols_3 = ncols + _sag_factor
+        ncols_3 = math.floor((panel_width[0] * ncols) / panel_width[2]) - 1
         slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[2]]
         step = max(int(img_data.shape[0] / (ncols_3 + 1)), 1)
         start = step
         stop = img_data.shape[0] - step
-        row_gs = root_gs[ii].subgridspec(1, ncols_3)
+        panel_axs = subfigs[2].subgridspec(1, ncols_3, wspace=0.0001)
 
         swapaxes = views in (
             ("axial", "coronal", "sagittal"),
@@ -707,7 +728,7 @@ def plot_mosaic(
 
         x_vals = np.linspace(start, stop, num=ncols_3, dtype=int, endpoint=True)
         for jj, slice_val in enumerate(x_vals):
-            ax = fig.add_subplot(row_gs[jj])
+            ax = fig.add_subplot(panel_axs[jj])
             plot_slice(
                 img_data[slice_val, ...],
                 vmin=vmin,
@@ -723,7 +744,7 @@ def plot_mosaic(
     if title:
         fig.suptitle(title, fontsize="10")
 
-    fig.subplots_adjust(wspace=0.002, hspace=0.002)
+    # fig.subplots_adjust(wspace=0.002, hspace=0.002)
 
     if out_file is None:
         fname, ext = op.splitext(op.basename(img))

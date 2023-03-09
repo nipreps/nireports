@@ -31,6 +31,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from templateflow.api import get
+
 from nireports.reportlets.modality.func import fMRIPlot
 from nireports.reportlets.nuisance import plot_carpet
 from nireports.reportlets.surface import cifti_surfaces_plot
@@ -343,7 +345,7 @@ def test_mriqc_plot_mosaic(tmp_path, testdata_path, outdir, views, plot_sagittal
 
     testfunc = partial(
         plot_mosaic,
-        testdata_path / "testSpatialNormalizationRPTMovingWarpedImage.nii.gz",
+        get("MNI152NLin6Asym", resolution=2, desc="LR", suffix="T1w"),
         plot_sagittal=plot_sagittal,
         views=views,
         out_file=(outdir / fname) if outdir is not None else None,
@@ -360,11 +362,8 @@ def test_mriqc_plot_mosaic(tmp_path, testdata_path, outdir, views, plot_sagittal
 
 def test_mriqc_plot_mosaic_2(tmp_path, testdata_path, outdir):
     """Exercise the generation of mosaics."""
-
-    from templateflow.api import get
-
     plot_mosaic(
-        get("MouseIn", resolution=1, suffix="UNIT1"),
+        get("Fischer344", desc=None, suffix="T2w"),
         plot_sagittal=False,
         ncols=6,
         views=("coronal", "axial", "sagittal"),

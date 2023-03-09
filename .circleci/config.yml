@@ -12,11 +12,33 @@ jobs:
 
     environment:
       - TEST_DIR: /tmp/tests
+      - TEMPLATEFLOW_HOME: /tmp/templateflow
     steps:
       - checkout
       - run:
           name: Get codecov
           command: python -m pip install codecov
+
+      - restore_cache:
+          keys:
+            - tf-v0-{{ .Branch }}-{{ .Revision }}
+            - tf-v0--{{ .Revision }}
+            - tf-v0-{{ .Branch }}-
+            - tf-v0-master-
+            - tf-v0-
+          paths:
+            - /tmp/templateflow
+
+      - run:
+          name: Get some templates
+          command: |
+            python -c "from templateflow.api import get; get('Fischer344', desc=None, suffix='T2w')"
+            python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
+
+      - save_cache:
+         key: tf-v0-{{ .Branch }}-{{ .Revision }}
+         paths:
+            - /tmp/templateflow
 
       - run:
           name: Run unit tests
