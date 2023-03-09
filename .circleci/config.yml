@@ -24,7 +24,7 @@ jobs:
           command: |
             export TEST_OUTPUT_DIR=${TEST_DIR}/output
             mkdir -p ${TEST_OUTPUT_DIR} ${TEST_DIR}/summary ${TEST_DIR}/coverage
-            python -m pytest --junit-xml=${TEST_DIR}/summary/pytest.xml \
+            python -m pytest -n 6 --junit-xml=${TEST_DIR}/summary/pytest.xml \
                    --cov nireports --cov-report xml:${TEST_DIR}/coverage/unittests.xml \
                    nireports/
 

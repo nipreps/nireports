@@ -514,14 +514,16 @@ def plot_mosaic(
         zooms = [1.0, 1.0, 1.0]
         out_file = "mosaic.svg"
 
-    if views[1] is None and plot_sagittal:
+    if views[0] != "sagittal" and views[1] is None and plot_sagittal:
         views = (views[0], "sagittal", None)
 
     # Select the axis through which we cut the planes
     axes_order = [
         ["sagittal", "coronal", "axial"].index(views[0]),
-        ["sagittal", "coronal", "axial"].index(views[1] or "sagittal"),
     ]
+
+    if views[1] is not None:
+        axes_order.append(["sagittal", "coronal", "axial"].index(views[1]))
 
     # If 3D, complete last axis
     if img_data.ndim > 3:
