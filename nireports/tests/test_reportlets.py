@@ -334,24 +334,21 @@ _views = (
 
 @pytest.mark.parametrize("views", _views)
 @pytest.mark.parametrize("plot_sagittal", (True, False))
-@pytest.mark.parametrize("only_plot_noise", (True, False))
-def test_mriqc_plot_mosaic(tmp_path, testdata_path, outdir, views, plot_sagittal, only_plot_noise):
+def test_mriqc_plot_mosaic(tmp_path, testdata_path, outdir, views, plot_sagittal):
     """Exercise the generation of mosaics."""
 
     fname = (
-        f"mosaic_{'_'.join(v or 'none' for v in views)}_"
-        f"{plot_sagittal:d}_{only_plot_noise:d}.svg"
+        f"mosaic_{'_'.join(v or 'none' for v in views)}_{plot_sagittal:d}.svg"
     )
 
     testfunc = partial(
         plot_mosaic,
         testdata_path / "testSpatialNormalizationRPTMovingWarpedImage.nii.gz",
+        plot_sagittal=plot_sagittal,
         views=views,
         out_file=(outdir / fname) if outdir is not None else None,
-        title=(
-            f"A mosaic plotting example: views={views}, plot_sagittal={plot_sagittal}",
-            f"only_plot_noise={only_plot_noise}"
-        ),
+        title=f"A mosaic plotting example: views={views}, plot_sagittal={plot_sagittal}",
+        maxrows=5,
     )
 
     if views[0] is None or ((views[1] is None) and (views[2] is not None)):
@@ -359,3 +356,19 @@ def test_mriqc_plot_mosaic(tmp_path, testdata_path, outdir, views, plot_sagittal
             testfunc()
     else:
         testfunc()
+
+
+def test_mriqc_plot_mosaic_2(tmp_path, testdata_path, outdir):
+    """Exercise the generation of mosaics."""
+
+    from templateflow.api import get
+
+    plot_mosaic(
+        get("MouseIn", resolution=1, suffix="UNIT1"),
+        plot_sagittal=False,
+        ncols=6,
+        views=("coronal", "axial", "sagittal"),
+        out_file=(outdir / "rodent_mosaic.svg") if outdir is not None else None,
+        maxrows=12,
+        annotate=True,
+    )
