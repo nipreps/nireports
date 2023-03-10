@@ -10,5 +10,5 @@ If you are participating because of your affiliation with another organization (
 
 | **Lastname** | **Name** | **Handle** | **ORCID** | **Affiliation** | **Position** |
 | --- | --- | --- | --- | --- | --- |
-| Esteban | Oscar | @oesteban | 0000-0001-8435-6191 | Department of Radiology, Lausanne University Hospital and University of Lausanne |  |
-| Poldrack | Russell A. | @poldrack | 0000-0001-6755-0259 | Department of Psychology, Stanford University, CA, USA | -1 |
+| Esteban | Oscar | @oesteban | 0000-0001-8435-6191 | Department of Radiology, Lausanne University Hospital and University of Lausanne | -1 |
+| Poldrack | Russell A. | @poldrack | 0000-0001-6755-0259 | Department of Psychology, Stanford University, CA, USA | -2 |
