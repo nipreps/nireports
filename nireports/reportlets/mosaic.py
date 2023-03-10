@@ -510,7 +510,7 @@ def plot_mosaic(
     if len(views) != 3:
         _views = [None, None, None]
 
-        for ii, vv in views:
+        for ii, vv in enumerate(views):
             _views[ii] = vv
 
         views = tuple(_views)
