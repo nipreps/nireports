@@ -8,6 +8,7 @@ CHANGES
 -------
 **Full Changelog**: https://github.com/nipreps/nireports/compare/0.2.0...23.0.0
 
+* FIX: Bug in ``plot_mosaic`` introduced in #52 (666ac5b)
 * ENH: Flexibilize views of ``plot_mosaic`` to render nonhuman imaging by @oesteban in https://github.com/nipreps/nireports/pull/52
 * ENH: Set up CI on CircleCI for artifact visualization  by @esavary in https://github.com/nipreps/nireports/pull/50
 * ENH: API refactor of *NiPype* interfaces by @oesteban in https://github.com/nipreps/nireports/pull/51
