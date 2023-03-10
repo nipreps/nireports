@@ -151,13 +151,12 @@ class PlotMosaic(SimpleInterface):
     output_spec = _PlotMosaicOutputSpec
 
     def _run_interface(self, runtime):
-        mask = None
-        if isdefined(self.inputs.bbox_mask_file):
-            mask = self.inputs.bbox_mask_file
+        mask = (
+            self.inputs.bbox_mask_file if isdefined(self.inputs.bbox_mask_file)
+            else None
+        )
 
-        title = None
-        if isdefined(self.inputs.title):
-            title = self.inputs.title
+        title = self.inputs.title if isdefined(self.inputs.title) else None
 
         plot_mosaic(
             self.inputs.in_file,
