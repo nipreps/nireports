@@ -23,15 +23,20 @@
 """Test reportlets module."""
 import os
 from pathlib import Path
+from itertools import permutations
+from functools import partial
 
 import nibabel as nb
 import numpy as np
 import pandas as pd
 import pytest
 
+from templateflow.api import get
+
 from nireports.reportlets.modality.func import fMRIPlot
 from nireports.reportlets.nuisance import plot_carpet
 from nireports.reportlets.surface import cifti_surfaces_plot
+from nireports.reportlets.mosaic import plot_mosaic
 from nireports.reportlets.xca import compcor_variance_plot, plot_melodic_components
 from nireports.tools.timeseries import cifti_timeseries as _cifti_timeseries
 from nireports.tools.timeseries import get_tr as _get_tr
@@ -320,4 +325,49 @@ def test_nifti_carpetplot(tmp_path, testdata_path, outdir):
         tr=_get_tr(nb.load(nifti_file)),
         output_file=outdir / "carpetplot_nifti.svg" if outdir is not None else None,
         drop_trs=0,
+    )
+
+
+_views = (
+    list(permutations(("axial", "sagittal", "coronal", None), 3))
+    + [(v, None, None) for v in ("axial", "sagittal", "coronal")]
+)
+
+
+@pytest.mark.parametrize("views", _views)
+@pytest.mark.parametrize("plot_sagittal", (True, False))
+def test_mriqc_plot_mosaic(tmp_path, testdata_path, outdir, views, plot_sagittal):
+    """Exercise the generation of mosaics."""
+
+    fname = (
+        f"mosaic_{'_'.join(v or 'none' for v in views)}_{plot_sagittal:d}.svg"
+    )
+
+    testfunc = partial(
+        plot_mosaic,
+        get("MNI152NLin6Asym", resolution=2, desc="LR", suffix="T1w"),
+        plot_sagittal=plot_sagittal,
+        views=views,
+        out_file=(outdir / fname) if outdir is not None else None,
+        title=f"A mosaic plotting example: views={views}, plot_sagittal={plot_sagittal}",
+        maxrows=5,
+    )
+
+    if views[0] is None or ((views[1] is None) and (views[2] is not None)):
+        with pytest.raises(RuntimeError):
+            testfunc()
+    else:
+        testfunc()
+
+
+def test_mriqc_plot_mosaic_2(tmp_path, testdata_path, outdir):
+    """Exercise the generation of mosaics."""
+    plot_mosaic(
+        get("Fischer344", desc=None, suffix="T2w"),
+        plot_sagittal=False,
+        ncols=6,
+        views=("coronal", "axial", "sagittal"),
+        out_file=(outdir / "rodent_mosaic.svg") if outdir is not None else None,
+        maxrows=12,
+        annotate=True,
     )

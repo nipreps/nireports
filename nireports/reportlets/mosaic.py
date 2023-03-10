@@ -29,6 +29,7 @@ import math
 import numpy as np
 import nibabel as nb
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 from matplotlib.cm import get_cmap
 from svgutils.transform import fromstring
 from nilearn.plotting import plot_anat
@@ -265,6 +266,7 @@ def plot_slice(
     vmax=None,
     vmin=None,
     annotate=False,
+    swapaxes=False,
 ):
     if isinstance(cmap, (str, bytes)):
         cmap = get_cmap(cmap)
@@ -281,15 +283,19 @@ def plot_slice(
     if spacing is None:
         spacing = [1.0, 1.0]
 
-    phys_sp = np.array(spacing) * dslice.shape
+    if swapaxes:
+        dslice = np.swapaxes(dslice, 0, 1)
+        spacing = (spacing[1], spacing[0])
+
     ax.imshow(
-        np.swapaxes(dslice, 0, 1),
+        dslice,
         vmin=vmin,
         vmax=vmax,
         cmap=cmap,
-        interpolation="nearest",
+        extent=[0, dslice.shape[1] * spacing[1],
+                0, dslice.shape[0] * spacing[0]],
+        interpolation="none",
         origin="lower",
-        extent=[0, phys_sp[0], 0, phys_sp[1]],
     )
     ax.set_xticklabels([])
     ax.set_yticklabels([])
@@ -308,7 +314,7 @@ def plot_slice(
             transform=ax.transAxes,
             horizontalalignment="center",
             verticalalignment="top",
-            size=18,
+            size=14,
             bbox=dict(boxstyle="square,pad=0", ec=bgcolor, fc=bgcolor),
         )
         ax.text(
@@ -319,7 +325,7 @@ def plot_slice(
             transform=ax.transAxes,
             horizontalalignment="center",
             verticalalignment="top",
-            size=18,
+            size=14,
             bbox=dict(boxstyle="square,pad=0", ec=bgcolor, fc=bgcolor),
         )
 
@@ -332,7 +338,7 @@ def plot_slice(
             transform=ax.transAxes,
             horizontalalignment="right",
             verticalalignment="bottom",
-            size=18,
+            size=14,
             bbox=dict(boxstyle="square,pad=0", ec=bgcolor, fc=bgcolor),
         )
 
@@ -494,10 +500,26 @@ def plot_mosaic(
     cmap="Greys_r",
     plot_sagittal=True,
     fig=None,
-    zmax=128,
+    maxrows=16,
+    views=("axial", "sagittal", None),
 ):
+    """Plot a mosaic of 2D cuts."""
 
-    if isinstance(img, (str, bytes)):
+    VIEW_AXES_ORDER = (2, 1, 0)
+
+    if len(views) != 3:
+        _views = [None, None, None]
+
+        for ii, vv in views:
+            _views[ii] = vv
+
+        views = tuple(_views)
+
+    # Error with inconsistent views input
+    if views[0] is None or ((views[1] is None) and (views[2] is not None)):
+        raise RuntimeError("First view must not be None")
+
+    if not hasattr(img, "shape"):
         nii = nb.as_closest_canonical(nb.load(img))
         img_data = nii.get_fdata()
         zooms = nii.header.get_zooms()
@@ -506,49 +528,117 @@ def plot_mosaic(
         zooms = [1.0, 1.0, 1.0]
         out_file = "mosaic.svg"
 
-    # Remove extra dimensions
-    img_data = np.squeeze(img_data)
+    shape = img_data.shape[:3]
+    view_hratios = {
+        "axial": 1.0,
+        "coronal": (zooms[2] * shape[2]) / (zooms[1] * shape[1]),
+        "sagittal": (zooms[2] * shape[2]) / (zooms[1] * shape[1]),
+    }
+    view_x = {"axial": 0, "coronal": 0, "sagittal": 1}
+    view_y = {"axial": 1, "coronal": 2, "sagittal": 2}
 
-    if img_data.shape[2] > zmax and bbox_mask_file is None:
+    if plot_sagittal and views[1] is None and views[0] != "sagittal":
+        views = (views[0], "sagittal", None)
+
+    # Select the axis through which we cut the planes
+    axes_order = [
+        ["sagittal", "coronal", "axial"].index(views[0]),
+    ]
+
+    if views[1] is not None:
+        axes_order.append(["sagittal", "coronal", "axial"].index(views[1]))
+
+    # If 3D, complete last axis
+    if img_data.ndim > 3:
+        raise RuntimeError("Dataset has more than three dimensions")
+    elif img_data.ndim == 3:
+        axes_order += list(set(range(3)) - set(axes_order))
+
+    # Remove extra dimensions
+    img_data = np.moveaxis(
+        np.squeeze(img_data),
+        axes_order,
+        VIEW_AXES_ORDER[:len(axes_order)],
+    )
+
+    # Load overlay if present
+    if overlay_mask:
+        overlay_data = np.moveaxis(
+            nb.as_closest_canonical(nb.load(overlay_mask)).get_fdata(),
+            axes_order,
+            VIEW_AXES_ORDER[:len(axes_order)],
+        )
+
+    # Create mask for bounding box
+    if bbox_mask_file is not None:
+        bbox_data = np.moveaxis(
+            nb.as_closest_canonical(nb.load(bbox_mask_file)).get_fdata(),
+            axes_order,
+            VIEW_AXES_ORDER[:len(axes_order)],
+        )
+        img_data = _bbox(img_data, bbox_data)
+    elif img_data.shape[-1] > (ncols * maxrows):
         lowthres = np.percentile(img_data, 5)
         mask_file = np.ones_like(img_data)
         mask_file[img_data <= lowthres] = 0
         img_data = _bbox(img_data, mask_file)
 
-    if bbox_mask_file is not None:
-        bbox_data = nb.as_closest_canonical(nb.load(bbox_mask_file)).get_fdata()
-        img_data = _bbox(img_data, bbox_data)
+    nrows = min((img_data.shape[-1] + 1) // ncols, maxrows)
 
-    z_vals = np.array(list(range(0, img_data.shape[2])))
+    # Decimate if too many values
+    z_vals = np.unique(np.linspace(
+        0, img_data.shape[-1] - 1, num=(ncols * nrows), dtype=int, endpoint=True,
+    ))
+    n_gs = sum(bool(v) for v in views)
 
-    # Reduce the number of slices shown
-    if len(z_vals) > zmax:
-        rem = 15
-        # Crop inferior and posterior
-        if not bbox_mask_file:
-            # img_data = img_data[..., rem:-rem]
-            z_vals = z_vals[rem:-rem]
-        else:
-            # img_data = img_data[..., 2 * rem:]
-            start_index = 2 * rem
-            z_vals = z_vals[start_index:]
+    main_mosaic_idx = np.full((nrows * ncols, ), -1, dtype=int)
+    main_mosaic_idx[:len(z_vals)] = z_vals
+    main_mosaic_idx = main_mosaic_idx.reshape(nrows, ncols)
 
-    while len(z_vals) > zmax:
-        # Discard one every two slices
-        # img_data = img_data[..., ::2]
-        z_vals = z_vals[::2]
+    swapaxes = views in (
+        ("axial", "coronal", None),
+        ("axial", "coronal", "sagittal"),
+        ("coronal", "axial", None),
+        ("coronal", "axial", "sagittal"),
+        ("sagittal", "axial", "coronal"),
+        ("sagittal", "axial", None),
 
-    n_images = len(z_vals)
-    nrows = math.ceil(n_images / ncols)
-    if plot_sagittal:
-        nrows += 1
+    )
 
-    if overlay_mask:
-        overlay_data = nb.as_closest_canonical(nb.load(overlay_mask)).get_fdata()
+    nrows = [nrows, 1, 1]
 
     # create figures
+
     if fig is None:
-        fig = plt.figure(figsize=(22, nrows * 3))
+        fig = plt.figure(layout=None)
+
+    fig_height = []
+    panel_width = []
+    for ii, vv in enumerate(views):
+        if vv is None:
+            break
+
+        axis_x = view_x[vv]
+        axis_y = view_y[vv]
+
+        fig_height.append(zooms[axis_y] * shape[axis_y] * nrows[ii])
+        panel_width.append(zooms[axis_x] * shape[axis_x])
+
+    fig_ratio = sum(fig_height) / (panel_width[0] * ncols)
+    fig.set_size_inches(20, 20 * fig_ratio)
+
+    height_ratios = [
+        view_hratios[r] * nrows[i]
+        for i, r in enumerate(views) if r is not None
+    ]
+    subfigs = GridSpec(
+        nrows=n_gs,
+        ncols=1,
+        top=0.96,
+        bottom=0.01,
+        hspace=0.08,
+        height_ratios=height_ratios if len(height_ratios) > 1 else [1],
+    )
 
     est_vmin, est_vmax = _get_limits(img_data, only_plot_noise=only_plot_noise)
     if not vmin:
@@ -556,69 +646,113 @@ def plot_mosaic(
     if not vmax:
         vmax = est_vmax
 
-    naxis = 1
-    for z_val in z_vals:
-        ax = fig.add_subplot(nrows, ncols, naxis)
+    slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[0]]
 
-        if overlay_mask:
-            ax.set_rasterized(True)
-        plot_slice(
-            img_data[:, :, z_val],
-            vmin=vmin,
-            vmax=vmax,
-            cmap=cmap,
-            ax=ax,
-            spacing=zooms[:2],
-            label="%d" % z_val,
-            annotate=annotate,
-        )
+    # Fill in the main mosaic panel
+    panel_axs = subfigs[0].subgridspec(nrows[0], ncols, hspace=0.01, wspace=0.00001)
+    for ii, row_slices in enumerate(main_mosaic_idx):
+        for jj, z_val in enumerate(row_slices):
+            if z_val < 0:
+                break
 
-        if overlay_mask:
-            from matplotlib import cm
-
-            msk_cmap = cm.Reds  # @UndefinedVariable
-            msk_cmap._init()
-            alphas = np.linspace(0, 0.75, msk_cmap.N + 3)
-            msk_cmap._lut[:, -1] = alphas
-            plot_slice(
-                overlay_data[:, :, z_val],
-                vmin=0,
-                vmax=1,
-                cmap=msk_cmap,
-                ax=ax,
-                spacing=zooms[:2],
-            )
-        naxis += 1
-
-    if plot_sagittal:
-        naxis = ncols * (nrows - 1) + 1
-
-        step = int(img_data.shape[0] / (ncols + 1))
-        start = step
-        stop = img_data.shape[0] - step
-
-        if step == 0:
-            step = 1
-
-        for x_val in list(range(start, stop, step))[:ncols]:
-            ax = fig.add_subplot(nrows, ncols, naxis)
+            ax = fig.add_subplot(panel_axs[ii, jj])
+            if overlay_mask:
+                panel_axs[ii, jj].set_rasterized(True)
 
             plot_slice(
-                img_data[x_val, ...],
+                img_data[:, :, z_val],
                 vmin=vmin,
                 vmax=vmax,
                 cmap=cmap,
                 ax=ax,
-                label="%d" % x_val,
-                spacing=[zooms[0], zooms[2]],
+                spacing=slice_spacing,
+                label=f"{z_val:d}",
+                swapaxes=swapaxes,
+                annotate=annotate and views[0] in ("axial", "coronal"),
             )
-            naxis += 1
 
-    fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95, wspace=0.05, hspace=0.05)
+            if overlay_mask:
+                from matplotlib import cm
+
+                msk_cmap = cm.Reds  # @UndefinedVariable
+                msk_cmap._init()
+                alphas = np.linspace(0, 0.75, msk_cmap.N + 3)
+                msk_cmap._lut[:, -1] = alphas
+                plot_slice(
+                    overlay_data[:, :, z_val],
+                    vmin=0,
+                    vmax=1,
+                    cmap=msk_cmap,
+                    ax=panel_axs[ii, jj],
+                    spacing=slice_spacing,
+                    swapaxes=swapaxes,
+                )
+
+    if views[1] is not None:
+        ncols_2 = math.floor((panel_width[0] * ncols) / panel_width[1]) - 1
+        slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[1]]
+        step = max(int(img_data.shape[1] / (ncols_2 + 1)), 1)
+        start = step
+        stop = img_data.shape[1] - step
+        panel_axs = subfigs[1].subgridspec(1, ncols_2, wspace=0.0001)
+
+        swapaxes = views in (
+            ("axial", "coronal", None),
+            ("axial", "coronal", "sagittal"),
+            ("axial", "sagittal", "coronal"),
+            ("axial", "sagittal", None),
+            ("coronal", "axial", None),
+            ("coronal", "axial", "sagittal"),
+        )
+
+        y_vals = np.linspace(start, stop, num=ncols_2, dtype=int, endpoint=True)
+        for jj, slice_val in enumerate(y_vals):
+            ax = fig.add_subplot(panel_axs[jj])
+            plot_slice(
+                img_data[:, slice_val, :],
+                vmin=vmin,
+                vmax=vmax,
+                cmap=cmap,
+                ax=ax,
+                label=f"{slice_val:d}",
+                spacing=slice_spacing,
+                swapaxes=swapaxes,
+                annotate=annotate and views[1] in ("axial", "coronal"),
+            )
+
+    if views[1] is not None and views[2] is not None:
+        ncols_3 = math.floor((panel_width[0] * ncols) / panel_width[2]) - 1
+        slice_spacing = [vs for i, vs in enumerate(zooms) if i != axes_order[2]]
+        step = max(int(img_data.shape[0] / (ncols_3 + 1)), 1)
+        start = step
+        stop = img_data.shape[0] - step
+        panel_axs = subfigs[2].subgridspec(1, ncols_3, wspace=0.0001)
+
+        swapaxes = views in (
+            ("axial", "coronal", "sagittal"),
+            ("axial", "sagittal", "coronal"),
+            ("coronal", "sagittal", "axial"),
+        )
+
+        x_vals = np.linspace(start, stop, num=ncols_3, dtype=int, endpoint=True)
+        for jj, slice_val in enumerate(x_vals):
+            ax = fig.add_subplot(panel_axs[jj])
+            plot_slice(
+                img_data[slice_val, ...],
+                vmin=vmin,
+                vmax=vmax,
+                cmap=cmap,
+                ax=ax,
+                label=f"{slice_val:d}",
+                spacing=slice_spacing,
+                swapaxes=swapaxes,
+                annotate=annotate and views[2] in ("axial", "coronal"),
+            )
 
     if title:
         fig.suptitle(title, fontsize="10")
-    fig.subplots_adjust(wspace=0.002, hspace=0.002)
+
+    # fig.subplots_adjust(wspace=0.002, hspace=0.002)
 
     if out_file is None:
         fname, ext = op.splitext(op.basename(img))
