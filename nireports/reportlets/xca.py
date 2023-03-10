@@ -76,13 +76,16 @@ def plot_melodic_components(
         is printed at the top.
 
     """
-    from nilearn.image import index_img, iter_img
+    import os
     import numpy as np
+    from matplotlib.gridspec import GridSpec
     import pylab as plt
     import seaborn as sns
-    from matplotlib.gridspec import GridSpec
-    from nilearn.input_data import NiftiMasker
-    import os
+    from nilearn.image import index_img, iter_img
+    try:
+        from nilearn.maskers import NiftiMasker
+    except ImportError:  # nilearn < 0.9
+        from nilearn.input_data import NiftiMasker
 
     sns.set_style("white")
     current_palette = sns.color_palette()
