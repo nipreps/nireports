@@ -507,6 +507,14 @@ def plot_mosaic(
 
     VIEW_AXES_ORDER = (2, 1, 0)
 
+    if len(views) != 3:
+        _views = [None, None, None]
+
+        for ii, vv in views:
+            _views[ii] = vv
+
+        views = tuple(_views)
+
     # Error with inconsistent views input
     if views[0] is None or ((views[1] is None) and (views[2] is not None)):
         raise RuntimeError("First view must not be None")

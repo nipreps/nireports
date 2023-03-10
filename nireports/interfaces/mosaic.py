@@ -112,27 +112,12 @@ class PlotContours(SimpleInterface):
 class _PlotMosaicInputSpec(_PlotBaseInputSpec):
     bbox_mask_file = File(exists=True, desc="brain mask")
     only_noise = traits.Bool(False, desc="plot only noise")
-    main_view = traits.Enum(
-        "axial",
-        "sagittal",
-        "coronal",
-        default="axial",
-        usedefault=True,
-    )
-    addon_view1 = traits.Enum(
-        "sagittal",
-        "axial",
-        "coronal",
-        None,
-        default="sagittal",
-        usedefault=True,
-    )
-    addon_view2 = traits.Enum(
-        None,
-        "axial",
-        "sagittal",
-        "coronal",
-        default=None,
+    view = traits.List(
+        traits.Enum("axial", "sagittal", "coronal"),
+        value=["axial", "sagittal"],
+        minlen=1,
+        maxlen=3,
+        help="Sequence of views to plot (up to three)",
         usedefault=True,
     )
 
@@ -166,11 +151,7 @@ class PlotMosaic(SimpleInterface):
             bbox_mask_file=mask,
             cmap=self.inputs.cmap,
             annotate=self.inputs.annotate,
-            views=(
-                self.inputs.main_view,
-                self.inputs.addon_view1,
-                self.inputs.addon_view2,
-            )
+            views=self.inputs.view,
         )
         self._results["out_file"] = str((Path(runtime.cwd) / self.inputs.out_file).resolve())
         return runtime
