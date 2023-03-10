@@ -1,3 +1,7 @@
+23.0.1 (March 10, 2023)
+=======================
+Hotfix release porting `nipreps/niworkflows#785 <https://github.com/nipreps/niworkflows/pull/785>`__.
+
 23.0.0 (March 10, 2023)
 =======================
 The first OFFICIAL RELEASE of *NiReports* is out!
