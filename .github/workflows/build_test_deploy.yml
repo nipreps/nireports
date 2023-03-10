@@ -76,6 +76,7 @@ jobs:
 
     env:
       PACKAGE: ${{ matrix.package }}
+      TEMPLATEFLOW_HOME: /tmp/templateflow
 
     steps:
       - uses: actions/checkout@v3
@@ -103,6 +104,24 @@ jobs:
         run: python -c "import nireports; print(nireports.__version__)"
       - name: Install test dependencies
         run: pip install .[test]
+
+      - name: Restore cached templateflow
+        id: tf-cache-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: /tmp/templateflow
+          key: templateflow-v1
+      - name: Fetch templates
+        run: |
+          python -c "from templateflow.api import get; get('Fischer344', desc=None, suffix='T2w')"
+          python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
+      - name: Save templateflow cache
+        id: tf-cache-save
+        uses: actions/cache/save@v3
+        with:
+          path: /tmp/templateflow
+          key: ${{ steps.tf-cache-restore.outputs.cache-primary-key }}
+
       - name: Run tests
         run: pytest --cov nireports nireports
       - uses: codecov/codecov-action@v3
