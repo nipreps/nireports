@@ -174,4 +174,20 @@ sections:
     subtitle: ICA Components classified by AROMA
 - name: About
   reportlets:
-  - bids: {datatype: figures, desc: about, suffix: T1w}
+  - metadata:
+    - 'NiReports version': '23.0.1'
+      'NiReports command': |
+        <code>/opt/conda/bin/fmriprep /data /out participant --sloppy --write-graph
+        --mem-mb 14336 --nthreads 4 -vv --anat-derivatives /opt/smriprep/subjects
+        -w /scratch --output-spaces fsaverage5</code>
+      'Date processed': '2023-03-12 03:15:45 +0000'
+    caption: |
+      Thanks for using <em>NiReports</em>. The following information may assist in
+      reconstructing the provenance of the corresponding derivatives.
+    title: Reproducibility and provenance information
+  - boilerplate: file
+    caption: We kindly ask to report results preprocessed with this tool using the following boilerplate.
+    title: Methods
+  - errors: file
+    captions: <em>NiReports</em> may have recorded failure conditions.
+    title: Errors
