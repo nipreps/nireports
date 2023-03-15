@@ -38,11 +38,7 @@ class Report:
     The full report object. This object maintains a BIDSLayout to index
     all reportlets.
 
-
     .. testsetup::
-
-    >>> cwd = os.getcwd()
-    >>> os.chdir(tmpdir)
 
     >>> from pkg_resources import resource_filename
     >>> from shutil import copytree
@@ -50,23 +46,19 @@ class Report:
     >>> test_data_path = resource_filename('nireports', 'assembler/data/tests/work')
     >>> testdir = Path(tmpdir)
     >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
-    >>> out_figs = testdir / 'out' / 'fmriprep'
+    >>> out_figs = output_dir / 'nireports'
 
     .. doctest::
 
-    >>> robj = Report(testdir / 'out', 'madeoutuuid', subject_id='01', packagename='fmriprep',
+    >>> robj = Report(output_dir, 'madeoutuuid', subject_id='01', packagename='nireports',
     ...               reportlets_dir=testdir / 'work' / 'reportlets')
     >>> robj.layout.get(subject='01', desc='reconall')[0]._path.as_posix()  # doctest: +ELLIPSIS
     '.../figures/sub-01_desc-reconall_T1w.svg'
 
     >>> robj.generate_report()
     0
-    >>> len((testdir / 'out' / 'fmriprep' / 'sub-01.html').read_text())
-    36693
-
-    .. testcleanup::
-
-    >>> os.chdir(cwd)
+    >>> len((output_dir / 'nireports' / 'sub-01.html').read_text())
+    36673
 
     """
 

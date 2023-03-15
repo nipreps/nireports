@@ -19,7 +19,7 @@ from nireports.assembler.report import Report
 @pytest.fixture()
 def bids_sessions(tmpdir_factory):
     f, _ = plt.subplots()
-    svg_dir = tmpdir_factory.mktemp("work") / "fmriprep"
+    svg_dir = tmpdir_factory.mktemp("work") / "nireports"
     svg_dir.ensure_dir()
 
     pattern = (
@@ -97,7 +97,7 @@ def test_report1():
         "fakeuuid",
         reportlets_dir=Path(test_data_path),
         subject_id="01",
-        packagename="fmriprep",
+        packagename="nireports",
     )
 
 
@@ -109,7 +109,7 @@ def test_report2(bids_sessions):
         "fakeuuid",
         reportlets_dir=Path(bids_sessions),
         subject_id="01",
-        packagename="fmriprep",
+        packagename="nireports",
     )
 
 
@@ -223,7 +223,7 @@ def test_generated_reportlets(bids_sessions, ordering):
         "fakeuuid",
         reportlets_dir=Path(bids_sessions),
         subject_id="01",
-        packagename="fmriprep",
+        packagename="nireports",
     )
     config = Path(pkgrf("nireports.assembler", "data/default.yml"))
     settings = load(config.read_text())
@@ -260,7 +260,7 @@ def test_subject_id(tmp_path, subject_id, out_html):
     reports = tmp_path / "reports"
     Path(
         reports
-        / "fmriprep"
+        / "nireports"
         / (subject_id if subject_id.startswith("sub-") else f"sub-{subject_id}")
     ).mkdir(parents=True)
 
@@ -269,7 +269,7 @@ def test_subject_id(tmp_path, subject_id, out_html):
         "myuniqueid",
         reportlets_dir=reports,
         subject_id=subject_id,
-        packagename="fmriprep",
+        packagename="nireports",
     )
     assert report.subject_id[:4] != "sub-"
     assert report.out_filename == out_html
