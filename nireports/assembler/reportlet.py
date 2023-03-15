@@ -14,9 +14,6 @@ class Reportlet(Element):
 
     .. testsetup::
 
-    >>> cwd = os.getcwd()
-    >>> os.chdir(tmpdir)
-
     >>> from pkg_resources import resource_filename
     >>> from shutil import copytree
     >>> from bids.layout import BIDSLayout
@@ -30,7 +27,7 @@ class Reportlet(Element):
     .. doctest::
 
     >>> bl.get(subject='01', desc='reconall')[0]._path.as_posix() # doctest: +ELLIPSIS
-    '.../fmriprep/sub-01/figures/sub-01_desc-reconall_T1w.svg'
+    '.../nireports/sub-01/figures/sub-01_desc-reconall_T1w.svg'
 
     >>> len(bl.get(subject='01', space='.*', regex_search=True))
     2
@@ -80,10 +77,6 @@ class Reportlet(Element):
     ...     'caption': 'Some description {space}'})
     >>> r.is_empty()
     True
-
-    .. testcleanup::
-
-    >>> os.chdir(cwd)
 
     """
 

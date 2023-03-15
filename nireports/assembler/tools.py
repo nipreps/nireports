@@ -21,25 +21,18 @@ def run_reports(
 
     .. testsetup::
 
-    >>> cwd = os.getcwd()
-    >>> os.chdir(tmpdir)
-
     >>> from pkg_resources import resource_filename
     >>> from shutil import copytree
     >>> test_data_path = resource_filename('nireports', 'assembler/data/tests/work')
     >>> testdir = Path(tmpdir)
     >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
-    >>> (testdir / 'fmriprep').mkdir(parents=True, exist_ok=True)
+    >>> (testdir / 'nireports').mkdir(parents=True, exist_ok=True)
 
     .. doctest::
 
-    >>> run_reports(testdir / 'out', '01', 'madeoutuuid', packagename='fmriprep',
+    >>> run_reports(testdir / 'out', '01', 'madeoutuuid', packagename='nireports',
     ...             reportlets_dir=testdir / 'work' / 'reportlets')
     0
-
-    .. testcleanup::
-
-    >>> os.chdir(cwd)
 
     """
     return Report(

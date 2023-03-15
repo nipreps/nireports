@@ -59,6 +59,11 @@ def expand_namespace(doctest_namespace):
     tmpdir = tempfile.TemporaryDirectory()
     doctest_namespace["tmpdir"] = tmpdir.name
 
+    doctest_namespace["output_dir"] = (
+        Path(test_output_dir) if test_output_dir is not None
+        else Path(tmpdir.name)
+    )
+
     cwd = os.getcwd()
     os.chdir(tmpdir.name)
     yield
