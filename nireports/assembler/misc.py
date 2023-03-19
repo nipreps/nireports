@@ -3,25 +3,6 @@ from pathlib import Path
 
 from nipype.utils.filemanip import loadcrash
 
-SVG_SNIPPET = [
-    """\
-<object class="svg-reportlet" type="image/svg+xml" data="./{0}">
-Problem loading figure {0}. If the link below works, please try \
-reloading the report in your browser.</object>
-</div>
-<div class="elem-filename">
-    Get figure file: <a href="./{0}" target="_blank">{0}</a>
-</div>
-""",
-    """\
-<img class="svg-reportlet" src="./{0}" style="width: 100%" />
-</div>
-<div class="elem-filename">
-    Get figure file: <a href="./{0}" target="_blank">{0}</a>
-</div>
-""",
-]
-
 
 class Element:
     """Just a basic component of a report"""
@@ -95,4 +76,60 @@ def _read_txt(path):
     else:
         data["node_dir"] = "Node crashed before execution"
     data["traceback"] = "\n".join(lines[traceback_start:]).strip()
+    return data
+
+
+def dict2html(indict, table_id):
+    """Converts a dictionary into an HTML table"""
+    columns = sorted(unfold_columns(indict))
+    if not columns:
+        return None
+
+    depth = max([len(col) for col in columns])
+
+    result_str = '<table id="%s" class="table table-sm table-striped">\n' % table_id
+    td = "<td{1}>{0}</td>".format
+    for line in columns:
+        result_str += "<tr>"
+        ncols = len(line)
+        for i, col in enumerate(line):
+            colspan = 0
+            colstring = ""
+            if (depth - ncols) > 0 and i == ncols - 2:
+                colspan = (depth - ncols) + 1
+                colstring = " colspan=%d" % colspan
+            result_str += td(col, colstring)
+        result_str += "</tr>\n"
+    result_str += "</table>\n"
+    return result_str
+
+
+def unfold_columns(indict, prefix=None):
+    """Converts an input dict with flattened keys to an array of columns"""
+    if prefix is None:
+        prefix = []
+    keys = sorted(set(list(indict.keys())))
+
+    data = []
+    subdict = {}
+    for key in keys:
+        col = key.split("_", 1)
+        if len(col) == 1:
+            value = indict[col[0]]
+            data.append(prefix + [col[0], value])
+        else:
+            if subdict.get(col[0]) is None:
+                subdict[col[0]] = {}
+            subdict[col[0]][col[1]] = indict[key]
+
+    if subdict:
+        for skey in sorted(list(subdict.keys())):
+            sskeys = list(subdict[skey].keys())
+            if len(sskeys) == 1:
+                value = subdict[skey][sskeys[0]]
+                newkey = "_".join([skey] + sskeys)
+                data.append(prefix + [newkey, value])
+            else:
+                data += unfold_columns(subdict[skey], prefix=prefix + [skey])
+
     return data
