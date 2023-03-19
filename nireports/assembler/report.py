@@ -90,7 +90,7 @@ class Report:
         )
 
         bootstrap_text = []
-        expr = re.compile(r'{(subject_id|run_uuid|out_dir)}')
+        expr = re.compile(r'{(subject_id|run_uuid|out_dir|packagename)}')
         for line in bootstrap_file.read_text().splitlines(keepends=False):
             if expr.search(line):
                 line = line.format(

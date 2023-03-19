@@ -177,6 +177,7 @@ sections:
   reportlets:
   - custom: boilerplate
     path: '{out_dir}/logs/'
+    bibfile: ['nireports', 'data/boilerplate.bib']
     caption: We kindly ask to report results preprocessed with this tool using the following boilerplate.
     title: Methods
   - custom: errors

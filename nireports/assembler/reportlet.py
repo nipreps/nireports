@@ -301,6 +301,9 @@ class Reportlet(Element):
             elif custom == "boilerplate":
                 self.name = "boilerplate"
                 logs_path = Path(path.format(out_dir=out_dir))
+                bibfile = config.get(
+                    "bibfile", ["nireports", "data/bibliography.bib"]
+                )
 
                 boiler_tabs = [
                     '<ul class="nav nav-tabs" id="myTab" role="tablist">'
@@ -336,7 +339,7 @@ class Reportlet(Element):
                         )
                         text = f"""<pre>{text}</pre>
 <h3>Bibliography</h3>
-<pre>{Path(pkgrf(config['packagename'], 'data/boilerplate.bib')).read_text()}</pre>
+<pre>{Path(pkgrf(*bibfile)).read_text()}</pre>
 """
                         tab_title = "LaTeX"
 
