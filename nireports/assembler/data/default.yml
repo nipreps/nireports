@@ -1,3 +1,4 @@
+packagename: nireports
 sections:
 - name: Summary
   reportlets:

@@ -54,7 +54,6 @@ class Report:
     ...     output_dir / 'nireports',
     ...     'madeoutuuid',
     ...     subject_id='01',
-    ...     packagename='nireports',
     ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
     ... )
     >>> robj.generate_report()
@@ -70,7 +69,6 @@ class Report:
         run_uuid,
         config=None,
         out_filename="report.html",
-        packagename=None,
         reportlets_dir=None,
         subject_id=None,
     ):

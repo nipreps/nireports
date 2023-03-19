@@ -14,7 +14,6 @@ def run_reports(
     run_uuid,
     config=None,
     reportlets_dir=None,
-    packagename=None,
 ):
     """
     Run the reports.
@@ -40,7 +39,6 @@ def run_reports(
         run_uuid,
         config=config,
         subject_id=subject_label,
-        packagename=packagename,
         reportlets_dir=reportlets_dir,
     ).generate_report()
 
@@ -51,7 +49,6 @@ def generate_reports(
     run_uuid,
     config=None,
     work_dir=None,
-    packagename=None,
 ):
     """Execute run_reports on a list of subjects."""
     reportlets_dir = None
@@ -63,7 +60,6 @@ def generate_reports(
             subject_label,
             run_uuid,
             config=config,
-            packagename=packagename,
             reportlets_dir=reportlets_dir,
         )
         for subject_label in subject_list

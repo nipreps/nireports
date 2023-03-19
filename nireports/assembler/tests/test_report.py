@@ -97,7 +97,6 @@ def test_report1():
         "fakeuuid",
         reportlets_dir=Path(test_data_path) / "nireports",
         subject_id="01",
-        packagename="nireports",
     )
 
 
@@ -109,7 +108,6 @@ def test_report2(bids_sessions):
         "fakeuuid",
         reportlets_dir=Path(bids_sessions) / "nireports",
         subject_id="01",
-        packagename="nireports",
     )
 
 
@@ -228,7 +226,6 @@ def test_generated_reportlets(bids_sessions, ordering):
         "fakeuuid",
         reportlets_dir=Path(bids_sessions) / "nireports",
         subject_id="01",
-        packagename="nireports",
     )
     config = Path(pkgrf("nireports.assembler", "data/default.yml"))
     settings = load(config.read_text())
@@ -279,6 +276,5 @@ def test_subject_id(tmp_path, subject_id, out_html):
         "myuniqueid",
         reportlets_dir=reports / "nireports",
         subject_id=subject_id,
-        packagename="nireports",
     )
     assert report.out_filename.name == out_html
