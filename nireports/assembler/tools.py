@@ -30,8 +30,8 @@ def run_reports(
 
     .. doctest::
 
-    >>> run_reports(testdir / 'out', '01', 'madeoutuuid', packagename='nireports',
-    ...             reportlets_dir=testdir / 'work' / 'reportlets')
+    >>> run_reports(testdir / 'out' / 'nireports', '01', 'madeoutuuid',
+    ...             reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports')
     0
 
     """

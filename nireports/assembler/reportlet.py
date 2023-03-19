@@ -268,9 +268,10 @@ class Reportlet(Element):
                 ))
 
             contents.append("</div>")
-            self.components.append(("\n".join(contents), desc_text))
+            self.components.append(("\n".join(contents), config.get("caption")))
 
         elif (custom := config.get("custom", None)) in ("boilerplate", "errors"):
+            desc_text = config.get("caption")
             path = config.get("path", None)
             if custom == "errors":
                 self.name = "errors"
@@ -296,7 +297,7 @@ class Reportlet(Element):
                                 for err_in in error.inputs
                             ],
                         ))
-                    self.components.append(("\n".join(contents), config.get("caption")))
+                    self.components.append(("\n".join(contents), desc_text))
             elif custom == "boilerplate":
                 self.name = "boilerplate"
                 logs_path = Path(path.format(out_dir=out_dir))
@@ -363,7 +364,7 @@ class Reportlet(Element):
                     self.components.append((
                         '<p class="alert alert-danger" role="alert">'
                         'Failed to generate the boilerplate</p>',
-                        config.get("caption"),
+                        desc_text,
                     ))
                 else:
                     boiler_tabs.append("</ul>")

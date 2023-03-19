@@ -47,17 +47,20 @@ class Report:
     >>> test_data_path = resource_filename('nireports', 'assembler/data/tests/work')
     >>> testdir = Path(tmpdir)
     >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
-    >>> out_figs = output_dir / 'nireports'
 
     .. doctest::
 
-    >>> robj = Report(output_dir, 'madeoutuuid', subject_id='01', packagename='nireports',
-    ...               reportlets_dir=testdir / 'work' / 'reportlets')
-
+    >>> robj = Report(
+    ...     output_dir / 'nireports',
+    ...     'madeoutuuid',
+    ...     subject_id='01',
+    ...     packagename='nireports',
+    ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ... )
     >>> robj.generate_report()
     0
     >>> len((output_dir / 'nireports' / 'sub-01.html').read_text())
-    39738
+    39742
 
     """
 
@@ -73,11 +76,6 @@ class Report:
     ):
         out_dir = Path(out_dir)
         root = Path(reportlets_dir or out_dir)
-
-        # TODO This probably breaks YODA and doesn't bring anything. Remove?
-        if packagename is not None:
-            root = root / packagename
-            out_dir = out_dir / packagename
 
         if subject_id is not None:
             subject_id = subject_id[4:] if subject_id.startswith("sub-") else subject_id
