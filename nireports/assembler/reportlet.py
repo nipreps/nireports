@@ -114,13 +114,18 @@ class Reportlet(Element):
 
     .. testsetup::
 
-    >>> from pkg_resources import resource_filename
+    >>> from pkg_resources import resource_filename as pkgrf
     >>> from shutil import copytree
-    >>> from bids.layout import BIDSLayout
-    >>> test_data_path = resource_filename('nireports', 'assembler/data/tests/work')
+    >>> from bids.layout import BIDSLayout, add_config_paths
+    >>> test_data_path = pkgrf('nireports', 'assembler/data/tests/work')
     >>> testdir = Path(tmpdir)
     >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
     >>> out_figs = testdir / 'out' / 'fmriprep'
+    >>> try:
+    ...     add_config_paths(figures=pkgrf("nireports.assembler", "data/nipreps.json"))
+    ... except ValueError as e:
+    ...     if "Configuration 'figures' already exists" != str(e):
+    ...         raise
     >>> bl = BIDSLayout(str(testdir / 'work' / 'reportlets'),
     ...                 config='figures', validate=False)
 
@@ -132,7 +137,7 @@ class Reportlet(Element):
     >>> len(bl.get(subject='01', space='.*', regex_search=True))
     2
 
-    >>> r = Reportlet(bl, out_figs, config={
+    >>> r = Reportlet(bl, out_dir=out_figs, config={
     ...     'title': 'Some Title', 'bids': {'datatype': 'figures', 'desc': 'reconall'},
     ...     'description': 'Some description'})
     >>> r.name
@@ -141,7 +146,7 @@ class Reportlet(Element):
     >>> r.components[0][0].startswith('<img')
     True
 
-    >>> r = Reportlet(bl, out_figs, config={
+    >>> r = Reportlet(bl, out_dir=out_figs, config={
     ...     'title': 'Some Title', 'bids': {'datatype': 'figures', 'desc': 'reconall'},
     ...     'description': 'Some description', 'static': False})
     >>> r.name
@@ -150,7 +155,7 @@ class Reportlet(Element):
     >>> r.components[0][0].startswith('<object')
     True
 
-    >>> r = Reportlet(bl, out_figs, config={
+    >>> r = Reportlet(bl, out_dir=out_figs, config={
     ...     'title': 'Some Title', 'bids': {'datatype': 'figures', 'desc': 'summary'},
     ...     'description': 'Some description'})
 
@@ -160,7 +165,7 @@ class Reportlet(Element):
     >>> r.components[0][1] is None
     True
 
-    >>> r = Reportlet(bl, out_figs, config={
+    >>> r = Reportlet(bl, out_dir=out_figs, config={
     ...     'title': 'Some Title',
     ...     'bids': {'datatype': 'figures', 'space': '.*', 'regex_search': True},
     ...     'caption': 'Some description {space}'})
@@ -171,7 +176,7 @@ class Reportlet(Element):
     'Some description MNI152NLin6Asym'
 
 
-    >>> r = Reportlet(bl, out_figs, config={
+    >>> r = Reportlet(bl, out_dir=out_figs, config={
     ...     'title': 'Some Title',
     ...     'bids': {'datatype': 'fmap', 'space': '.*', 'regex_search': True},
     ...     'caption': 'Some description {space}'})
@@ -191,7 +196,6 @@ class Reportlet(Element):
         self.title = config.get("title")
         self.subtitle = config.get("subtitle")
         self.description = config.get("description")
-        desc_text = config.get("caption")
         self.components = []
 
         # Determine whether this is a "BIDS-type" reportlet (typically, an SVG file)
@@ -207,11 +211,13 @@ class Reportlet(Element):
             for bidsfile in files:
                 src = Path(bidsfile.path)
                 ext = "".join(src.suffixes)
+                desc_text = config.get("caption")
 
                 contents = None
                 if ext == ".html":
                     contents = src.read_text().strip()
                 elif ext == ".svg":
+
                     entities = dict(bidsfile.entities)
                     if desc_text:
                         desc_text = desc_text.format(**entities)
@@ -290,7 +296,7 @@ class Reportlet(Element):
                                 for err_in in error.inputs
                             ],
                         ))
-                    self.components.append(("\n".join(contents), desc_text))
+                    self.components.append(("\n".join(contents), config.get("caption")))
             elif custom == "boilerplate":
                 self.name = "boilerplate"
                 logs_path = Path(path.format(out_dir=out_dir))
@@ -355,8 +361,9 @@ class Reportlet(Element):
 
                 if boiler_idx == 0:
                     self.components.append((
-                        '<p class="alert alert-danger" role="alert">Failed to generate the boilerplate</p>',
-                        desc_text,
+                        '<p class="alert alert-danger" role="alert">'
+                        'Failed to generate the boilerplate</p>',
+                        config.get("caption"),
                     ))
                 else:
                     boiler_tabs.append("</ul>")
