@@ -158,7 +158,7 @@ def test_process_orderings_small(
         os.path.join("assembler", "data", "tests", "work", "reportlets"),
     )
     layout = BIDSLayout(Path(layout_root) / "nireports", config="figures", validate=False)
-    entities, value_combos = report._process_orderings(orderings, layout)
+    entities, value_combos = report._process_orderings(orderings, layout.get())
 
     assert entities == expected_entities
     assert expected_value_combos == value_combos
@@ -195,7 +195,7 @@ def test_process_orderings_large(
 ):
     report = test_report2
     layout = BIDSLayout(Path(bids_sessions), config="figures", validate=False)
-    entities, value_combos = report._process_orderings(orderings, layout)
+    entities, value_combos = report._process_orderings(orderings, layout.get())
 
     if not value_combos:
         value_combos = [None]
@@ -229,11 +229,12 @@ def test_generated_reportlets(bids_sessions, ordering):
     )
     config = Path(pkgrf("nireports.assembler", "data/default.yml"))
     settings = load(config.read_text())
-    settings["root"] = str(Path(bids_sessions) / "nireports" / "sub-01")
+    settings["root"] = str(Path(bids_sessions) / "nireports")
     settings["out_dir"] = str(out_dir / "nireports")
     settings["run_uuid"] = "fakeuuid"
     # change settings to only include some missing ordering
     settings["sections"][3]["ordering"] = ordering
+    settings["bids_filters"] = {"subject": ["01"]}
     report.index(settings)
     # expected number of reportlets
 
@@ -245,7 +246,7 @@ def test_generated_reportlets(bids_sessions, ordering):
     reportlets_num = len(report.sections[-2].reportlets)
     # get the number of figures in the output directory
     out_layout = BIDSLayout(out_dir / "nireports", config="figures", validate=False)
-    out_figs = len(out_layout.get())
+    out_figs = len(out_layout.get(subject="01"))
     # if ordering does not contain all the relevent entities
     # then there should be fewer reportlets than expected
     if all(ent in ordering for ent in needed_entities):

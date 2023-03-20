@@ -155,9 +155,11 @@ class Report:
         settings["root"] = root
         settings["out_dir"] = out_dir
         settings["run_uuid"] = run_uuid
-        settings["bids_filters"] = {
-            "subject": listify(subject_id),
-        }
+
+        if subject_id is not None:
+            settings["bids_filters"] = {
+                "subject": listify(subject_id),
+            }
         self.index(settings)
 
     def index(self, config):
@@ -179,19 +181,20 @@ class Report:
             validate=False,
         )
 
+        bids_filters = config.get("bids_filters", {})
         out_dir = Path(config["out_dir"])
         for subrep_cfg in config["sections"]:
             # First determine whether we need to split by some ordering
             # (ie. sessions / tasks / runs), which are separated by commas.
             orderings = [s for s in subrep_cfg.get("ordering", "").strip().split(",") if s]
             entities, list_combos = self._process_orderings(
-                orderings, layout.get(**config["bids_filters"])
+                orderings, layout.get(**bids_filters)
             )
 
             if not list_combos:  # E.g. this is an anatomical reportlet
                 reportlets = [
                     Reportlet(
-                        layout, config=cfg, out_dir=out_dir, bids_filters=config["bids_filters"]
+                        layout, config=cfg, out_dir=out_dir, bids_filters=bids_filters
                     )
                     for cfg in subrep_cfg["reportlets"]
                 ]
@@ -217,7 +220,7 @@ class Report:
                             layout,
                             config=cfg,
                             out_dir=out_dir,
-                            bids_filters=config["bids_filters"],
+                            bids_filters=bids_filters,
                         )
                         if not rlet.is_empty():
                             rlet.title = title
