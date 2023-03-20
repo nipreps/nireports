@@ -8,11 +8,13 @@ from pathlib import Path
 from yaml import safe_load as load
 
 import jinja2
-from bids.layout import BIDSLayout, add_config_paths
+from bids.layout import BIDSLayout, BIDSLayoutIndexer, add_config_paths
+from bids.utils import listify
 from pkg_resources import resource_filename as pkgrf
 
 from nireports.assembler.misc import Element
 from nireports.assembler.reportlet import Reportlet
+
 
 # Add a new figures spec
 try:
@@ -44,9 +46,13 @@ class Report:
     >>> from pkg_resources import resource_filename
     >>> from shutil import copytree
     >>> from bids.layout import BIDSLayout
-    >>> test_data_path = resource_filename('nireports', 'assembler/data/tests/work')
+    >>> test_data_path = Path(resource_filename('nireports', 'assembler/data'))
     >>> testdir = Path(tmpdir)
-    >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
+    >>> data_dir = copytree(
+    ...     test_data_path / 'tests' / 'work',
+    ...     str(testdir / 'work'),
+    ...     dirs_exist_ok=True,
+    ... )
 
     .. doctest::
 
@@ -59,7 +65,33 @@ class Report:
     >>> robj.generate_report()
     0
     >>> len((output_dir / 'nireports' / 'sub-01.html').read_text())
-    39742
+    40326
+
+    Test including a crashfile
+
+    >>> robj = Report(
+    ...     output_dir / 'nireports',
+    ...     'madeoutuuid02',
+    ...     subject_id='02',
+    ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ... )
+    >>> robj.generate_report()
+    0
+    >>> len((output_dir / 'nireports' / 'sub-02.html').read_text())
+    43659
+
+    Test including a boilerplate
+
+    >>> robj = Report(
+    ...     output_dir / 'nireports',
+    ...     'madeoutuuid03',
+    ...     subject_id='03',
+    ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ... )
+    >>> robj.generate_report()
+    0
+    >>> len((output_dir / 'nireports' / 'sub-03.html').read_text())
+    92501
 
     """
 
@@ -77,7 +109,6 @@ class Report:
 
         if subject_id is not None:
             subject_id = subject_id[4:] if subject_id.startswith("sub-") else subject_id
-            root = root / "sub-{}".format(subject_id)
 
         if subject_id is not None and out_filename == "report.html":
             out_filename = f"sub-{subject_id}.html"
@@ -90,13 +121,14 @@ class Report:
         )
 
         bootstrap_text = []
-        expr = re.compile(r'{(subject_id|run_uuid|out_dir|packagename)}')
+        expr = re.compile(r'{(subject_id|run_uuid|out_dir|packagename|reportlets_dir)}')
         for line in bootstrap_file.read_text().splitlines(keepends=False):
             if expr.search(line):
                 line = line.format(
                     subject_id=subject_id if subject_id is not None else "null",
                     run_uuid=run_uuid if run_uuid is not None else "null",
                     out_dir=str(out_dir),
+                    reportlets_dir=str(root),
                 )
             bootstrap_text.append(line)
 
@@ -124,7 +156,7 @@ class Report:
         settings["out_dir"] = out_dir
         settings["run_uuid"] = run_uuid
         settings["bids_filters"] = {
-            "subject": subject_id,
+            "subject": listify(subject_id),
         }
         self.index(settings)
 
@@ -135,18 +167,32 @@ class Report:
         This method also places figures in their final location.
         """
         # Initialize a BIDS layout
-        layout = BIDSLayout(config["root"], config="figures", validate=False)
+        _indexer = BIDSLayoutIndexer(
+            config_filename=pkgrf("nireports.assembler", "data/nipreps.json"),
+            index_metadata=False,
+            validate=False,
+        )
+        layout = BIDSLayout(
+            config["root"],
+            config="figures",
+            indexer=_indexer,
+            validate=False,
+        )
 
         out_dir = Path(config["out_dir"])
         for subrep_cfg in config["sections"]:
             # First determine whether we need to split by some ordering
             # (ie. sessions / tasks / runs), which are separated by commas.
             orderings = [s for s in subrep_cfg.get("ordering", "").strip().split(",") if s]
-            entities, list_combos = self._process_orderings(orderings, layout)
+            entities, list_combos = self._process_orderings(
+                orderings, layout.get(**config["bids_filters"])
+            )
 
             if not list_combos:  # E.g. this is an anatomical reportlet
                 reportlets = [
-                    Reportlet(layout, config=cfg, out_dir=out_dir)
+                    Reportlet(
+                        layout, config=cfg, out_dir=out_dir, bids_filters=config["bids_filters"]
+                    )
                     for cfg in subrep_cfg["reportlets"]
                 ]
                 list_combos = subrep_cfg.get("nested", False)
@@ -167,7 +213,12 @@ class Report:
                     )
                     for cfg in subrep_cfg["reportlets"]:
                         cfg["bids"].update({entities[i]: c[i] for i in range(len(c))})
-                        rlet = Reportlet(layout, config=cfg, out_dir=out_dir)
+                        rlet = Reportlet(
+                            layout,
+                            config=cfg,
+                            out_dir=out_dir,
+                            bids_filters=config["bids_filters"],
+                        )
                         if not rlet.is_empty():
                             rlet.title = title
                             title = None
@@ -201,7 +252,7 @@ class Report:
         return 0
 
     @staticmethod
-    def _process_orderings(orderings, layout):
+    def _process_orderings(orderings, hits):
         """
         Generate relevant combinations of orderings with observed values.
 
@@ -209,8 +260,8 @@ class Report:
         ---------
         orderings : :obj:`list` of :obj:`list` of :obj:`str`
             Sections prescribing an ordering to select across sessions, acquisitions, runs, etc.
-        layout : :obj:`bids.layout.BIDSLayout`
-            The BIDS layout
+        hits : :obj:`list`
+            The output of a BIDS query of the layout
 
         Returns
         -------
@@ -223,7 +274,7 @@ class Report:
         # get a set of all unique entity combinations
         all_value_combos = {
             tuple(bids_file.get_entities().get(k, None) for k in orderings)
-            for bids_file in layout.get()
+            for bids_file in hits
         }
         # remove the all None member if it exists
         none_member = tuple([None for k in orderings])

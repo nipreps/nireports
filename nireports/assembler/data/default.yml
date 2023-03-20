@@ -176,12 +176,12 @@ sections:
   nested: true
   reportlets:
   - custom: boilerplate
-    path: '{out_dir}/logs/'
-    bibfile: ['nireports', 'data/boilerplate.bib']
+    path: '{reportlets_dir}/sub-{subject_id}/'
+    bibfile: ['nireports.assembler', 'data/tests/boilerplate.bib']
     caption: We kindly ask to report results preprocessed with this tool using the following boilerplate.
     title: Methods
   - custom: errors
-    path: '{out_dir}/sub-{subject_id}/log/{run_uuid}'
+    path: '{reportlets_dir}/sub-{subject_id}/log/{run_uuid}'
     captions: <em>NiReports</em> may have recorded failure conditions.
     title: Errors
   - metadata:

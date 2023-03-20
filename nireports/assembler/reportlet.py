@@ -77,30 +77,31 @@ data-bs-parent="#{metadata_id}-{metadata_index}">
 
 ERROR_TEMPLATE = """
     <details>
-        <summary>Node Name: {error.node}</summary><br>
+        <summary>Node Name: {node}</summary><br>
         <div>
-            File: <code>{error.file}</code><br />
-            Working Directory: <code>{error.node_dir}</code><br />
+            File: <code>{file}</code><br />
+            Working Directory: <code>{node_dir}</code><br />
             Inputs: <br />
             <ul>
             {inputs}
             </ul>
-            <pre>{error.traceback}</pre>
+            <pre>{traceback}</pre>
         </div>
     </details>
 """
 
 BOILERPLATE_NAV_TEMPLATE = """
-        <li class="nav-item">
-            <a class="nav-link {active}" id="boiler-{boiler_idx}-tab" data-toggle="tab" \
-href="#{anchor}" role="tab" aria-controls="{anchor}" aria-selected="{selected}">{tab_title}</a>
+        <li class="nav-item" role="presentation">
+        <button class="nav-link {active}" id="{anchor}-tab" data-bs-toggle="tab" \
+data-bs-target="#{anchor}-tab-pane" type="button" role="tab" aria-controls="{anchor}-tab-pane"\
+aria-selected="{selected}">{tab_title}</button>
         </li>
 """
 
 BOILERPLATE_TXT_TEMPLATE = """
-        <div class="tab-pane fade {active}" id="boiler-{boiler_idx}" role="tabpanel" \
-aria-labelledby="{anchor}-tab">
-            <div class="boiler-{anchor}">{text}</div>
+        <div class="tab-pane fade {active}" id="{anchor}-tab-pane" role="tabpanel" \
+aria-labelledby="{anchor}-tab" tabindex="0">
+            <div class="boiler-{anchor}">{body}</div>
         </div>
 """
 
@@ -185,7 +186,7 @@ class Reportlet(Element):
 
     """
 
-    def __init__(self, layout, config=None, out_dir=None):
+    def __init__(self, layout, config=None, out_dir=None, bids_filters=None):
         if not config:
             raise RuntimeError("Reportlet must have a config object")
 
@@ -200,6 +201,7 @@ class Reportlet(Element):
 
         # Determine whether this is a "BIDS-type" reportlet (typically, an SVG file)
         if bidsquery := config.get("bids", {}):
+            bidsquery.update(bids_filters or {})
             self.name = config.get(
                 "name",
                 "_".join("%s-%s" % i for i in sorted(bidsquery.items())),
@@ -222,10 +224,12 @@ class Reportlet(Element):
                     if desc_text:
                         desc_text = desc_text.format(**entities)
 
+                    # import pdb; pdb.set_trace()
+
                     try:
                         html_anchor = src.relative_to(out_dir)
                     except ValueError:
-                        html_anchor = src.relative_to(Path(layout.root).parent)
+                        html_anchor = src.relative_to(Path(layout.root))
                         dst = out_dir / html_anchor
                         dst.parent.mkdir(parents=True, exist_ok=True)
                         copyfile(src, dst, copy=True, use_hardlink=True)
@@ -284,23 +288,27 @@ class Reportlet(Element):
 
                 if not errors:
                     self.components.append((
-                        '<p class="alert alert-success" role="alert"">No errors to report!</p>',
+                        '<p class="alert alert-success" role="alert">No errors to report!</p>',
                         desc_text,
                     ))
                 else:
-                    contents = []
+                    contents = [
+                        '<p class="alert alert-danger" role="alert">'
+                        f"One or more execution steps failed ({len(errors)}). "
+                        "Error details are attached below.</p>",
+                    ]
                     for error in errors:
                         contents.append(ERROR_TEMPLATE.format(
-                            error=error,
                             inputs=[
-                                f"<li>{err_in.name}: <code>{err_in.spec}</code></li>"
-                                for err_in in error.inputs
+                                f"<li>{err_in[0]}: <code>{err_in[-1]}</code></li>"
+                                for err_in in error.pop("inputs", {})
                             ],
+                            **error,
                         ))
                     self.components.append(("\n".join(contents), desc_text))
             elif custom == "boilerplate":
                 self.name = "boilerplate"
-                logs_path = Path(path.format(out_dir=out_dir))
+                logs_path = Path(path)
                 bibfile = config.get(
                     "bibfile", ["nireports", "data/bibliography.bib"]
                 )
@@ -317,6 +325,8 @@ class Reportlet(Element):
                     if not (logs_path / f"CITATION.{boiler_type}").exists():
                         continue
 
+                    text = ""
+                    tab_title = ""
                     if boiler_type == "html":
                         text = (
                             re.compile("<body>(.*?)</body>", re.DOTALL | re.IGNORECASE)
@@ -355,7 +365,7 @@ class Reportlet(Element):
 
                     boiler_body.append(
                         BOILERPLATE_TXT_TEMPLATE.format(
-                            active="active show" if boiler_idx == 0 else "",
+                            active="show active" if boiler_idx == 0 else "",
                             boiler_idx=boiler_idx,
                             body=text,
                             anchor=boiler_type,
