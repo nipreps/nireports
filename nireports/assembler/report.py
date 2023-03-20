@@ -65,7 +65,7 @@ class Report:
     >>> robj.generate_report()
     0
     >>> len((output_dir / 'nireports' / 'sub-01.html').read_text())
-    40326
+    40464
 
     Test including a crashfile
 
@@ -78,7 +78,7 @@ class Report:
     >>> robj.generate_report()
     0
     >>> len((output_dir / 'nireports' / 'sub-02.html').read_text())
-    43566
+    43704
 
     Test including a boilerplate
 
@@ -91,7 +91,7 @@ class Report:
     >>> robj.generate_report()
     0
     >>> len((output_dir / 'nireports' / 'sub-03.html').read_text())
-    92501
+    92639
 
     """
 

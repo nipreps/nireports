@@ -195,6 +195,8 @@ sections:
       Dataset information:
         Dataset name: 'Test example'
         Participant ID: '00017'
+        Split Nested_key1: value1
+        Split Nested_key2: value1
     settings:
       # By default, only the first dictionary will be expanded.
       # If folded is true, all will be folded. If false all expanded.
