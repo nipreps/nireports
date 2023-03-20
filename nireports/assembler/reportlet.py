@@ -283,7 +283,8 @@ class Reportlet(Element):
                 error_dir = Path(path)
                 # Read in all crash files
                 errors = [
-                    read_crashfile(str(f)) for f in error_dir.glob("crash*.*")
+                    read_crashfile(str(f), root=layout.root)
+                    for f in error_dir.glob("crash*.*")
                 ]
 
                 if not errors:
@@ -299,10 +300,10 @@ class Reportlet(Element):
                     ]
                     for error in errors:
                         contents.append(ERROR_TEMPLATE.format(
-                            inputs=[
+                            inputs="\n".join([
                                 f"<li>{err_in[0]}: <code>{err_in[-1]}</code></li>"
                                 for err_in in error.pop("inputs", {})
-                            ],
+                            ]),
                             **error,
                         ))
                     self.components.append(("\n".join(contents), desc_text))

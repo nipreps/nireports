@@ -12,12 +12,16 @@ class Element:
         self.title = title
 
 
-def read_crashfile(path):
-    if path.endswith(".pklz"):
-        return _read_pkl(path)
-    elif path.endswith(".txt"):
-        return _read_txt(path)
-    raise RuntimeError("unknown crashfile format")
+def read_crashfile(path, root=None):
+    errordata = (
+        _read_pkl(path) if path.endswith(".pklz")
+        else _read_txt(path)
+    )
+    if root:
+        errordata["file"] = (
+            f"&lt;workdir&gt;/{Path(errordata['file']).relative_to(root)}"
+        )
+    return errordata
 
 
 def _read_pkl(path):

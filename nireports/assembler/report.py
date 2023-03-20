@@ -78,7 +78,7 @@ class Report:
     >>> robj.generate_report()
     0
     >>> len((output_dir / 'nireports' / 'sub-02.html').read_text())
-    43659
+    43566
 
     Test including a boilerplate
 
