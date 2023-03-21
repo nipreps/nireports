@@ -125,6 +125,26 @@ def unfold_columns(indict, prefix=None, delimiter="_"):
     ... })
     [['key1', 'val1'], ['nested', 'key1', 'nested value'], ['nested', 'key2', 'another value']]
 
+    If nested keys do not share prefixes, they should not be unfolded.
+    >>> unfold_columns({
+    ...     "key1": "val1",
+    ...     "key1_split": "nonnested value",
+    ...     "key2_singleton": "another value",
+    ... })
+    [['key1', 'val1'], ['key1_split', 'nonnested value'], ['key2_singleton', 'another value']]
+
+    Nested/non-nested keys can be combined (see the behavior for key1):
+    >>> unfold_columns({
+    ...     "key1": "val1",
+    ...     "key1_split1": "nested value",
+    ...     "key1_split2": "nested value",
+    ...     "key2_singleton": "another value",
+    ... })
+    [['key1', 'val1'],
+    ['key1', 'split1', 'nested value'],
+    ['key1', 'split2', 'nested value'],
+    ['key2_singleton', 'another value']]
+
     >>> unfold_columns({
     ...     "key1": "val1",
     ...     "nested_key1": "nested value",
