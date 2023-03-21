@@ -1,4 +1,4 @@
-package: nireports
+packagename: nireports
 sections:
 - name: Summary
   reportlets:
@@ -173,5 +173,37 @@ sections:
       in green; noise components in red.
     subtitle: ICA Components classified by AROMA
 - name: About
+  nested: true
   reportlets:
-  - bids: {datatype: figures, desc: about, suffix: T1w}
+  - custom: boilerplate
+    path: '{reportlets_dir}/sub-{subject_id}/'
+    bibfile: ['nireports.assembler', 'data/tests/boilerplate.bib']
+    caption: We kindly ask to report results preprocessed with this tool using the following boilerplate.
+    title: Methods
+  - custom: errors
+    path: '{reportlets_dir}/sub-{subject_id}/log/{run_uuid}'
+    captions: <em>NiReports</em> may have recorded failure conditions.
+    title: Errors
+  - metadata:
+      Execution provenance:
+        NiReports version: '23.0.1'
+        NiReports command: |
+          <code>/opt/conda/bin/fmriprep /data /out participant --sloppy --write-graph
+          --mem-mb 14336 --nthreads 4 -vv --anat-derivatives /opt/smriprep/subjects
+          -w /scratch --output-spaces fsaverage5</code>
+        Date processed: '2023-03-12 03:15:45 +0000'
+      Dataset information:
+        Dataset name: 'Test example'
+        Participant ID: '00017'
+        Split Nested_key1: value1
+        Split Nested_key2: value1
+    settings:
+      # By default, only the first dictionary will be expanded.
+      # If folded is true, all will be folded. If false all expanded.
+      folded: true
+      # If an ID is not provided, one should be generated automatically
+      id: 'about-metadata'
+    caption: |
+      Thanks for using <em>NiReports</em>. The following information may assist in
+      reconstructing the provenance of the corresponding derivatives.
+    title: Reproducibility and provenance information

@@ -1,17 +1,41 @@
-"""
-Definition of the :class:`Report` class.
-"""
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+#
+# Copyright 2023 The NiPreps Developers <nipreps@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# We support and encourage derived works from this project, please read
+# about our expectations at
+#
+#     https://www.nipreps.org/community/licensing/
+#
+# STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
+# another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
+"""Core objects representing reports."""
 import re
 from collections import defaultdict
 from itertools import compress
 from pathlib import Path
+from yaml import safe_load as load
 
 import jinja2
-from bids.layout import BIDSLayout, add_config_paths
+from bids.layout import BIDSLayout, BIDSLayoutIndexer, add_config_paths
+from bids.utils import listify
 from pkg_resources import resource_filename as pkgrf
 
-from nireports.assembler.misc import Element, read_crashfile
 from nireports.assembler.reportlet import Reportlet
+
 
 # Add a new figures spec
 try:
@@ -23,8 +47,15 @@ except ValueError as e:
 PLURAL_SUFFIX = defaultdict(str("s").format, [("echo", "es")])
 
 
-class SubReport(Element):
+class SubReport:
     """SubReports are sections within a Report."""
+
+    __slots__ = {
+        "name": "a unique subreport name",
+        "title": "a header for the content included in the subreport",
+        "reportlets": "the collection of reportlets in this subreport",
+        "isnested": "``True`` if this subreport is a reportlet to another subreport",
+    }
 
     def __init__(self, name, isnested=False, reportlets=None, title=""):
         self.name = name
@@ -40,25 +71,55 @@ class Report:
 
     .. testsetup::
 
-    >>> from pkg_resources import resource_filename
-    >>> from shutil import copytree
-    >>> from bids.layout import BIDSLayout
-    >>> test_data_path = resource_filename('nireports', 'assembler/data/tests/work')
-    >>> testdir = Path(tmpdir)
-    >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
-    >>> out_figs = output_dir / 'nireports'
+       >>> from pkg_resources import resource_filename
+       >>> from shutil import copytree
+       >>> from bids.layout import BIDSLayout
+       >>> test_data_path = Path(resource_filename('nireports', 'assembler/data'))
+       >>> testdir = Path(tmpdir)
+       >>> data_dir = copytree(
+       ...     test_data_path / 'tests' / 'work',
+       ...     str(testdir / 'work'),
+       ...     dirs_exist_ok=True,
+       ... )
 
-    .. doctest::
-
-    >>> robj = Report(output_dir, 'madeoutuuid', subject_id='01', packagename='nireports',
-    ...               reportlets_dir=testdir / 'work' / 'reportlets')
-    >>> robj.layout.get(subject='01', desc='reconall')[0]._path.as_posix()  # doctest: +ELLIPSIS
-    '.../figures/sub-01_desc-reconall_T1w.svg'
-
+    Examples
+    --------
+    >>> robj = Report(
+    ...     output_dir / 'nireports',
+    ...     'madeoutuuid',
+    ...     subject_id='01',
+    ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ... )
     >>> robj.generate_report()
     0
     >>> len((output_dir / 'nireports' / 'sub-01.html').read_text())
-    36673
+    40464
+
+    Test including a crashfile
+
+    >>> robj = Report(
+    ...     output_dir / 'nireports',
+    ...     'madeoutuuid02',
+    ...     subject_id='02',
+    ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ... )
+    >>> robj.generate_report()
+    0
+    >>> len((output_dir / 'nireports' / 'sub-02.html').read_text())
+    43704
+
+    Test including a boilerplate
+
+    >>> robj = Report(
+    ...     output_dir / 'nireports',
+    ...     'madeoutuuid03',
+    ...     subject_id='03',
+    ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ... )
+    >>> robj.generate_report()
+    0
+    >>> len((output_dir / 'nireports' / 'sub-03.html').read_text())
+    92639
 
     """
 
@@ -68,49 +129,64 @@ class Report:
         run_uuid,
         config=None,
         out_filename="report.html",
-        packagename=None,
         reportlets_dir=None,
         subject_id=None,
     ):
-        self.root = Path(reportlets_dir or out_dir)
+        out_dir = Path(out_dir)
+        root = Path(reportlets_dir or out_dir)
+
+        if subject_id is not None:
+            subject_id = subject_id[4:] if subject_id.startswith("sub-") else subject_id
+
+        if subject_id is not None and out_filename == "report.html":
+            out_filename = f"sub-{subject_id}.html"
 
         # Initialize structuring elements
         self.sections = []
-        self.errors = []
-        self.out_dir = Path(out_dir)
-        self.out_filename = out_filename
-        self.run_uuid = run_uuid
-        self.packagename = packagename
-        self.subject_id = subject_id
-        if subject_id is not None:
-            self.subject_id = subject_id[4:] if subject_id.startswith("sub-") else subject_id
-            self.out_filename = f"sub-{self.subject_id}.html"
 
-        # Default template from nireports
-        self.template_path = Path(pkgrf("nireports.assembler", "data/report.tpl"))
-        self._load_config(Path(config or pkgrf("nireports.assembler", "data/default.yml")))
+        bootstrap_file = Path(config or pkgrf("nireports.assembler", "data/default.yml"))
+
+        bootstrap_text = []
+        expr = re.compile(r'{(subject_id|run_uuid|out_dir|packagename|reportlets_dir)}')
+        for line in bootstrap_file.read_text().splitlines(keepends=False):
+            if expr.search(line):
+                line = line.format(
+                    subject_id=subject_id if subject_id is not None else "null",
+                    run_uuid=run_uuid if run_uuid is not None else "null",
+                    out_dir=str(out_dir),
+                    reportlets_dir=str(root),
+                )
+            bootstrap_text.append(line)
+
+        # Load report schema (settings YAML file)
+        settings = load("\n".join(bootstrap_text))
+
+        # Set the output path
+        self.out_filename = Path(out_filename)
+        if not self.out_filename.is_absolute():
+            self.out_filename = Path(out_dir) / self.out_filename
+
+        # Path to the Jinja2 template
+        self.template_path = (
+            Path(settings["template_path"])
+            if "template_path" in settings
+            else Path(pkgrf("nireports.assembler", "data/report.tpl")).absolute()
+        )
+
+        if not self.template_path.is_absolute():
+            self.template_path = bootstrap_file / self.template_file
+
         assert self.template_path.exists()
 
-    def _load_config(self, config):
-        from yaml import safe_load as load
+        settings["root"] = root
+        settings["out_dir"] = out_dir
+        settings["run_uuid"] = run_uuid
 
-        settings = load(config.read_text())
-        self.packagename = self.packagename or settings.get("package", None)
-
-        if self.packagename is not None:
-            self.root = self.root / self.packagename
-            self.out_dir = self.out_dir / self.packagename
-
-        if self.subject_id is not None:
-            self.root = self.root / "sub-{}".format(self.subject_id)
-
-        if "template_path" in settings:
-            self.template_path = config.parent / settings["template_path"]
-
-        self.index(settings["sections"])
-
-    def init_layout(self):
-        self.layout = BIDSLayout(self.root, config="figures", validate=False)
+        if subject_id is not None:
+            settings["bids_filters"] = {
+                "subject": listify(subject_id),
+            }
+        self.index(settings)
 
     def index(self, config):
         """
@@ -119,18 +195,32 @@ class Report:
         This method also places figures in their final location.
         """
         # Initialize a BIDS layout
-        self.init_layout()
-        for subrep_cfg in config:
+        _indexer = BIDSLayoutIndexer(
+            config_filename=pkgrf("nireports.assembler", "data/nipreps.json"),
+            index_metadata=False,
+            validate=False,
+        )
+        layout = BIDSLayout(
+            config["root"],
+            config="figures",
+            indexer=_indexer,
+            validate=False,
+        )
+
+        bids_filters = config.get("bids_filters", {})
+        out_dir = Path(config["out_dir"])
+        for subrep_cfg in config["sections"]:
             # First determine whether we need to split by some ordering
             # (ie. sessions / tasks / runs), which are separated by commas.
             orderings = [s for s in subrep_cfg.get("ordering", "").strip().split(",") if s]
-            entities, list_combos = self._process_orderings(orderings, self.layout)
+            entities, list_combos = self._process_orderings(orderings, layout.get(**bids_filters))
 
             if not list_combos:  # E.g. this is an anatomical reportlet
                 reportlets = [
-                    Reportlet(self.layout, self.out_dir, config=cfg)
+                    Reportlet(layout, config=cfg, out_dir=out_dir, bids_filters=bids_filters)
                     for cfg in subrep_cfg["reportlets"]
                 ]
+                list_combos = subrep_cfg.get("nested", False)
             else:
                 # Do not use dictionary for queries, as we need to preserve ordering
                 # of ordering columns.
@@ -148,7 +238,12 @@ class Report:
                     )
                     for cfg in subrep_cfg["reportlets"]:
                         cfg["bids"].update({entities[i]: c[i] for i in range(len(c))})
-                        rlet = Reportlet(self.layout, self.out_dir, config=cfg)
+                        rlet = Reportlet(
+                            layout,
+                            config=cfg,
+                            out_dir=out_dir,
+                            bids_filters=bids_filters,
+                        )
                         if not rlet.is_empty():
                             rlet.title = title
                             title = None
@@ -165,53 +260,8 @@ class Report:
                 )
                 self.sections.append(sub_report)
 
-        # Populate errors section
-        error_dir = self.out_dir / "sub-{}".format(self.subject_id) / "log" / self.run_uuid
-        if error_dir.is_dir():
-            self.errors = [read_crashfile(str(f)) for f in error_dir.glob("crash*.*")]
-
     def generate_report(self):
         """Once the Report has been indexed, the final HTML can be generated"""
-        logs_path = self.out_dir / "logs"
-
-        boilerplate = []
-        boiler_idx = 0
-
-        if (logs_path / "CITATION.html").exists():
-            text = (
-                re.compile("<body>(.*?)</body>", re.DOTALL | re.IGNORECASE)
-                .findall((logs_path / "CITATION.html").read_text())[0]
-                .strip()
-            )
-            boilerplate.append((boiler_idx, "HTML", f'<div class="boiler-html">{text}</div>'))
-            boiler_idx += 1
-
-        if (logs_path / "CITATION.md").exists():
-            text = (logs_path / "CITATION.md").read_text()
-            boilerplate.append((boiler_idx, "Markdown", f"<pre>{text}</pre>\n"))
-            boiler_idx += 1
-
-        if (logs_path / "CITATION.tex").exists():
-            text = (
-                re.compile(
-                    r"\\begin{document}(.*?)\\end{document}",
-                    re.DOTALL | re.IGNORECASE,
-                )
-                .findall((logs_path / "CITATION.tex").read_text())[0]
-                .strip()
-            )
-            boilerplate.append(
-                (
-                    boiler_idx,
-                    "LaTeX",
-                    f"""<pre>{text}</pre>
-<h3>Bibliography</h3>
-<pre>{Path(pkgrf(self.packagename, 'data/boilerplate.bib')).read_text()}</pre>
-""",
-                )
-            )
-            boiler_idx += 1
-
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(searchpath=str(self.template_path.parent)),
             trim_blocks=True,
@@ -219,17 +269,15 @@ class Report:
             autoescape=False,
         )
         report_tpl = env.get_template(self.template_path.name)
-        report_render = report_tpl.render(
-            sections=self.sections, errors=self.errors, boilerplate=boilerplate
-        )
+        report_render = report_tpl.render(sections=self.sections)
 
         # Write out report
-        self.out_dir.mkdir(parents=True, exist_ok=True)
-        (self.out_dir / self.out_filename).write_text(report_render, encoding="UTF-8")
-        return len(self.errors)
+        self.out_filename.parent.mkdir(parents=True, exist_ok=True)
+        self.out_filename.write_text(report_render, encoding="UTF-8")
+        return 0
 
     @staticmethod
-    def _process_orderings(orderings, layout):
+    def _process_orderings(orderings, hits):
         """
         Generate relevant combinations of orderings with observed values.
 
@@ -237,8 +285,8 @@ class Report:
         ---------
         orderings : :obj:`list` of :obj:`list` of :obj:`str`
             Sections prescribing an ordering to select across sessions, acquisitions, runs, etc.
-        layout : :obj:`bids.layout.BIDSLayout`
-            The BIDS layout
+        hits : :obj:`list`
+            The output of a BIDS query of the layout
 
         Returns
         -------
@@ -250,8 +298,7 @@ class Report:
         """
         # get a set of all unique entity combinations
         all_value_combos = {
-            tuple(bids_file.get_entities().get(k, None) for k in orderings)
-            for bids_file in layout.get()
+            tuple(bids_file.get_entities().get(k, None) for k in orderings) for bids_file in hits
         }
         # remove the all None member if it exists
         none_member = tuple([None for k in orderings])

@@ -1,6 +1,28 @@
-"""
-Tests for the :mod:`nireports.assembler.report` module.
-"""
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+#
+# Copyright 2023 The NiPreps Developers <nipreps@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# We support and encourage derived works from this project, please read
+# about our expectations at
+#
+#     https://www.nipreps.org/community/licensing/
+#
+# STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
+# another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
+"""Exercising the visual report system (VRS)."""
 import os
 import tempfile
 from itertools import product
@@ -93,11 +115,10 @@ def test_report1():
     out_dir = tempfile.mkdtemp()
 
     return Report(
-        Path(out_dir),
+        Path(out_dir) / "nireports",
         "fakeuuid",
-        reportlets_dir=Path(test_data_path),
+        reportlets_dir=Path(test_data_path) / "nireports",
         subject_id="01",
-        packagename="nireports",
     )
 
 
@@ -105,11 +126,10 @@ def test_report1():
 def test_report2(bids_sessions):
     out_dir = tempfile.mkdtemp()
     return Report(
-        Path(out_dir),
+        Path(out_dir) / "nireports",
         "fakeuuid",
-        reportlets_dir=Path(bids_sessions),
+        reportlets_dir=Path(bids_sessions) / "nireports",
         subject_id="01",
-        packagename="nireports",
     )
 
 
@@ -155,8 +175,12 @@ def test_process_orderings_small(
     expected_value_combos,
 ):
     report = test_report1
-    report.init_layout()
-    entities, value_combos = report._process_orderings(orderings, report.layout)
+    layout_root = pkgrf(
+        "nireports",
+        os.path.join("assembler", "data", "tests", "work", "reportlets"),
+    )
+    layout = BIDSLayout(Path(layout_root) / "nireports", config="figures", validate=False)
+    entities, value_combos = report._process_orderings(orderings, layout.get())
 
     assert entities == expected_entities
     assert expected_value_combos == value_combos
@@ -184,6 +208,7 @@ def test_process_orderings_small(
     ],
 )
 def test_process_orderings_large(
+    bids_sessions,
     test_report2,
     orderings,
     expected_entities,
@@ -191,8 +216,8 @@ def test_process_orderings_large(
     last_value_combo,
 ):
     report = test_report2
-    report.init_layout()
-    entities, value_combos = report._process_orderings(orderings, report.layout)
+    layout = BIDSLayout(Path(bids_sessions), config="figures", validate=False)
+    entities, value_combos = report._process_orderings(orderings, layout.get())
 
     if not value_combos:
         value_combos = [None]
@@ -217,28 +242,33 @@ def test_process_orderings_large(
 )
 def test_generated_reportlets(bids_sessions, ordering):
     # make independent report
-    out_dir = tempfile.mkdtemp()
+    out_dir = Path(tempfile.mkdtemp())
     report = Report(
-        Path(out_dir),
+        out_dir / "nireports",
         "fakeuuid",
-        reportlets_dir=Path(bids_sessions),
+        reportlets_dir=Path(bids_sessions) / "nireports",
         subject_id="01",
-        packagename="nireports",
     )
     config = Path(pkgrf("nireports.assembler", "data/default.yml"))
     settings = load(config.read_text())
+    settings["root"] = str(Path(bids_sessions) / "nireports")
+    settings["out_dir"] = str(out_dir / "nireports")
+    settings["run_uuid"] = "fakeuuid"
     # change settings to only include some missing ordering
     settings["sections"][3]["ordering"] = ordering
-    report.index(settings["sections"])
+    settings["bids_filters"] = {"subject": ["01"]}
+    report.index(settings)
     # expected number of reportlets
-    expected_reportlets_num = len(report.layout.get(extension=".svg"))
+
+    layout = BIDSLayout(Path(bids_sessions) / "nireports", config="figures", validate=False)
+    expected_reportlets_num = len(layout.get(extension=".svg"))
     # bids_session uses these entities
     needed_entities = ["session", "task", "ceagent", "run"]
     # the last section is the most recently run
-    reportlets_num = len(report.sections[-1].reportlets)
+    reportlets_num = len(report.sections[-2].reportlets)
     # get the number of figures in the output directory
-    out_layout = BIDSLayout(out_dir, config="figures", validate=False)
-    out_figs = len(out_layout.get())
+    out_layout = BIDSLayout(out_dir / "nireports", config="figures", validate=False)
+    out_figs = len(out_layout.get(subject="01"))
     # if ordering does not contain all the relevent entities
     # then there should be fewer reportlets than expected
     if all(ent in ordering for ent in needed_entities):
@@ -265,11 +295,9 @@ def test_subject_id(tmp_path, subject_id, out_html):
     ).mkdir(parents=True)
 
     report = Report(
-        str(tmp_path),
+        f"{tmp_path}/nireports",
         "myuniqueid",
-        reportlets_dir=reports,
+        reportlets_dir=reports / "nireports",
         subject_id=subject_id,
-        packagename="nireports",
     )
-    assert report.subject_id[:4] != "sub-"
-    assert report.out_filename == out_html
+    assert report.out_filename.name == out_html
