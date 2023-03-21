@@ -31,7 +31,7 @@ def run_reports(
     out_dir,
     subject_label,
     run_uuid,
-    config=None,
+    bootstrap_file=None,
     reportlets_dir=None,
 ):
     """
@@ -56,9 +56,9 @@ def run_reports(
     return Report(
         out_dir,
         run_uuid,
-        config=config,
-        subject_id=subject_label,
+        bootstrap_file=bootstrap_file,
         reportlets_dir=reportlets_dir,
+        subject=subject_label,
     ).generate_report()
 
 
@@ -66,7 +66,7 @@ def generate_reports(
     subject_list,
     output_dir,
     run_uuid,
-    config=None,
+    bootstrap_file=None,
     work_dir=None,
 ):
     """Execute run_reports on a list of subjects."""
@@ -78,7 +78,7 @@ def generate_reports(
             output_dir,
             subject_label,
             run_uuid,
-            config=config,
+            bootstrap_file=bootstrap_file,
             reportlets_dir=reportlets_dir,
         )
         for subject_label in subject_list
