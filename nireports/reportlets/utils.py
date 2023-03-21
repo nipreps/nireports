@@ -322,7 +322,6 @@ def compose_view(bg_svgs, fg_svgs, ref=0, out_file="report.svg"):
         Full paths to input svgs for background.
     fg_svgs : list
         Full paths to input svgs for foreground.
-
     ref : int, optional
         Which panel to use as reference for sizing all panels. Default: 0
 
