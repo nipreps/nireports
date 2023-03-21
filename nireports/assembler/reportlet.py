@@ -108,7 +108,7 @@ aria-labelledby="{anchor}-tab" tabindex="0">
 
 class Reportlet:
     """
-    A visual report element (*reportlet*).
+    A visual report atom (*reportlet*).
 
     A reportlet has title, description and a list of components with either an
     HTML fragment or a path to an SVG file, and possibly a caption. This is a
@@ -187,16 +187,13 @@ class Reportlet:
 
     """
 
-    components = None
-    """A list of visual elements for composite reportlets."""
-    description = None
-    """This reportlet's longer description."""
-    name = None
-    """A unique name for the reportlet (used to create HTML anchors)."""
-    subtitle = None
-    """This reportlet's subtitle."""
-    title = None
-    """This reportlet's title."""
+    __slots__ = {
+        "components": "A list of visual elements for composite reportlets.",
+        "description": "This reportlet's longer description.",
+        "name": "A unique name for the reportlet (used to create HTML anchors).",
+        "subtitle": "This reportlet's subtitle.",
+        "title": "This reportlet's title.",
+    }
 
     def __init__(self, layout, config=None, out_dir=None, bids_filters=None):
         if not config:

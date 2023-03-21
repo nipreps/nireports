@@ -1,6 +1,28 @@
-"""
-Definition of the :class:`Report` class.
-"""
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+#
+# Copyright 2023 The NiPreps Developers <nipreps@gmail.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# We support and encourage derived works from this project, please read
+# about our expectations at
+#
+#     https://www.nipreps.org/community/licensing/
+#
+# STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
+# another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
+"""Core objects representing reports."""
 import re
 from collections import defaultdict
 from itertools import compress
@@ -28,7 +50,12 @@ PLURAL_SUFFIX = defaultdict(str("s").format, [("echo", "es")])
 class SubReport:
     """SubReports are sections within a Report."""
 
-    __slots__ = ("name", "title", "reportlets", "isnested")
+    __slots__ = {
+        "name": "a unique subreport name",
+        "title": "a header for the content included in the subreport",
+        "reportlets": "the collection of reportlets in this subreport",
+        "isnested": "``True`` if this subreport is a reportlet to another subreport",
+    }
 
     def __init__(self, name, isnested=False, reportlets=None, title=""):
         self.name = name
@@ -44,19 +71,19 @@ class Report:
 
     .. testsetup::
 
-    >>> from pkg_resources import resource_filename
-    >>> from shutil import copytree
-    >>> from bids.layout import BIDSLayout
-    >>> test_data_path = Path(resource_filename('nireports', 'assembler/data'))
-    >>> testdir = Path(tmpdir)
-    >>> data_dir = copytree(
-    ...     test_data_path / 'tests' / 'work',
-    ...     str(testdir / 'work'),
-    ...     dirs_exist_ok=True,
-    ... )
+       >>> from pkg_resources import resource_filename
+       >>> from shutil import copytree
+       >>> from bids.layout import BIDSLayout
+       >>> test_data_path = Path(resource_filename('nireports', 'assembler/data'))
+       >>> testdir = Path(tmpdir)
+       >>> data_dir = copytree(
+       ...     test_data_path / 'tests' / 'work',
+       ...     str(testdir / 'work'),
+       ...     dirs_exist_ok=True,
+       ... )
 
-    .. doctest::
-
+    Examples
+    --------
     >>> robj = Report(
     ...     output_dir / 'nireports',
     ...     'madeoutuuid',
