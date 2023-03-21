@@ -330,6 +330,7 @@ def compose_view(bg_svgs, fg_svgs, ref=0, out_file="report.svg"):
     Returns
     -------
     out_file : same as input
+
     """
     out_file = Path(out_file).absolute()
     out_file.write_text("\n".join(_compose_view(bg_svgs, fg_svgs, ref=ref)))
