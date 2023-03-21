@@ -1,4 +1,5 @@
 """Miscellaneous utilities."""
+from collections import defaultdict
 from pathlib import Path
 from bids.utils import listify
 
@@ -173,20 +174,19 @@ def unfold_columns(indict, prefix=None, delimiter="_"):
     keys = sorted(set(list(indict.keys())))
 
     data = []
-    subdict = {}
+    subdict = defaultdict(dict, {})
     for key in keys:
         col = key.split(delimiter, 1)
         if len(col) == 1:
-            value = indict[col[0]]
-            data.append(prefix + [col[0], value])
+            data.append(prefix + [col[0], indict[col[0]]])
         else:
-            if subdict.get(col[0]) is None:
-                subdict[col[0]] = {}
             subdict[col[0]][col[1]] = indict[key]
 
     if subdict:
         for skey in sorted(list(subdict.keys())):
             sskeys = list(subdict[skey].keys())
+
+            # If there is only one subkey, merge back
             if len(sskeys) == 1:
                 value = subdict[skey][sskeys[0]]
                 newkey = delimiter.join([skey] + sskeys)
