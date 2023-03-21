@@ -320,7 +320,6 @@ def compose_view(bg_svgs, fg_svgs, ref=0, out_file="report.svg"):
     ----------
     bg_svgs : list
         Full paths to input svgs for background.
-
     fg_svgs : list
         Full paths to input svgs for foreground.
 
