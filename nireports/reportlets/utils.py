@@ -314,7 +314,25 @@ def _3d_in_file(in_file):
 
 
 def compose_view(bg_svgs, fg_svgs, ref=0, out_file="report.svg"):
-    """Compose the input svgs into one standalone svg with CSS flickering animation."""
+    """
+    Compose svgs into one standalone svg with CSS flickering animation.
+
+    Parameters
+    ----------
+    bg_svgs : :obj:`list`
+        Full paths to input svgs for background.
+    fg_svgs : :obj:`list`
+        Full paths to input svgs for foreground.
+    ref : :obj:`int`, optional
+        Which panel to use as reference for sizing all panels. Default: 0
+    out_file : :obj:`str`, optional
+        Full path to the output file. Default: "report.svg".
+
+    Returns
+    -------
+    out_file : same as input
+
+    """
     out_file = Path(out_file).absolute()
     out_file.write_text("\n".join(_compose_view(bg_svgs, fg_svgs, ref=ref)))
     return str(out_file)
