@@ -12,7 +12,6 @@ from bids.layout import BIDSLayout, BIDSLayoutIndexer, add_config_paths
 from bids.utils import listify
 from pkg_resources import resource_filename as pkgrf
 
-from nireports.assembler.misc import Element
 from nireports.assembler.reportlet import Reportlet
 
 
@@ -26,8 +25,9 @@ except ValueError as e:
 PLURAL_SUFFIX = defaultdict(str("s").format, [("echo", "es")])
 
 
-class SubReport(Element):
+class SubReport:
     """SubReports are sections within a Report."""
+    __slots__ = ("name", "title", "reportlets", "isnested")
 
     def __init__(self, name, isnested=False, reportlets=None, title=""):
         self.name = name

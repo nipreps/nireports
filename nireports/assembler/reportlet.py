@@ -28,7 +28,7 @@ from uuid import uuid4
 import re
 from pkg_resources import resource_filename as pkgrf
 from nipype.utils.filemanip import copyfile
-from nireports.assembler.misc import Element, dict2html, read_crashfile
+from nireports.assembler.misc import dict2html, read_crashfile
 
 
 SVG_SNIPPET = [
@@ -106,8 +106,10 @@ aria-labelledby="{anchor}-tab" tabindex="0">
 """
 
 
-class Reportlet(Element):
+class Reportlet:
     """
+    A visual report element (*reportlet*).
+
     A reportlet has title, description and a list of components with either an
     HTML fragment or a path to an SVG file, and possibly a caption. This is a
     factory class to generate Reportlets reusing the layout from a ``Report``
@@ -185,6 +187,17 @@ class Reportlet(Element):
     True
 
     """
+
+    components = None
+    """A list of visual elements for composite reportlets."""
+    description = None
+    """This reportlet's longer description."""
+    name = None
+    """A unique name for the reportlet (used to create HTML anchors)."""
+    subtitle = None
+    """This reportlet's subtitle."""
+    title = None
+    """This reportlet's title."""
 
     def __init__(self, layout, config=None, out_dir=None, bids_filters=None):
         if not config:
@@ -387,4 +400,5 @@ class Reportlet(Element):
                     )
 
     def is_empty(self):
+        """Determine whether the reportlet has no components."""
         return len(self.components) == 0

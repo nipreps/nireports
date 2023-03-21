@@ -1,15 +1,8 @@
 """Miscellaneous utilities."""
 from pathlib import Path
+from bids.utils import listify
 
 from nipype.utils.filemanip import loadcrash
-
-
-class Element:
-    """Just a basic component of a report"""
-
-    def __init__(self, name, title=None):
-        self.name = name
-        self.title = title
 
 
 def read_crashfile(path, root=None):
@@ -108,16 +101,66 @@ def dict2html(indict, table_id):
     return result_str
 
 
-def unfold_columns(indict, prefix=None):
-    """Converts an input dict with flattened keys to an array of columns"""
-    if prefix is None:
-        prefix = []
+def unfold_columns(indict, prefix=None, delimiter="_"):
+    """
+    Convert an input dict with flattened keys to an array of columns.
+
+    Parameters
+    ----------
+    indict : :obj:`dict`
+        Input dictionary to be expanded as a list of lists.
+    prefix : :obj:`str` or :obj:`list`
+        A string or list of strings to expand columns on the left
+        (that is, all *rows* will be added these prefixes to the
+        left side).
+    delimiter : :obj:`str`
+        The delimiter string.
+
+    Examples
+    --------
+    >>> unfold_columns({
+    ...     "key1": "val1",
+    ...     "nested_key1": "nested value",
+    ...     "nested_key2": "another value",
+    ... })
+    [['key1', 'val1'], ['nested', 'key1', 'nested value'], ['nested', 'key2', 'another value']]
+
+    >>> unfold_columns({
+    ...     "key1": "val1",
+    ...     "nested_key1": "nested value",
+    ...     "nested_key2": "another value",
+    ... }, prefix="prefix")
+    [['prefix', 'key1', 'val1'],
+    ['prefix', 'nested', 'key1', 'nested value'],
+    ['prefix', 'nested', 'key2', 'another value']]
+
+    >>> unfold_columns({
+    ...     "key1": "val1",
+    ...     "nested_key1": "nested value",
+    ...     "nested_key2": "another value",
+    ... }, prefix=["name", "lastname"])
+    [['name', 'lastname', 'key1', 'val1'],
+    ['name', 'lastname', 'nested', 'key1', 'nested value'],
+    ['name', 'lastname', 'nested', 'key2', 'another value']]
+
+    >>> unfold_columns({
+    ...     "key1": "val1",
+    ...     "nested_key1_sub1": "val2",
+    ...     "nested_key1_sub2": "val3",
+    ...     "nested_key2": "another value",
+    ... })
+    [['key1', 'val1'], ['nested', 'key2', 'another value'],
+    ['nested', 'key1', 'sub1', 'val2'],
+    ['nested', 'key1', 'sub2', 'val3']]
+
+    """
+    prefix = listify(prefix) if prefix is not None else []
     keys = sorted(set(list(indict.keys())))
 
     data = []
     subdict = {}
     for key in keys:
-        col = key.split("_", 1)
+        col = key.split(delimiter, 1)
         if len(col) == 1:
             value = indict[col[0]]
             data.append(prefix + [col[0], value])
@@ -131,7 +174,7 @@ def unfold_columns(indict, prefix=None):
             sskeys = list(subdict[skey].keys())
             if len(sskeys) == 1:
                 value = subdict[skey][sskeys[0]]
-                newkey = "_".join([skey] + sskeys)
+                newkey = delimiter.join([skey] + sskeys)
                 data.append(prefix + [newkey, value])
             else:
                 data += unfold_columns(subdict[skey], prefix=prefix + [skey])
