@@ -318,7 +318,7 @@ def compose_view(bg_svgs, fg_svgs, ref=0, out_file="report.svg"):
 
     Parameters
     ----------
-    bg_svgs : list
+    bg_svgs : :obj:`list`
         Full paths to input svgs for background.
     fg_svgs : list
         Full paths to input svgs for foreground.
