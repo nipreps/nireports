@@ -6,14 +6,9 @@ from nipype.utils.filemanip import loadcrash
 
 
 def read_crashfile(path, root=None):
-    errordata = (
-        _read_pkl(path) if path.endswith(".pklz")
-        else _read_txt(path)
-    )
+    errordata = _read_pkl(path) if path.endswith(".pklz") else _read_txt(path)
     if root:
-        errordata["file"] = (
-            f"&lt;workdir&gt;/{Path(errordata['file']).relative_to(root)}"
-        )
+        errordata["file"] = f"&lt;workdir&gt;/{Path(errordata['file']).relative_to(root)}"
     return errordata
 
 

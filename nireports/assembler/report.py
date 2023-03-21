@@ -27,6 +27,7 @@ PLURAL_SUFFIX = defaultdict(str("s").format, [("echo", "es")])
 
 class SubReport:
     """SubReports are sections within a Report."""
+
     __slots__ = ("name", "title", "reportlets", "isnested")
 
     def __init__(self, name, isnested=False, reportlets=None, title=""):
@@ -116,9 +117,7 @@ class Report:
         # Initialize structuring elements
         self.sections = []
 
-        bootstrap_file = Path(
-            config or pkgrf("nireports.assembler", "data/default.yml")
-        )
+        bootstrap_file = Path(config or pkgrf("nireports.assembler", "data/default.yml"))
 
         bootstrap_text = []
         expr = re.compile(r'{(subject_id|run_uuid|out_dir|packagename|reportlets_dir)}')
@@ -187,15 +186,11 @@ class Report:
             # First determine whether we need to split by some ordering
             # (ie. sessions / tasks / runs), which are separated by commas.
             orderings = [s for s in subrep_cfg.get("ordering", "").strip().split(",") if s]
-            entities, list_combos = self._process_orderings(
-                orderings, layout.get(**bids_filters)
-            )
+            entities, list_combos = self._process_orderings(orderings, layout.get(**bids_filters))
 
             if not list_combos:  # E.g. this is an anatomical reportlet
                 reportlets = [
-                    Reportlet(
-                        layout, config=cfg, out_dir=out_dir, bids_filters=bids_filters
-                    )
+                    Reportlet(layout, config=cfg, out_dir=out_dir, bids_filters=bids_filters)
                     for cfg in subrep_cfg["reportlets"]
                 ]
                 list_combos = subrep_cfg.get("nested", False)
@@ -276,8 +271,7 @@ class Report:
         """
         # get a set of all unique entity combinations
         all_value_combos = {
-            tuple(bids_file.get_entities().get(k, None) for k in orderings)
-            for bids_file in hits
+            tuple(bids_file.get_entities().get(k, None) for k in orderings) for bids_file in hits
         }
         # remove the all None member if it exists
         none_member = tuple([None for k in orderings])

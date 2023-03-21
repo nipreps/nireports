@@ -272,17 +272,17 @@ class Reportlet:
             self.name = f"meta-{meta_id}"
             # meta_folded = meta_settings.get("folded", None)
 
-            contents = [
-                METADATA_ACCORDION_BLOCK.format(metadata_id=meta_id)
-            ]
+            contents = [METADATA_ACCORDION_BLOCK.format(metadata_id=meta_id)]
 
             for ii, (group_name, values) in enumerate(metadata.items()):
-                contents.append(METADATA_ACCORDION_ITEM.format(
-                    metadata_id=meta_id,
-                    metadata_index=ii,
-                    metadata_item_key=group_name,
-                    metadata_html=dict2html(values, f"{meta_id}-table-{ii}"),
-                ))
+                contents.append(
+                    METADATA_ACCORDION_ITEM.format(
+                        metadata_id=meta_id,
+                        metadata_index=ii,
+                        metadata_item_key=group_name,
+                        metadata_html=dict2html(values, f"{meta_id}-table-{ii}"),
+                    )
+                )
 
             contents.append("</div>")
             self.components.append(("\n".join(contents), config.get("caption")))
@@ -296,15 +296,16 @@ class Reportlet:
                 error_dir = Path(path)
                 # Read in all crash files
                 errors = [
-                    read_crashfile(str(f), root=layout.root)
-                    for f in error_dir.glob("crash*.*")
+                    read_crashfile(str(f), root=layout.root) for f in error_dir.glob("crash*.*")
                 ]
 
                 if not errors:
-                    self.components.append((
-                        '<p class="alert alert-success" role="alert">No errors to report!</p>',
-                        desc_text,
-                    ))
+                    self.components.append(
+                        (
+                            '<p class="alert alert-success" role="alert">No errors to report!</p>',
+                            desc_text,
+                        )
+                    )
                 else:
                     contents = [
                         '<p class="alert alert-danger" role="alert">'
@@ -312,27 +313,25 @@ class Reportlet:
                         "Error details are attached below.</p>",
                     ]
                     for error in errors:
-                        contents.append(ERROR_TEMPLATE.format(
-                            inputs="\n".join([
-                                f"<li>{err_in[0]}: <code>{err_in[-1]}</code></li>"
-                                for err_in in error.pop("inputs", {})
-                            ]),
-                            **error,
-                        ))
+                        contents.append(
+                            ERROR_TEMPLATE.format(
+                                inputs="\n".join(
+                                    [
+                                        f"<li>{err_in[0]}: <code>{err_in[-1]}</code></li>"
+                                        for err_in in error.pop("inputs", {})
+                                    ]
+                                ),
+                                **error,
+                            )
+                        )
                     self.components.append(("\n".join(contents), desc_text))
             elif custom == "boilerplate":
                 self.name = "boilerplate"
                 logs_path = Path(path)
-                bibfile = config.get(
-                    "bibfile", ["nireports", "data/bibliography.bib"]
-                )
+                bibfile = config.get("bibfile", ["nireports", "data/bibliography.bib"])
 
-                boiler_tabs = [
-                    '<ul class="nav nav-tabs" id="myTab" role="tablist">'
-                ]
-                boiler_body = [
-                    '<div class="tab-content" id="myTabContent">'
-                ]
+                boiler_tabs = ['<ul class="nav nav-tabs" id="myTab" role="tablist">']
+                boiler_body = ['<div class="tab-content" id="myTabContent">']
 
                 boiler_idx = 0
                 for boiler_type in ("html", "md", "tex"):
@@ -388,16 +387,16 @@ class Reportlet:
                     boiler_idx += 1
 
                 if boiler_idx == 0:
-                    self.components.append((
-                        '<p class="alert alert-danger" role="alert">'
-                        'Failed to generate the boilerplate</p>',
-                        desc_text,
-                    ))
+                    self.components.append(
+                        (
+                            '<p class="alert alert-danger" role="alert">'
+                            'Failed to generate the boilerplate</p>',
+                            desc_text,
+                        )
+                    )
                 else:
                     boiler_tabs.append("</ul>")
-                    self.components.append(
-                        ("\n".join(boiler_tabs + boiler_body), desc_text)
-                    )
+                    self.components.append(("\n".join(boiler_tabs + boiler_body), desc_text))
 
     def is_empty(self):
         """Determine whether the reportlet has no components."""
