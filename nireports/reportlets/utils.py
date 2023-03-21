@@ -324,7 +324,7 @@ def compose_view(bg_svgs, fg_svgs, ref=0, out_file="report.svg"):
         Full paths to input svgs for foreground.
     ref : :obj:`int`, optional
         Which panel to use as reference for sizing all panels. Default: 0
-    out_file : str, optional
+    out_file : :obj:`str`, optional
         Full path to the output file. Default: "report.svg".
 
     Returns
