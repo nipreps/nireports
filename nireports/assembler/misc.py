@@ -6,10 +6,47 @@ from bids.utils import listify
 from nipype.utils.filemanip import loadcrash
 
 
-def read_crashfile(path, root=None):
-    errordata = _read_pkl(path) if path.endswith(".pklz") else _read_txt(path)
+def read_crashfile(path, root=None, root_replace="<workdir>"):
+    """
+    Prepare crashfiles for rendering into a report.
+
+    Parameters
+    ----------
+    path : :obj:`str` or :obj:`~pathlib.Path`
+        The path where the crash-file is located.
+    root : :obj:`str` or :obj:`~pathlib.Path`
+        The root folder. If provided, the path will be replaced with ``root_replace``.
+    root_replace : :obj:`str`
+        A replacement for the absolute root path.
+
+    .. testsetup::
+
+       >>> new_path = Path(__file__).resolve().parent
+       >>> test_data_path = new_path / 'data' / 'tests'
+
+    Examples
+    --------
+    >>> info = read_crashfile(test_data_path / 'crashfile.txt')
+    >>> info['node']  # doctest: +ELLIPSIS
+    '...func_preproc_task_machinegame_run_02_wf.carpetplot_wf.conf_plot'
+
+    >>> info['traceback']  # doctest: +ELLIPSIS
+    '...ValueError: zero-size array to reduction operation minimum which has no identity'
+
+    >>> info['file']
+    '...nireports/assembler/data/tests/crashfile.txt'
+
+    >>> read_crashfile(
+    ...     test_data_path / 'crashfile.txt',
+    ...     root=test_data_path,
+    ...     root_replace="<outdir>",
+    ... )['file']
+    '<outdir>/crashfile.txt'
+
+    """
+    errordata = _read_pkl(path) if str(path).endswith(".pklz") else _read_txt(path)
     if root:
-        errordata["file"] = f"&lt;workdir&gt;/{Path(errordata['file']).relative_to(root)}"
+        errordata["file"] = f"{root_replace}/{Path(errordata['file']).relative_to(root)}"
     return errordata
 
 
@@ -27,13 +64,17 @@ def _read_pkl(path):
 
 
 def _read_txt(path):
-    """Read a txt crashfile
+    """
+    Read a text crashfile.
 
+    Examples
+    --------
     >>> new_path = Path(__file__).resolve().parent
     >>> test_data_path = new_path / 'data' / 'tests'
     >>> info = _read_txt(test_data_path / 'crashfile.txt')
     >>> info['node']  # doctest: +ELLIPSIS
     '...func_preproc_task_machinegame_run_02_wf.carpetplot_wf.conf_plot'
+
     >>> info['traceback']  # doctest: +ELLIPSIS
     '...ValueError: zero-size array to reduction operation minimum which has no identity'
 
@@ -73,23 +114,23 @@ def _read_txt(path):
 
 
 def dict2html(indict, table_id):
-    """Converts a dictionary into an HTML table"""
-    columns = sorted(unfold_columns(indict))
-    if not columns:
+    """Convert a dictionary into an HTML table."""
+    rows = sorted(unfold_columns(indict))
+    if not rows:
         return None
 
-    depth = max([len(col) for col in columns])
+    width = max([len(row) for row in rows])
 
     result_str = '<table id="%s" class="table table-sm table-striped">\n' % table_id
     td = "<td{1}>{0}</td>".format
-    for line in columns:
+    for row in rows:
         result_str += "<tr>"
-        ncols = len(line)
-        for i, col in enumerate(line):
+        ncols = len(row)
+        for i, col in enumerate(row):
             colspan = 0
             colstring = ""
-            if (depth - ncols) > 0 and i == ncols - 2:
-                colspan = (depth - ncols) + 1
+            if (width - ncols) > 0 and i == ncols - 2:
+                colspan = (width - ncols) + 1
                 colstring = " colspan=%d" % colspan
             result_str += td(col, colstring)
         result_str += "</tr>\n"
@@ -99,7 +140,7 @@ def dict2html(indict, table_id):
 
 def unfold_columns(indict, prefix=None, delimiter="_"):
     """
-    Convert an input dict with flattened keys to an array of columns.
+    Convert an input dict with flattened keys to an list of rows expanding columns.
 
     Parameters
     ----------
@@ -122,6 +163,7 @@ def unfold_columns(indict, prefix=None, delimiter="_"):
     [['key1', 'val1'], ['nested', 'key1', 'nested value'], ['nested', 'key2', 'another value']]
 
     If nested keys do not share prefixes, they should not be unfolded.
+
     >>> unfold_columns({
     ...     "key1": "val1",
     ...     "key1_split": "nonnested value",
@@ -130,6 +172,7 @@ def unfold_columns(indict, prefix=None, delimiter="_"):
     [['key1', 'val1'], ['key1_split', 'nonnested value'], ['key2_singleton', 'another value']]
 
     Nested/non-nested keys can be combined (see the behavior for key1):
+
     >>> unfold_columns({
     ...     "key1": "val1",
     ...     "key1_split1": "nested value",

@@ -117,23 +117,23 @@ class Reportlet:
 
     .. testsetup::
 
-    >>> from pkg_resources import resource_filename as pkgrf
-    >>> from shutil import copytree
-    >>> from bids.layout import BIDSLayout, add_config_paths
-    >>> test_data_path = pkgrf('nireports', 'assembler/data/tests/work')
-    >>> testdir = Path(tmpdir)
-    >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
-    >>> out_figs = testdir / 'out' / 'fmriprep'
-    >>> try:
-    ...     add_config_paths(figures=pkgrf("nireports.assembler", "data/nipreps.json"))
-    ... except ValueError as e:
-    ...     if "Configuration 'figures' already exists" != str(e):
-    ...         raise
-    >>> bl = BIDSLayout(str(testdir / 'work' / 'reportlets'),
-    ...                 config='figures', validate=False)
+       >>> from pkg_resources import resource_filename as pkgrf
+       >>> from shutil import copytree
+       >>> from bids.layout import BIDSLayout, add_config_paths
+       >>> test_data_path = pkgrf('nireports', 'assembler/data/tests/work')
+       >>> testdir = Path(tmpdir)
+       >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
+       >>> out_figs = testdir / 'out' / 'fmriprep'
+       >>> try:
+       ...     add_config_paths(figures=pkgrf("nireports.assembler", "data/nipreps.json"))
+       ... except ValueError as e:
+       ...     if "Configuration 'figures' already exists" != str(e):
+       ...         raise
+       >>> bl = BIDSLayout(str(testdir / 'work' / 'reportlets'),
+       ...                 config='figures', validate=False)
 
-    .. doctest::
-
+    Examples
+    --------
     >>> bl.get(subject='01', desc='reconall')[0]._path.as_posix() # doctest: +ELLIPSIS
     '.../nireports/sub-01/figures/sub-01_desc-reconall_T1w.svg'
 
@@ -177,7 +177,6 @@ class Reportlet:
 
     >>> sorted(r.components)[1][1]
     'Some description MNI152NLin6Asym'
-
 
     >>> r = Reportlet(bl, out_dir=out_figs, config={
     ...     'title': 'Some Title',
@@ -296,7 +295,8 @@ class Reportlet:
                 error_dir = Path(path)
                 # Read in all crash files
                 errors = [
-                    read_crashfile(str(f), root=layout.root) for f in error_dir.glob("crash*.*")
+                    read_crashfile(str(f), root=layout.root, root_replace="&lt;workdir&gt;")
+                    for f in error_dir.glob("crash*.*")
                 ]
 
                 if not errors:
