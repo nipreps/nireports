@@ -314,7 +314,8 @@ def _3d_in_file(in_file):
 
 
 def compose_view(bg_svgs, fg_svgs, ref=0, out_file="report.svg"):
-    """Compose svgs into one standalone svg with CSS flickering animation.
+    """
+    Compose svgs into one standalone svg with CSS flickering animation.
 
     Parameters
     ----------
