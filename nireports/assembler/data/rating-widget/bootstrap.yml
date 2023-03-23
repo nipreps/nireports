@@ -1,0 +1,77 @@
+type: rating-widget
+id: qcrating
+defaults:
+  md5sum: unspecified
+  dataset: unknown
+  filename: unspecified
+  endpoint: "https://localhost:8000/rating"
+settings:
+  style: 'width: 30%; top: 100px; left: 65%;'
+  navbar_label: Rating widget
+  mintime: 10
+components:
+  slider:
+    id: qcslider
+    title: Overall Quality Rating
+    collapse: false
+    settings:
+      step: '0.05'
+      value: '2.5'
+      min: '1.0'
+      max: '4.0'
+    options:
+      - ['Exclude', 'danger']
+      - ['Poor', 'warning']
+      - ['Acceptable', 'primary']
+      - ['Excellent', 'success']
+  artifacts:
+    id: qcartifacts
+    title: Record specific artifacts
+    collapse: true
+    settings:
+      type: checkbox
+    options:
+      head-motion: Head motion artifacts
+      eye-spillover: Eye spillover through <abbr title="phase-encoding">PE</abbr> axis
+      noneye-spillover: Non-eye spillover through <abbr title="phase-encoding">PE</abbr> axis
+      coil-failure: Coil failure
+      noise-global: Global noise
+      noise-local: Local noise
+      em-perturbation: <abbr title="electromagnetic">EM</abbr> interference/perturbation
+      wrap-around: Problematic <abbr title="field-of-view">FoV</abbr> prescription / wrap-around
+      ghost-aliasing: Aliasing ghosts
+      ghost-other: Other ghosts (for example, <abbr title="radiofrequency">RF</abbr> spoiling)
+      inu: Intensity non-uniformity (B<sub>1</sub> bias)
+      field-variation: Temporal B<sub>1</sub> field non-uniformity variation
+      processing: Processing such as denoising, defacing or resamplings happened
+      uncategorized: Other uncategorized artifact(s)
+  extra:
+    id: qcextra
+    title: Extra details
+    collapse: true
+    components:
+      - settings:
+          type: textarea
+          label: Comments
+      - settings:
+          label: Rater confidence
+          class: slider
+          type: range
+          step: '0.05'
+          value: '3.5'
+          min: '0.0'
+          max: '4.0'
+        options:
+          - ['Doubtful', 'warning']
+          - ['Confident', 'success bg-success text-white']
+  actions:
+    - id: btn-download
+      href: ""
+      text: Download
+      type: anchor
+      disabled: true
+    - id: btn-post
+      disabled: true
+      type: button
+      value: <secret_token>
+      text: Share publicly

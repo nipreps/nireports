@@ -31,7 +31,7 @@ from yaml import safe_load as load
 
 import jinja2
 from bids.layout import BIDSLayout, BIDSLayoutIndexer, add_config_paths
-from bids.utils import listify
+from bids.layout.writing import build_path
 from pkg_resources import resource_filename as pkgrf
 
 from nireports.assembler.reportlet import Reportlet
@@ -45,6 +45,20 @@ except ValueError as e:
         raise
 
 PLURAL_SUFFIX = defaultdict(str("s").format, [("echo", "es")])
+
+OUTPUT_NAME_PATTERN = [
+    "sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}]"
+    "[_rec-{reconstruction}][_dir-{direction}][_run-{run}][_echo-{echo}][_part-{part}]"
+    "[_space-{space}][_cohort-{cohort}][_desc-{desc}][_{suffix<bold|sbref>}]"
+    "{extension<.html|.svg>|.html}",
+    "sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]"
+    "[_run-{run}][_space-{space}][_cohort-{cohort}][_desc-{desc}]"
+    "[_{suffix<T1w|T2w|T1rho|T1map|T2map|T2star|FLAIR|FLASH|PDmap|PD|PDT2|inplaneT[12]|"
+    "angio|dseg|mask|dwi|epiref|T2starw|MTw|TSE>}]{extension<.html|.svg>|.html}",
+    # "sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]"
+    # "[_run-{run}][_space-{space}][_cohort-{cohort}][_fmapid-{fmapid}][_desc-{desc}]_"
+    # "{suffix<fieldmap>}{extension<.html|.svg>|.html}",
+]
 
 
 class SubReport:
@@ -81,80 +95,174 @@ class Report:
        ...     str(testdir / 'work'),
        ...     dirs_exist_ok=True,
        ... )
+       >>> REPORT_BASELINE_LENGTH = 40478
+       >>> RATING_WIDGET_LENGTH = 81508
+
 
     Examples
     --------
+    Output naming can be automated or customized:
+
+    >>> robj = Report(
+    ...     output_dir,
+    ...     'madeoutuuid',
+    ...     bootstrap_file=test_data_path / "tests" / "minimal.yml",
+    ... )
+    >>> str(robj.out_filename)  # doctest: +ELLIPSIS
+    '.../report.html'
+
+    >>> robj = Report(
+    ...     output_dir,
+    ...     'madeoutuuid',
+    ...     bootstrap_file=test_data_path / "tests" / "minimal.yml",
+    ...     out_filename="override.html"
+    ... )
+    >>> str(robj.out_filename) == str(output_dir / "override.html")
+    True
+
+    When ``bids_filters`` are available, the report will take up all the
+    entities for naming.
+    Therefore, the user must be careful to only include the necessary
+    entities:
+
+    >>> robj = Report(
+    ...     output_dir,
+    ...     'madeoutuuid',
+    ...     bootstrap_file=test_data_path / "tests" / "minimal.yml",
+    ...     subject="17",
+    ...     acquisition="mprage",
+    ...     suffix="T1w",
+    ... )
+    >>> str(robj.out_filename)
+    '.../sub-17_acq-mprage_T1w.html'
+
+    Report generation, first with a bootstrap file that contains special
+    reportlets (namely, "errors" and "boilerplate").
+    The first generated test does not have errors, and the CITATION files
+    are missing (failing the boilerplate generation):
+
     >>> robj = Report(
     ...     output_dir / 'nireports',
     ...     'madeoutuuid',
-    ...     subject_id='01',
     ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ...     plugins=[],
+    ...     subject='01',
     ... )
     >>> robj.generate_report()
     0
-    >>> len((output_dir / 'nireports' / 'sub-01.html').read_text())
-    40464
 
-    Test including a crashfile
+    Test including a crashfile, but no CITATION files (therefore, failing
+    boilerplate generation):
 
     >>> robj = Report(
     ...     output_dir / 'nireports',
     ...     'madeoutuuid02',
-    ...     subject_id='02',
     ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ...     plugins=[],
+    ...     subject='02',
     ... )
     >>> robj.generate_report()
     0
-    >>> len((output_dir / 'nireports' / 'sub-02.html').read_text())
-    43704
 
-    Test including a boilerplate
+    Test including CITATION files (i.e., boilerplate generation is successful)
+    and no crashfiles (no errors reported):
 
     >>> robj = Report(
     ...     output_dir / 'nireports',
     ...     'madeoutuuid03',
-    ...     subject_id='03',
     ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ...     plugins=[],
+    ...     subject='03',
     ... )
     >>> robj.generate_report()
     0
-    >>> len((output_dir / 'nireports' / 'sub-03.html').read_text())
-    92639
+
+    >>> robj = Report(
+    ...     output_dir / 'nireports',
+    ...     'madeoutuuid03',
+    ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ...     plugins=[{
+    ...         "module": "nireports.assembler",
+    ...         "path": "data/rating-widget/bootstrap.yml",
+    ...     }],
+    ...     subject='03',
+    ...     task="faketaskwithruns",
+    ...     suffix="bold",
+    ... )
+    >>> robj.generate_report()
+    0
+
+    Check contents (roughly, by length of the generated HTML file):
+
+    >>> len((
+    ...     output_dir / 'nireports' / 'sub-01.html'
+    ... ).read_text()) - REPORT_BASELINE_LENGTH
+    0
+    >>> len((
+    ...     output_dir / 'nireports' / 'sub-02.html'
+    ... ).read_text()) - (REPORT_BASELINE_LENGTH + 3254)
+    0
+    >>> len((
+    ...     output_dir / 'nireports' / 'sub-03.html'
+    ... ).read_text()) - (REPORT_BASELINE_LENGTH + 51892)
+    0
+
+    >>> len((
+    ...     output_dir / 'nireports' / 'sub-03_task-faketaskwithruns_bold.html'
+    ... ).read_text()) - RATING_WIDGET_LENGTH
+    0
 
     """
+
+    __slots__ = {
+        "title": "the title that will be shown in the browser",
+        "sections": "a header for the content included in the subreport",
+        "out_filename": "output path where report will be stored",
+        "template_path": "location of a JINJA2 template for the output HTML",
+        "header": "plugins can modify the default HTML elements of the report",
+        "navbar": "plugins can modify the default HTML elements of the report",
+        "footer": "plugins can modify the default HTML elements of the report",
+    }
 
     def __init__(
         self,
         out_dir,
         run_uuid,
-        config=None,
+        bootstrap_file=None,
         out_filename="report.html",
         reportlets_dir=None,
-        subject_id=None,
+        plugins=None,
+        plugin_meta=None,
+        **bids_filters,
     ):
         out_dir = Path(out_dir)
         root = Path(reportlets_dir or out_dir)
 
-        if subject_id is not None:
-            subject_id = subject_id[4:] if subject_id.startswith("sub-") else subject_id
+        if "subject" in bids_filters:
+            subject_id = bids_filters["subject"]
+            bids_filters["subject"] = (
+                subject_id[4:] if subject_id.startswith("sub-") else subject_id
+            )
 
-        if subject_id is not None and out_filename == "report.html":
-            out_filename = f"sub-{subject_id}.html"
+        if bids_filters and out_filename == "report.html":
+            out_filename = build_path(bids_filters, OUTPUT_NAME_PATTERN)
 
         # Initialize structuring elements
         self.sections = []
 
-        bootstrap_file = Path(config or pkgrf("nireports.assembler", "data/default.yml"))
+        bootstrap_file = Path(bootstrap_file or pkgrf("nireports.assembler", "data/default.yml"))
 
         bootstrap_text = []
-        expr = re.compile(r'{(subject_id|run_uuid|out_dir|packagename|reportlets_dir)}')
+        expr = re.compile(
+            f'{{({"|".join(bids_filters.keys())}|run_uuid|out_dir|packagename|reportlets_dir)}}'
+        )
         for line in bootstrap_file.read_text().splitlines(keepends=False):
             if expr.search(line):
                 line = line.format(
-                    subject_id=subject_id if subject_id is not None else "null",
                     run_uuid=run_uuid if run_uuid is not None else "null",
                     out_dir=str(out_dir),
                     reportlets_dir=str(root),
+                    **bids_filters,
                 )
             bootstrap_text.append(line)
 
@@ -168,8 +276,7 @@ class Report:
 
         # Path to the Jinja2 template
         self.template_path = (
-            Path(settings["template_path"])
-            if "template_path" in settings
+            Path(settings["template_path"]) if "template_path" in settings
             else Path(pkgrf("nireports.assembler", "data/report.tpl")).absolute()
         )
 
@@ -181,12 +288,19 @@ class Report:
         settings["root"] = root
         settings["out_dir"] = out_dir
         settings["run_uuid"] = run_uuid
+        self.title = settings.get("title", "Visual report generated by NiReports")
 
-        if subject_id is not None:
-            settings["bids_filters"] = {
-                "subject": listify(subject_id),
-            }
+        settings["bids_filters"] = bids_filters or {}
         self.index(settings)
+
+        # Override plugins specified in the bootstrap with arg
+        if plugins is not None:
+            settings["plugins"] = [
+                load(Path(pkgrf(plugin["module"], plugin["path"])).read_text())
+                for plugin in plugins
+            ]
+
+        self.process_plugins(settings, plugin_meta)
 
     def index(self, config):
         """
@@ -260,6 +374,34 @@ class Report:
                 )
                 self.sections.append(sub_report)
 
+    def process_plugins(self, config, metadata=None):
+        """Add components to header/navbar/footer to extend the default report."""
+        self.header = []
+        self.navbar = []
+        self.footer = []
+
+        plugins = config.get("plugins", None)
+        for plugin in (plugins or []):
+            env = jinja2.Environment(
+                loader=jinja2.FileSystemLoader(searchpath=str(
+                    Path(__file__).parent / "data" / f"{plugin['type']}"
+                )),
+                trim_blocks=True,
+                lstrip_blocks=True,
+                autoescape=False,
+            )
+
+            plugin_meta = plugin.get("defaults", {})
+            plugin_meta.update((metadata or {}).get(plugin["type"], {}))
+            for member in ("header", "navbar", "footer"):
+                old_value = getattr(self, member)
+                setattr(self, member, old_value + [
+                    env.get_template(f"{member}.tpl").render(
+                        config=plugin,
+                        metadata=plugin_meta,
+                    )
+                ])
+
     def generate_report(self):
         """Once the Report has been indexed, the final HTML can be generated"""
         env = jinja2.Environment(
@@ -269,7 +411,13 @@ class Report:
             autoescape=False,
         )
         report_tpl = env.get_template(self.template_path.name)
-        report_render = report_tpl.render(sections=self.sections)
+        report_render = report_tpl.render(
+            title=self.title,
+            sections=self.sections,
+            header=self.header,
+            navbar=self.navbar,
+            footer=self.footer,
+        )
 
         # Write out report
         self.out_filename.parent.mkdir(parents=True, exist_ok=True)

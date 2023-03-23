@@ -118,7 +118,7 @@ def test_report1():
         Path(out_dir) / "nireports",
         "fakeuuid",
         reportlets_dir=Path(test_data_path) / "nireports",
-        subject_id="01",
+        subject="01",
     )
 
 
@@ -129,7 +129,7 @@ def test_report2(bids_sessions):
         Path(out_dir) / "nireports",
         "fakeuuid",
         reportlets_dir=Path(bids_sessions) / "nireports",
-        subject_id="01",
+        subject="01",
     )
 
 
@@ -247,7 +247,7 @@ def test_generated_reportlets(bids_sessions, ordering):
         out_dir / "nireports",
         "fakeuuid",
         reportlets_dir=Path(bids_sessions) / "nireports",
-        subject_id="01",
+        subject="01",
     )
     config = Path(pkgrf("nireports.assembler", "data/default.yml"))
     settings = load(config.read_text())
@@ -278,7 +278,7 @@ def test_generated_reportlets(bids_sessions, ordering):
 
 
 @pytest.mark.parametrize(
-    "subject_id,out_html",
+    "subject,out_html",
     [
         ("sub-01", "sub-01.html"),
         ("sub-sub1", "sub-sub1.html"),
@@ -286,18 +286,18 @@ def test_generated_reportlets(bids_sessions, ordering):
         ("sub1", "sub-sub1.html"),
     ],
 )
-def test_subject_id(tmp_path, subject_id, out_html):
+def test_subject(tmp_path, subject, out_html):
     reports = tmp_path / "reports"
     Path(
         reports
         / "nireports"
-        / (subject_id if subject_id.startswith("sub-") else f"sub-{subject_id}")
+        / (subject if subject.startswith("sub-") else f"sub-{subject}")
     ).mkdir(parents=True)
 
     report = Report(
         f"{tmp_path}/nireports",
         "myuniqueid",
         reportlets_dir=reports / "nireports",
-        subject_id=subject_id,
+        subject=subject,
     )
     assert report.out_filename.name == out_html
