@@ -33,7 +33,7 @@
         <fieldset id="{{ config.components.artifacts.id }}-group" class="form-group">
             {% for name, label in config.components.artifacts.options.items() %}
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" name="{{ name }}" id="{{ config.components.artifacts.id }}-item-{{ loop.index0 }}">
+                <input class="form-check-input" type="checkbox" name="{{ name }}" id="{{ config.components.artifacts.id }}-item-{{ loop.index0 }}" />
                 <label class="form-check-label" for="{{ config.components.artifacts.id }}-item-{{ loop.index0 }}">{{ label }}</label>
             </div>
             {% endfor %}
@@ -73,9 +73,10 @@
 <button class="btn btn-primary" id="{{ config.components.actions[1].id }}" value="<secret_token>" disabled>{{ config.components.actions[1].text }}</button>
 </div>
 <script type="text/javascript">
+var MINIMUM_RATING_TIME = {{ config.settings.mintime }}
 $('#{{ config.components.slider.id }}').on('input', function() {
 
-    if ( (Date.now() - timestamp) / 1000 > 10) {
+    if ( (Date.now() - timestamp) / 1000 > MINIMUM_RATING_TIME) {
         $('#{{ config.components.actions[0].id }}').removeClass('disabled');
         $('#{{ config.components.actions[0].id }}').removeAttr('aria-disabled');
         $('#{{ config.components.actions[1].id }}').removeAttr('disabled');
@@ -102,7 +103,7 @@ $('#{{ config.components.slider.id }}').on('input', function() {
 });
 
 $('#{{ config.components.extra.id }}-confidence').on('input', function() {
-    if ( (Date.now() - timestamp) / 1000 > 10) {
+    if ( (Date.now() - timestamp) / 1000 > MINIMUM_RATING_TIME) {
         $('#{{ config.components.actions[0].id }}').removeClass('disabled');
         $('#{{ config.components.actions[0].id }}').removeAttr('aria-disabled');
         $('#{{ config.components.actions[1].id }}').removeAttr('disabled');
@@ -126,7 +127,7 @@ $('#{{ config.components.extra.id }}-confidence').on('input', function() {
 
 
 $('#{{ config.components.extra.id }}-comments').bind('input propertychange', function() {
-    if ( (Date.now() - timestamp) / 1000 > 10) {
+    if ( (Date.now() - timestamp) / 1000 > MINIMUM_RATING_TIME) {
         $('#{{ config.components.actions[0].id }}').removeClass('disabled');
         $('#{{ config.components.actions[0].id }}').removeAttr('aria-disabled');
         $('#{{ config.components.actions[1].id }}').removeAttr('disabled');
@@ -135,7 +136,7 @@ $('#{{ config.components.extra.id }}-comments').bind('input propertychange', fun
 
 $( '#{{ config.components.actions[1].id }}' ).click( function() {
     var payload = read_form();
-    var md5sum = "{{ md5sum }}";
+    var md5sum = "{{ metadata.md5sum }}";
     var params = {
         'rating': payload['rating'],
         'md5sum': md5sum,
@@ -146,7 +147,7 @@ $( '#{{ config.components.actions[1].id }}' ).click( function() {
     // disable development releases
     var authorization = $(this).val();
     var ratingReq = new XMLHttpRequest();
-    ratingReq.open("POST", "{{ endpoint }}");
+    ratingReq.open("POST", "{{ metadata.endpoint }}");
     ratingReq.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     ratingReq.setRequestHeader("Authorization", authorization);
     ratingReq.onload = function () {
@@ -169,7 +170,7 @@ $( '#{{ config.components.actions[1].id }}' ).click( function() {
 });
 
 $( 'body' ).on( 'click', '#{{ config.components.artifacts.id }}-group input', function(e) {
-    if ( (Date.now() - timestamp) / 1000 > 10) {
+    if ( (Date.now() - timestamp) / 1000 > MINIMUM_RATING_TIME) {
         $('#{{ config.components.actions[0].id }}').removeClass('disabled');
         $('#{{ config.components.actions[0].id }}').removeAttr('aria-disabled');
         $('#{{ config.components.actions[1].id }}').removeAttr('disabled');

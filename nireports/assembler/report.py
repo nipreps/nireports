@@ -47,16 +47,17 @@ except ValueError as e:
 PLURAL_SUFFIX = defaultdict(str("s").format, [("echo", "es")])
 
 OUTPUT_NAME_PATTERN = [
+    "sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}]"
+    "[_rec-{reconstruction}][_dir-{direction}][_run-{run}][_echo-{echo}][_part-{part}]"
+    "[_space-{space}][_cohort-{cohort}][_desc-{desc}][_{suffix<bold|sbref>}]"
+    "{extension<.html|.svg>|.html}",
     "sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]"
     "[_run-{run}][_space-{space}][_cohort-{cohort}][_desc-{desc}]"
     "[_{suffix<T1w|T2w|T1rho|T1map|T2map|T2star|FLAIR|FLASH|PDmap|PD|PDT2|inplaneT[12]|"
     "angio|dseg|mask|dwi|epiref|T2starw|MTw|TSE>}]{extension<.html|.svg>|.html}",
-    "sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]"
-    "[_run-{run}][_space-{space}][_cohort-{cohort}][_fmapid-{fmapid}][_desc-{desc}]_"
-    "{suffix<fieldmap>}{extension<.html|.svg>|.html}",
-    "sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}]"
-    "[_rec-{reconstruction}][_dir-{direction}][_run-{run}][_echo-{echo}][_part-{part}]"
-    "[_space-{space}][_cohort-{cohort}][_desc-{desc}]_{suffix<bold>}{extension<.html|.svg>|.html}",
+    # "sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]"
+    # "[_run-{run}][_space-{space}][_cohort-{cohort}][_fmapid-{fmapid}][_desc-{desc}]_"
+    # "{suffix<fieldmap>}{extension<.html|.svg>|.html}",
 ]
 
 
@@ -94,8 +95,8 @@ class Report:
        ...     str(testdir / 'work'),
        ...     dirs_exist_ok=True,
        ... )
-       >>> REPORT_BASELINE_LENGTH = 40619
-       >>> RATING_WIDGET_LENGTH = 14934
+       >>> REPORT_BASELINE_LENGTH = 40478
+       >>> RATING_WIDGET_LENGTH = 81508
 
 
     Examples
@@ -176,6 +177,21 @@ class Report:
     >>> robj.generate_report()
     0
 
+    >>> robj = Report(
+    ...     output_dir / 'nireports',
+    ...     'madeoutuuid03',
+    ...     reportlets_dir=testdir / 'work' / 'reportlets' / 'nireports',
+    ...     plugins=[{
+    ...         "module": "nireports.assembler",
+    ...         "path": "data/rating-widget/bootstrap.yml",
+    ...     }],
+    ...     subject='03',
+    ...     task="faketaskwithruns",
+    ...     suffix="bold",
+    ... )
+    >>> robj.generate_report()
+    0
+
     Check contents (roughly, by length of the generated HTML file):
 
     >>> len((
@@ -189,6 +205,11 @@ class Report:
     >>> len((
     ...     output_dir / 'nireports' / 'sub-03.html'
     ... ).read_text()) - (REPORT_BASELINE_LENGTH + 51892)
+    0
+
+    >>> len((
+    ...     output_dir / 'nireports' / 'sub-03_task-faketaskwithruns_bold.html'
+    ... ).read_text()) - RATING_WIDGET_LENGTH
     0
 
     """
@@ -211,6 +232,7 @@ class Report:
         out_filename="report.html",
         reportlets_dir=None,
         plugins=None,
+        plugin_meta=None,
         **bids_filters,
     ):
         out_dir = Path(out_dir)
@@ -273,9 +295,12 @@ class Report:
 
         # Override plugins specified in the bootstrap with arg
         if plugins is not None:
-            settings["plugins"] = plugins
+            settings["plugins"] = [
+                load(Path(pkgrf(plugin["module"], plugin["path"])).read_text())
+                for plugin in plugins
+            ]
 
-        self.process_plugins(settings)
+        self.process_plugins(settings, plugin_meta)
 
     def index(self, config):
         """
@@ -349,7 +374,7 @@ class Report:
                 )
                 self.sections.append(sub_report)
 
-    def process_plugins(self, config):
+    def process_plugins(self, config, metadata=None):
         """Add components to header/navbar/footer to extend the default report."""
         self.header = []
         self.navbar = []
@@ -366,11 +391,14 @@ class Report:
                 autoescape=False,
             )
 
+            plugin_meta = plugin.get("defaults", {})
+            plugin_meta.update((metadata or {}).get(plugin["type"], {}))
             for member in ("header", "navbar", "footer"):
                 old_value = getattr(self, member)
                 setattr(self, member, old_value + [
                     env.get_template(f"{member}.tpl").render(
                         config=plugin,
+                        metadata=plugin_meta,
                     )
                 ])
 

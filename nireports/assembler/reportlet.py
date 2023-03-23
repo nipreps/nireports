@@ -211,7 +211,9 @@ class Reportlet:
 
         # Determine whether this is a "BIDS-type" reportlet (typically, an SVG file)
         if bidsquery := config.get("bids", {}):
-            bidsquery.update(bids_filters or {})
+            _bidsquery = (bids_filters or {}).copy()
+            _bidsquery.update(bidsquery)
+            bidsquery = _bidsquery
             self.name = config.get(
                 "name",
                 "_".join("%s-%s" % i for i in sorted(bidsquery.items())),

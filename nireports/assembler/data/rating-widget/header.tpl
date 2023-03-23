@@ -2,13 +2,13 @@
 var timestamp = Date.now()
 
 function read_form() {
-    var ds = "{{ dataset or 'unknown' }}";
-    var sub = "{{ bids_name }}";
+    var ds = "{{ metadata.dataset }}";
+    var sub = "{{ metadata.filename }}";
 
     var artifacts = [];
     {% if config.components.artifacts %}
     $('#{{ config.components.artifacts.id }}-group input:checked').each(function() {
-        config.components.artifacts.push($(this).attr('name'));
+        artifacts.push($(this).attr('name'));
     });
     {% endif %}
 
@@ -17,10 +17,12 @@ function read_form() {
         'dataset': ds,
         'subject': sub,
         'rating': rating,
-        {% if config.components.artifacts %}'artifacts': artifacts,{% endif %}
+        {% if config.components.artifacts %}
+        'artifacts': artifacts,
+        {% endif %}
         'time_sec': (Date.now() - timestamp) / 1000,
-        'confidence': $('#confidence').val(),
-        'comments': $('#widget-comments').val()
+        'confidence': $('#{{ config.components.extra.id }}-confidence').val(),
+        'comments': $('#{{ config.components.extra.id }}-comments').val()
     };
 
     var file = new Blob([JSON.stringify(payload)], {type: 'text/json'});

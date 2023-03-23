@@ -1,0 +1,6 @@
+packagename: nireports
+title: Minimal visual report specification
+sections:
+- name: Summary
+  reportlets:
+  - bids: {datatype: figures, desc: summary, suffix: T1w}
