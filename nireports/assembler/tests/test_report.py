@@ -38,6 +38,16 @@ from yaml import safe_load as load
 from nireports.assembler.report import Report
 
 
+summary_meta = {
+    "Summary": {
+        "Structural images": 1,
+        "FreeSurfer reconstruction": "Pre-existing directory",
+        "Output spaces":
+            "<code>MNI152NLin2009cAsym</code>, <code>fsaverage5</code>",
+    }
+}
+
+
 @pytest.fixture()
 def bids_sessions(tmpdir_factory):
     f, _ = plt.subplots()
@@ -118,6 +128,7 @@ def test_report1():
         Path(out_dir) / "nireports",
         "fakeuuid",
         reportlets_dir=Path(test_data_path) / "nireports",
+        metadata={"summary-meta": summary_meta},
         subject="01",
     )
 

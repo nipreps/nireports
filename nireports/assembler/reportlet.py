@@ -196,7 +196,7 @@ class Reportlet:
         "title": "This reportlet's title.",
     }
 
-    def __init__(self, layout, config=None, out_dir=None, bids_filters=None):
+    def __init__(self, layout, config=None, out_dir=None, bids_filters=None, metadata=None):
         if not config:
             raise RuntimeError("Reportlet must have a config object")
 
@@ -265,15 +265,27 @@ class Reportlet:
 
                 if contents:
                     self.components.append((contents, desc_text))
-        elif metadata := config.get("metadata", False):
+        elif meta_reportlet := config.get("metadata", False):
             meta_settings = config.get("settings", {})
             meta_id = meta_settings.get("id", f"meta-{uuid4()}")
             self.name = f"meta-{meta_id}"
+
+            if metadata is not None and not isinstance(meta_reportlet, dict):
+                meta_reportlet = metadata.get(meta_id)
+
+                if not meta_reportlet:
+                    self.components.append((
+                        '<p class="alert alert-success" role="alert">'
+                        f'Could not find metadata for reportlet "{meta_id}"'
+                        '</p>',
+                        ""
+                    ))
+                    return
             # meta_folded = meta_settings.get("folded", None)
 
             contents = [METADATA_ACCORDION_BLOCK.format(metadata_id=meta_id)]
 
-            for ii, (group_name, values) in enumerate(metadata.items()):
+            for ii, (group_name, values) in enumerate(meta_reportlet.items()):
                 contents.append(
                     METADATA_ACCORDION_ITEM.format(
                         metadata_id=meta_id,
