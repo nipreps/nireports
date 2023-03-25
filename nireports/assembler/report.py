@@ -294,7 +294,7 @@ class Report:
         self.index(settings)
 
         # Override plugins specified in the bootstrap with arg
-        if plugins is not None:
+        if plugins is not None or (plugins := settings.get("plugins", [])):
             settings["plugins"] = [
                 load(Path(pkgrf(plugin["module"], plugin["path"])).read_text())
                 for plugin in plugins

@@ -253,6 +253,5 @@ sections:
 
 # Example pluging specification in bootstrap file:
 # plugins:
-# - rating-widget:
-#     module: nireports.assembler
-#     path: data/rating-widget/bootstrap.yml
+# - module: nireports.assembler
+#   path: data/rating-widget/bootstrap.yml
