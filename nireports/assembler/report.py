@@ -96,7 +96,7 @@ class Report:
        ...     dirs_exist_ok=True,
        ... )
        >>> REPORT_BASELINE_LENGTH = 41648
-       >>> RATING_WIDGET_LENGTH = 83134
+       >>> RATING_WIDGET_LENGTH = 83290
 
 
     Examples

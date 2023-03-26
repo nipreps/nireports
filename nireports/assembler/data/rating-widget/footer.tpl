@@ -14,7 +14,7 @@
         <input type="range" min="{{ config.components.slider.settings.min }}" max="{{ config.components.slider.settings.max }}" step="{{ config.components.slider.settings.step }}" value="{{ config.components.slider.settings.value }}" id="{{ config.components.slider.id }}" class="slider">
         <ul class="list-group list-group-horizontal slider-labels" style="width: 100%">
             {% for opt in config.components.slider.options %}
-            <li class="list-group-item list-group-item-{{ opt[1] }} small" style="width: 25%; text-align:center">{{ opt[0] }}</li>
+            <li class="list-group-item list-group-item-{{ opt[1] }} small" style="font-size: 0.7em; width: 25%; text-align:center">{{ opt[0] }}</li>
             {% endfor %}
         </ul>
       </div>
@@ -32,7 +32,7 @@
       <div class="accordion-body">
         <fieldset id="{{ config.components.artifacts.id }}-group" class="form-group">
             {% for name, label in config.components.artifacts.options.items() %}
-            <div class="form-check form-switch">
+            <div class="form-check form-switch small">
                 <input class="form-check-input" type="checkbox" name="{{ name }}" id="{{ config.components.artifacts.id }}-item-{{ loop.index0 }}" />
                 <label class="form-check-label" for="{{ config.components.artifacts.id }}-item-{{ loop.index0 }}">{{ label }}</label>
             </div>
