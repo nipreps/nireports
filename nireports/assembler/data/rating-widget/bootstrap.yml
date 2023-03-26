@@ -4,7 +4,8 @@ defaults:
   md5sum: unspecified
   dataset: unknown
   filename: unspecified
-  endpoint: "https://localhost:8000/rating"
+  endpoint: "https://localhost:8000/"
+  access_token: <secret_token>
 settings:
   style: 'width: 30%; top: 100px; left: 65%;'
   navbar_label: Rating widget
@@ -73,5 +74,4 @@ components:
     - id: btn-post
       disabled: true
       type: button
-      value: <secret_token>
       text: Share publicly
