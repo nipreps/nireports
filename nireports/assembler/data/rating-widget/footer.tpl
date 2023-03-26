@@ -70,7 +70,9 @@
 </div>
 <div style="margin-top: 10px">
 <a class="btn btn-primary disabled" id="{{ config.components.actions[0].id }}" href="{{ config.components.actions[0].href }}">{{ config.components.actions[0].text }}</a>
-<button class="btn btn-primary" id="{{ config.components.actions[1].id }}" value="<secret_token>" disabled>{{ config.components.actions[1].text }}</button>
+{% if metadata.access_token != "<secret_token>" %}
+<button class="btn btn-primary" id="{{ config.components.actions[1].id }}" value="{{ metadata.access_token }}" disabled>{{ config.components.actions[1].text }}</button>
+{% endif %}
 </div>
 <script type="text/javascript">
 var MINIMUM_RATING_TIME = {{ config.settings.mintime }}
