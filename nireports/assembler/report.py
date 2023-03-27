@@ -95,8 +95,8 @@ class Report:
        ...     str(testdir / 'work'),
        ...     dirs_exist_ok=True,
        ... )
-       >>> REPORT_BASELINE_LENGTH = 41648
-       >>> RATING_WIDGET_LENGTH = 83290
+       >>> REPORT_BASELINE_LENGTH = 41770
+       >>> RATING_WIDGET_LENGTH = 83308
 
 
     Examples

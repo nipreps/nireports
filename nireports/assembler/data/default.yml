@@ -67,6 +67,10 @@ sections:
     caption: Surfaces (white and pial) reconstructed with FreeSurfer (<code>recon-all</code>)
       overlaid on the participant's T1w template.
     subtitle: Surface reconstruction
+    style:
+      width: 100%
+      max-width: 800px
+      border: 1px solid red
 
 - name: <em>B<sub>0</sub></em> field mapping
   ordering: session,acquisition,reconstruction,direction,run,fmapid

@@ -34,17 +34,17 @@ from nireports.assembler.misc import dict2html, read_crashfile
 SVG_SNIPPET = [
     """\
 <div class="reportlet">
-<object class="svg-reportlet" type="image/svg+xml" data="./{0}">
-Problem loading figure {0}. If the link below works, please try \
+<object class="svg-reportlet" type="image/svg+xml" data="./{name}" style="{style}">
+Problem loading figure {name}. If the link below works, please try \
 reloading the report in your browser.</object>
 </div>
-<small>Get figure file: <a href="./{0}" target="_blank">{0}</a></small>
+<small>Get figure file: <a href="./{name}" target="_blank">{name}</a></small>
 """,
     """\
 <div class="reportlet">
-<img class="svg-reportlet" src="./{0}" style="width: 100%" />
+<img class="svg-reportlet" src="./{name}" style="{style}" />
 </div>
-<small>Get figure file: <a href="./{0}" target="_blank">{0}</a></small>
+<small>Get figure file: <a href="./{name}" target="_blank">{name}</a></small>
 """,
 ]
 
@@ -223,9 +223,14 @@ class Reportlet:
             files = layout.get(**bidsquery)
 
             for bidsfile in files:
-                src = Path(bidsfile.path)
+                src = dst = Path(bidsfile.path)
                 ext = "".join(src.suffixes)
                 desc_text = config.get("caption")
+                is_static = config.get("static", True)
+                style = config.get("style", {})
+
+                if is_static and ("width" not in style and "max-width" not in style):
+                    style["width"] = "100%"
 
                 contents = None
                 if ext == ".html":
@@ -236,8 +241,6 @@ class Reportlet:
                     if desc_text:
                         desc_text = desc_text.format(**entities)
 
-                    # import pdb; pdb.set_trace()
-
                     try:
                         html_anchor = src.relative_to(out_dir)
                     except ValueError:
@@ -246,22 +249,29 @@ class Reportlet:
                         dst.parent.mkdir(parents=True, exist_ok=True)
                         copyfile(src, dst, copy=True, use_hardlink=True)
 
-                    contents = SVG_SNIPPET[config.get("static", True)].format(html_anchor)
-
                     # Our current implementations of dynamic reportlets do this themselves,
                     # however I'll leave the code here since this is potentially something we
                     # will want to transfer from every figure generator to this location.
                     # The following code misses setting preserveAspecRatio="xMidYMid meet"
                     # if not is_static:
-                    #     # Remove height and width attributes from initial <svg> tag
-                    #     svglines = out_file.read_text().splitlines()
-                    #     expr = re.compile(r' (height|width)=["\'][0-9]+(\.[0-9]*)?[a-z]*["\']')
-                    #     for l, line in enumerate(svglines[:6]):
-                    #         if line.strip().startswith('<svg'):
-                    #             newline = expr.sub('', line)
-                    #             svglines[l] = newline
-                    #             out_file.write_text('\n'.join(svglines))
-                    #             break
+                    #     # set preserveAspectRatio
+
+                    # Remove height and width attributes from initial <svg> tag
+                    svglines = dst.read_text().splitlines()
+                    expr = re.compile(r' (height|width)=["\'][0-9]+(\.[0-9]*)?[a-z]*["\']')
+                    for ll, line in enumerate(svglines[:6]):
+                        if line.strip().startswith("<svg"):
+                            # It is critical that viewBox is correctly spelled out
+                            fixedline = expr.sub("", line.replace("viewbox", "viewBox"))
+                            dst.write_text("\n".join(
+                                [fixedline] + svglines[ll + 1:]
+                            ))
+                            break
+
+                    contents = SVG_SNIPPET[is_static].format(
+                        name=html_anchor,
+                        style="; ".join(f"{k}: {v}" for k, v in style.items()),
+                    )
 
                 if contents:
                     self.components.append((contents, desc_text))
