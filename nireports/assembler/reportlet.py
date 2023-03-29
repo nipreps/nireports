@@ -227,11 +227,6 @@ class Reportlet:
                 ext = "".join(src.suffixes)
                 desc_text = config.get("caption")
                 is_static = config.get("static", True)
-                style = config.get("style", {})
-
-                if is_static and ("width" not in style and "max-width" not in style):
-                    style["width"] = "100%"
-
                 contents = None
                 if ext == ".html":
                     contents = src.read_text().strip()
@@ -267,6 +262,9 @@ class Reportlet:
                                 [fixedline] + svglines[ll + 1:]
                             ))
                             break
+
+                    style = {"width": "100%"} if is_static else {}
+                    style.update(config.get("style", {}))
 
                     contents = SVG_SNIPPET[is_static].format(
                         name=html_anchor,
