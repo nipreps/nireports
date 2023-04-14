@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
-  docker: circleci/docker@1.6.0
+  docker: circleci/docker@2.2.0
+  codecov: codecov/codecov@3.2.4
 
 jobs:
   test_pytest:
@@ -15,9 +16,6 @@ jobs:
       - TEMPLATEFLOW_HOME: /tmp/templateflow
     steps:
       - checkout
-      - run:
-          name: Get codecov
-          command: python -m pip install codecov
 
       - restore_cache:
           keys:
@@ -56,11 +54,9 @@ jobs:
       - store_test_results:
           path: /tmp/tests/summary/
 
-      - run:
-          name: Submit unit test coverage
-          command: |
-            python -m codecov --file ${TEST_DIR}/coverage/unittests.xml \
-                --flags unittests -e CIRCLE_JOB
+      - codecov/upload:
+          file: /tmp/tests/coverage/unittests.xml
+          flags: unittests
 
 
   build_docs:
