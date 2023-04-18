@@ -38,12 +38,12 @@ def get_tr(img):
     Examples
     --------
     >>> get_tr(nb.load(
-    ...     testdata_path
+    ...     test_data_package
     ...     / 'sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz'
     ... ))
     2.2
     >>> get_tr(nb.load(
-    ...     testdata_path
+    ...     test_data_package
     ...     / 'sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii'
     ... ))
     2.0

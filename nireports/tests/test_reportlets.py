@@ -38,12 +38,11 @@ from nireports.reportlets.mosaic import plot_mosaic
 from nireports.reportlets.nuisance import plot_carpet, plot_raincloud
 from nireports.reportlets.surface import cifti_surfaces_plot
 from nireports.reportlets.xca import compcor_variance_plot, plot_melodic_components
+from nireports.tests.testing import _create_dtseries_cifti
 from nireports.tests.utils import _generate_raincloud_random_data
 from nireports.tools.timeseries import cifti_timeseries as _cifti_timeseries
 from nireports.tools.timeseries import get_tr as _get_tr
 from nireports.tools.timeseries import nifti_timeseries as _nifti_timeseries
-
-from .generate_data import _create_dtseries_cifti
 
 
 @pytest.mark.parametrize("tr", (None, 0.7))
@@ -140,12 +139,14 @@ def test_carpetplot(tr, sorting, outdir):
         ),
     ],
 )
-def test_fmriplot(input_files, testdata_path, outdir):
+def test_fmriplot(input_files, test_data_package, outdir):
     """Exercise the fMRIPlot class."""
     rng = np.random.default_rng(2010)
 
-    in_file = os.path.join(testdata_path, input_files[0])
-    seg_file = os.path.join(testdata_path, input_files[1]) if input_files[1] is not None else None
+    in_file = os.path.join(test_data_package, input_files[0])
+    seg_file = (
+        os.path.join(test_data_package, input_files[1]) if input_files[1] is not None else None
+    )
 
     dtype = "nifti" if input_files[0].endswith("volreg.nii.gz") else "cifti"
     has_seg = "_parc" if seg_file else ""
@@ -255,14 +256,14 @@ def test_plot_melodic_components(tmp_path, outdir):
     )
 
 
-def test_compcor_variance_plot(tmp_path, testdata_path, outdir):
+def test_compcor_variance_plot(tmp_path, test_data_package, outdir):
     """Test plotting CompCor variance"""
 
     if outdir is None:
         outdir = Path(str(tmp_path))
 
     out_file = str(outdir / "variance_plot_short.svg")
-    metadata_file = os.path.join(testdata_path, "confounds_metadata_short_test.tsv")
+    metadata_file = os.path.join(test_data_package, "confounds_metadata_short_test.tsv")
     compcor_variance_plot([metadata_file], output_file=out_file)
 
 
@@ -291,11 +292,11 @@ def test_cifti_surfaces_plot(tmp_path, create_surface_dtseries, outdir):
     cifti_surfaces_plot(create_surface_dtseries, output_file=out_file)
 
 
-def test_cifti_carpetplot(tmp_path, testdata_path, outdir):
+def test_cifti_carpetplot(tmp_path, test_data_package, outdir):
     """Exercise extraction of timeseries from CIFTI2."""
 
     cifti_file = os.path.join(
-        testdata_path,
+        test_data_package,
         "sub-01_task-mixedgamblestask_run-02_space-fsLR_den-91k_bold.dtseries.nii",
     )
     data, segments = _cifti_timeseries(cifti_file)
@@ -309,15 +310,15 @@ def test_cifti_carpetplot(tmp_path, testdata_path, outdir):
     )
 
 
-def test_nifti_carpetplot(tmp_path, testdata_path, outdir):
+def test_nifti_carpetplot(tmp_path, test_data_package, outdir):
     """Exercise extraction of timeseries from CIFTI2."""
 
     nifti_file = os.path.join(
-        testdata_path,
+        test_data_package,
         "sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz",
     )
     seg_file = os.path.join(
-        testdata_path,
+        test_data_package,
         "sub-ds205s03_task-functionallocalizer_run-01_bold_parc.nii.gz",
     )
     data, segments = _nifti_timeseries(nifti_file, seg_file)
@@ -337,7 +338,7 @@ _views = list(permutations(("axial", "sagittal", "coronal", None), 3)) + [
 
 @pytest.mark.parametrize("views", _views)
 @pytest.mark.parametrize("plot_sagittal", (True, False))
-def test_mriqc_plot_mosaic(tmp_path, testdata_path, outdir, views, plot_sagittal):
+def test_mriqc_plot_mosaic(tmp_path, test_data_package, outdir, views, plot_sagittal):
     """Exercise the generation of mosaics."""
 
     fname = f"mosaic_{'_'.join(v or 'none' for v in views)}_{plot_sagittal:d}.svg"
@@ -359,7 +360,7 @@ def test_mriqc_plot_mosaic(tmp_path, testdata_path, outdir, views, plot_sagittal
         testfunc()
 
 
-def test_mriqc_plot_mosaic_2(tmp_path, testdata_path, outdir):
+def test_mriqc_plot_mosaic_2(tmp_path, test_data_package, outdir):
     """Exercise the generation of mosaics."""
     plot_mosaic(
         get("Fischer344", desc=None, suffix="T2w"),
