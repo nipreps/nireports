@@ -30,13 +30,14 @@ import pandas as pd
 import pytest
 import tempfile
 
+
 # disable ET
 os.environ['NO_ET'] = '1'
 
 _datadir = (Path(__file__).parent / "tests" / "data").resolve(strict=True)
-niprepsdev_path = os.getenv(
+niprepsdev_path = Path(os.getenv(
     "TEST_DATA_HOME", str(Path.home() / ".cache" / "nipreps-dev")
-)
+))
 test_output_dir = os.getenv("TEST_OUTPUT_DIR")
 test_workdir = os.getenv("TEST_WORK_DIR")
 
@@ -50,8 +51,8 @@ def expand_namespace(doctest_namespace):
     doctest_namespace["os"] = os
     doctest_namespace["pytest"] = pytest
     doctest_namespace["Path"] = Path
-    doctest_namespace["testdata_path"] = _datadir
-    doctest_namespace["niprepsdev_path"] = niprepsdev_path
+    doctest_namespace["test_data_package"] = _datadir
+    doctest_namespace["test_data_home"] = niprepsdev_path
 
     doctest_namespace["os"] = os
     doctest_namespace["Path"] = Path
@@ -72,8 +73,13 @@ def expand_namespace(doctest_namespace):
 
 
 @pytest.fixture
-def testdata_path():
+def test_data_package():
     return _datadir
+
+
+@pytest.fixture
+def test_data_home():
+    return niprepsdev_path
 
 
 @pytest.fixture
