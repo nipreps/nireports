@@ -173,6 +173,11 @@
       "dtype": "int",
       "name": "cohort",
       "pattern": "[_/\\\\]+cohort-0*(\\d+)"
+    },
+    {
+      "dtype": "int",
+      "name": "bval",
+      "pattern": "[_/\\\\]+bval-0*(\\d+)"
     }
   ],
   "name": "nipreps"
