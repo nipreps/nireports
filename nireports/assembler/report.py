@@ -52,7 +52,7 @@ OUTPUT_NAME_PATTERN = [
     "[_space-{space}][_cohort-{cohort}][_desc-{desc}][_{suffix<bold|sbref>}]"
     "{extension<.html|.svg>|.html}",
     "sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]"
-    "[_run-{run}][_space-{space}][_cohort-{cohort}][_desc-{desc}]"
+    "[_dir-{direction}][_run-{run}][_space-{space}][_cohort-{cohort}][_desc-{desc}]"
     "[_{suffix<T1w|T2w|T1rho|T1map|T2map|T2star|FLAIR|FLASH|PDmap|PD|PDT2|inplaneT[12]|"
     "angio|dseg|mask|dwi|epiref|T2starw|MTw|TSE>}]{extension<.html|.svg>|.html}",
     # "sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]"
@@ -375,15 +375,13 @@ class Report:
                 reportlets = []
                 for c in list_combos:
                     # do not display entities with the value None.
-                    c_filt = list(filter(None, c))
-                    ent_filt = list(compress(entities, c))
+                    c_filt = [
+                        f'{key} <span class="bids-entity">{c_value}</span>'
+                        for key, c_value in zip(entities, c) if c_value is not None
+                    ]
                     # Set a common title for this particular combination c
-                    title = "Reports for: %s." % ", ".join(
-                        [
-                            '%s <span class="bids-entity">%s</span>' % (ent_filt[i], c_filt[i])
-                            for i in range(len(c_filt))
-                        ]
-                    )
+                    title = "Reports for: %s." % ", ".join(c_filt)
+
                     for cfg in subrep_cfg["reportlets"]:
                         cfg["bids"].update({entities[i]: c[i] for i in range(len(c))})
                         rlet = Reportlet(
