@@ -33,9 +33,6 @@ _LOGGER = logging.getLogger("nipype.interface")
 
 class _SVGReportCapableInputSpec(reporting.ReportCapableInputSpec):
     out_report = File("report.svg", usedefault=True, desc="filename for the visual report")
-    plot_params = traits.Dict(
-        traits.Str, value={}, usedefault=True, desc="pass parameters to plotter",
-    )
     compress_report = traits.Enum(
         "auto",
         True,
@@ -48,8 +45,19 @@ class _SVGReportCapableInputSpec(reporting.ReportCapableInputSpec):
     )
 
 
+class _RegistrationRCInputSpecRPT(_SVGReportCapableInputSpec):
+    fixed_params = traits.Dict(
+        traits.Str, value={}, usedefault=True, desc="pass parameters to plotter",
+    )
+    moving_params = traits.Dict(
+        traits.Str, value={}, usedefault=True, desc="pass parameters to plotter",
+    )
+
+
 class RegistrationRC(reporting.ReportCapableInterface):
     """An abstract mixin to registration nipype interfaces."""
+
+    input_spec = _RegistrationRCInputSpecRPT
 
     _fixed_image = None
     _moving_image = None
@@ -103,6 +111,7 @@ class RegistrationRC(reporting.ReportCapableInterface):
                 contour=contour_nii,
                 compress=self.inputs.compress_report,
                 dismiss_affine=self._dismiss_affine,
+                plot_params=self.inputs.fixed_params,
             ),
             plot_registration(
                 moving_image_nii,
@@ -113,6 +122,7 @@ class RegistrationRC(reporting.ReportCapableInterface):
                 contour=contour_nii,
                 compress=self.inputs.compress_report,
                 dismiss_affine=self._dismiss_affine,
+                plot_params=self.inputs.moving_params,
             ),
             out_file=self._out_report,
         )
@@ -177,7 +187,6 @@ class SurfaceSegmentationRC(reporting.ReportCapableInterface):
                 cuts=cuts,
                 contour=contour_nii,
                 compress=self.inputs.compress_report,
-                plot_params=self.inputs.plot_params,
             ),
             [],
             out_file=self._out_report,
@@ -201,7 +210,7 @@ class ReportingInterface(reporting.ReportCapableInterface):
         return runtime
 
 
-class _SimpleBeforeAfterInputSpecRPT(_SVGReportCapableInputSpec):
+class _SimpleBeforeAfterInputSpecRPT(_RegistrationRCInputSpecRPT):
     before = File(exists=True, mandatory=True, desc="file before")
     after = File(exists=True, mandatory=True, desc="file after")
     wm_seg = File(desc="reference white matter segmentation mask")
