@@ -1,7 +1,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 #
-# Copyright 2021 The NiPreps Developers <nipreps@gmail.com>
+# Copyright 2023 The NiPreps Developers <nipreps@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,15 +21,20 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """class mixin and utilities for enabling reports for nipype interfaces."""
-from nipype.interfaces.base import File, traits
+from pathlib import Path
+from nipype import logging
+from nipype.utils.filemanip import fname_presuffix
+from nipype.interfaces.base import File, traits, isdefined
 from nipype.interfaces.mixins import reporting
-from ... import NIWORKFLOWS_LOG
-from ...viz.utils import cuts_from_bbox, compose_view
+from nireports.reportlets.utils import cuts_from_bbox, compose_view
+
+_LOGGER = logging.getLogger("nipype.interface")
 
 
 class _SVGReportCapableInputSpec(reporting.ReportCapableInputSpec):
-    out_report = File(
-        "report.svg", usedefault=True, desc="filename for the visual report"
+    out_report = File("report.svg", usedefault=True, desc="filename for the visual report")
+    plot_params = traits.Dict(
+        traits.Str, value={}, usedefault=True, desc="pass parameters to plotter",
     )
     compress_report = traits.Enum(
         "auto",
@@ -58,9 +63,9 @@ class RegistrationRC(reporting.ReportCapableInterface):
         """Generate the visual report."""
         from nilearn.image import threshold_img, load_img
         from nilearn.masking import apply_mask, unmask
-        from niworkflows.viz.utils import plot_registration
+        from nireports.reportlets.mosaic import plot_registration
 
-        NIWORKFLOWS_LOG.info("Generating visual report")
+        _LOGGER.info("Generating visual report")
 
         fixed_image_nii = load_img(self._fixed_image)
         moving_image_nii = load_img(self._moving_image)
@@ -117,7 +122,7 @@ class SegmentationRC(reporting.ReportCapableInterface):
     """An abstract mixin to segmentation nipype interfaces."""
 
     def _generate_report(self):
-        from niworkflows.viz.utils import plot_segs
+        from nireports.reportlets.mosaic import plot_segs
 
         compose_view(
             plot_segs(
@@ -144,9 +149,9 @@ class SurfaceSegmentationRC(reporting.ReportCapableInterface):
         """Generate the visual report."""
         from nilearn.image import threshold_img, load_img
         from nilearn.masking import apply_mask, unmask
-        from niworkflows.viz.utils import plot_registration
+        from nireports.reportlets.mosaic import plot_registration
 
-        NIWORKFLOWS_LOG.info("Generating visual report")
+        _LOGGER.info("Generating visual report")
 
         anat = load_img(self._anat_file)
         contour_nii = load_img(self._contour) if self._contour is not None else None
@@ -172,6 +177,7 @@ class SurfaceSegmentationRC(reporting.ReportCapableInterface):
                 cuts=cuts,
                 contour=contour_nii,
                 compress=self.inputs.compress_report,
+                plot_params=self.inputs.plot_params,
             ),
             [],
             out_file=self._out_report,
@@ -189,9 +195,72 @@ class ReportingInterface(reporting.ReportCapableInterface):
     output_spec = reporting.ReportCapableOutputSpec
 
     def __init__(self, generate_report=True, **kwargs):
-        super(ReportingInterface, self).__init__(
-            generate_report=generate_report, **kwargs
-        )
+        super(ReportingInterface, self).__init__(generate_report=generate_report, **kwargs)
 
     def _run_interface(self, runtime):
+        return runtime
+
+
+class _SimpleBeforeAfterInputSpecRPT(_SVGReportCapableInputSpec):
+    before = File(exists=True, mandatory=True, desc="file before")
+    after = File(exists=True, mandatory=True, desc="file after")
+    wm_seg = File(desc="reference white matter segmentation mask")
+    before_label = traits.Str("before", usedefault=True)
+    after_label = traits.Str("after", usedefault=True)
+    dismiss_affine = traits.Bool(False, usedefault=True, desc="rotate image(s) to cardinal axes")
+
+
+class SimpleBeforeAfterRPT(RegistrationRC, ReportingInterface):
+    input_spec = _SimpleBeforeAfterInputSpecRPT
+
+    def _post_run_hook(self, runtime):
+        """there is not inner interface to run"""
+        self._fixed_image_label = self.inputs.after_label
+        self._moving_image_label = self.inputs.before_label
+        self._fixed_image = self.inputs.after
+        self._moving_image = self.inputs.before
+        self._contour = self.inputs.wm_seg if isdefined(self.inputs.wm_seg) else None
+        self._dismiss_affine = self.inputs.dismiss_affine
+        _LOGGER.info(
+            "Report - setting before (%s) and after (%s) images",
+            self._fixed_image,
+            self._moving_image,
+        )
+
+        return super(SimpleBeforeAfterRPT, self)._post_run_hook(runtime)
+
+
+class _ResampleBeforeAfterInputSpecRPT(_SimpleBeforeAfterInputSpecRPT):
+    base = traits.Enum("before", "after", usedefault=True, mandatory=True)
+
+
+class ResampleBeforeAfterRPT(SimpleBeforeAfterRPT):
+    input_spec = _ResampleBeforeAfterInputSpecRPT
+
+    def _post_run_hook(self, runtime):
+        from nilearn import image as nli
+
+        self._fixed_image = self.inputs.after
+        self._moving_image = self.inputs.before
+        if self.inputs.base == "before":
+            resampled_after = nli.resample_to_img(self._fixed_image, self._moving_image)
+            fname = fname_presuffix(self._fixed_image, suffix="_resampled", newpath=runtime.cwd)
+            resampled_after.to_filename(fname)
+            self._fixed_image = fname
+        else:
+            resampled_before = nli.resample_to_img(self._moving_image, self._fixed_image)
+            fname = fname_presuffix(self._moving_image, suffix="_resampled", newpath=runtime.cwd)
+            resampled_before.to_filename(fname)
+            self._moving_image = fname
+        self._contour = self.inputs.wm_seg if isdefined(self.inputs.wm_seg) else None
+        _LOGGER.info(
+            "Report - setting before (%s) and after (%s) images",
+            self._fixed_image,
+            self._moving_image,
+        )
+
+        runtime = super(ResampleBeforeAfterRPT, self)._post_run_hook(runtime)
+        _LOGGER.info("Successfully created report (%s)", self._out_report)
+        Path(fname).unlink(missing_ok=True)
+
         return runtime
