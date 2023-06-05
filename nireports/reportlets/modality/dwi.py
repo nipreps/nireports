@@ -100,8 +100,8 @@ def plot_heatmap(
         )
 
     if sigma is not None:
-        labels_bins = [2.0, 5.0, 7.0, 10.0, 20.0]
         max_snr = imax / sigma
+        labels_bins = [2.0, 5.0, 7.0, 10.0, max_snr]
         labels_bins_position = bins[0] * np.array(labels_bins) / max_snr
 
     else:
@@ -118,7 +118,8 @@ def plot_heatmap(
     axs[-1].legend([f"{b}" for b in bvals], ncol=len(bvals), title="$b$ value")
     axs[-1].set_yticks([], labels=[])
     axs[-1].set_xlabel(
-        "SNR" if sigma is not None else "DWI intensity",
+        f"SNR [noise floor estimated at {sigma:0.2f}]" if sigma is not None
+        else "DWI intensity",
         fontsize=20,
     )
     fig.supylabel(scalar_label, fontsize=20, y=0.65)
