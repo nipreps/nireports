@@ -39,7 +39,7 @@ from nireports.reportlets.modality.dwi import plot_heatmap
 class _DWIHeatmapInputSpec(BaseInterfaceInputSpec):
     in_file = File(exists=True, mandatory=True, desc="a DWI file")
     scalarmap = File(exists=True, mandatory=True, desc="a DWI-derived scalar map")
-    mask_file = File(exists=True, desc="a 3D mask")
+    mask_file = File(exists=True, mandatory=True, desc="a 3D mask")
     b_indices = traits.Dict(
         traits.Int, traits.List(traits.Int), mandatory=True, desc="index of b values"
     )
@@ -63,7 +63,7 @@ class DWIHeatmap(SimpleInterface):
 
     def _run_interface(self, runtime):
         gtable = self.inputs.b_indices
-        imax = None if not isdefined(self.inputs.threshold) else self.inputs.threshold
+        threshold = None if not isdefined(self.inputs.threshold) else self.inputs.threshold
         subsample = None if not isdefined(self.inputs.subsample) else self.inputs.subsample
         sigma = None if not isdefined(self.inputs.sigma) else self.inputs.sigma
         scalarmap_label = (
@@ -77,7 +77,7 @@ class DWIHeatmap(SimpleInterface):
             np.abs(np.asanyarray(nb.load(self.inputs.mask_file).dataobj) - 1) < 1e-3,
             nb.load(self.inputs.scalarmap).get_fdata(dtype="float32"),
             scalar_label=scalarmap_label,
-            imax=imax,
+            imax=threshold,
             sub_size=subsample,
             sigma=sigma,
             cmap=self.inputs.colormap,

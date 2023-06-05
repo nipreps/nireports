@@ -45,7 +45,9 @@ def plot_heatmap(
     # Prepare data in shells
     shells = [np.rint(data[mask][..., idx].reshape(-1)) for idx in b_indices]
 
+    # Maximum intensity level to be plotted
     if imax is None:
+        # If not provided, set 75th percentile of lowest b-value.
         imax = np.percentile(shells[0], 75)
 
     fig, axs = plt.subplots(
@@ -63,10 +65,6 @@ def plot_heatmap(
             choice = np.random.choice(range(x.size), size=sub_size)
             x = x[choice]
             y = y[choice]
-
-        alpha = y.copy()
-        alpha = alpha - alpha.min()
-        alpha = i + (2 * alpha / alpha.max() - 1.0) * 0.35
 
         histdata, _, _ = np.histogram2d(x, y, bins=bins, range=((0, int(imax)), (0, 1)))
         axs[i].imshow(
