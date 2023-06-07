@@ -522,7 +522,7 @@ def plot_mosaic(
     if not hasattr(img, "shape"):
         nii = nb.as_closest_canonical(nb.load(img))
         img_data = nii.get_fdata()
-        zooms = nii.header.get_zooms()
+        zooms = nii.header.get_zooms()[:3]
     else:
         img_data = img
         zooms = [1.0, 1.0, 1.0]
@@ -530,8 +530,8 @@ def plot_mosaic(
 
     shape = img_data.shape[:3]
     view_hratios = {
-        "axial": 1.0,
-        "coronal": (zooms[2] * shape[2]) / (zooms[1] * shape[1]),
+        "axial": (zooms[1] * shape[1]) / (zooms[0] * shape[0]),
+        "coronal": (zooms[2] * shape[2]) / (zooms[0] * shape[0]),
         "sagittal": (zooms[2] * shape[2]) / (zooms[1] * shape[1]),
     }
     view_x = {"axial": 0, "coronal": 0, "sagittal": 1}
