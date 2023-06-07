@@ -528,15 +528,6 @@ def plot_mosaic(
         zooms = [1.0, 1.0, 1.0]
         out_file = "mosaic.svg"
 
-    shape = img_data.shape[:3]
-    view_hratios = {
-        "axial": 1.0,
-        "coronal": (zooms[2] * shape[2]) / (zooms[1] * shape[1]),
-        "sagittal": (zooms[2] * shape[2]) / (zooms[1] * shape[1]),
-    }
-    view_x = {"axial": 0, "coronal": 0, "sagittal": 1}
-    view_y = {"axial": 1, "coronal": 2, "sagittal": 2}
-
     if plot_sagittal and views[1] is None and views[0] != "sagittal":
         views = (views[0], "sagittal", None)
 
@@ -583,11 +574,12 @@ def plot_mosaic(
         mask_file[img_data <= lowthres] = 0
         img_data = _bbox(img_data, mask_file)
 
-    nrows = min((img_data.shape[-1] + 1) // ncols, maxrows)
+    shape = img_data.shape[:3]
+    nrows = min((shape[-1] + 1) // ncols, maxrows)
 
     # Decimate if too many values
     z_vals = np.unique(np.linspace(
-        0, img_data.shape[-1] - 1, num=(ncols * nrows), dtype=int, endpoint=True,
+        0, shape[-1] - 1, num=(ncols * nrows), dtype=int, endpoint=True,
     ))
     n_gs = sum(bool(v) for v in views)
 
@@ -607,8 +599,15 @@ def plot_mosaic(
 
     nrows = [nrows, 1, 1]
 
-    # create figures
+    view_hratios = {
+        "axial": (zooms[1] * shape[1]) / (zooms[0] * shape[0]),
+        "coronal": (zooms[2] * shape[2]) / (zooms[0] * shape[0]),
+        "sagittal": (zooms[2] * shape[2]) / (zooms[1] * shape[1]),
+    }
+    view_x = {"axial": 0, "coronal": 0, "sagittal": 1}
+    view_y = {"axial": 1, "coronal": 2, "sagittal": 2}
 
+    # create figures
     if fig is None:
         fig = plt.figure(layout=None)
 
