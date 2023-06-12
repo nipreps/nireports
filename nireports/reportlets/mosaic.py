@@ -547,7 +547,9 @@ def plot_mosaic(
     # Create mask for bounding box
     bbox_data = None
     if bbox_mask_file is not None:
-        bbox_data = np.asanyarray(nb.as_closest_canonical(nb.load(bbox_mask_file))) > 1e-3
+        bbox_data = np.asanyarray(
+            nb.as_closest_canonical(nb.load(bbox_mask_file)).dataobj
+        ) > 1e-3
     elif img_data.shape[-1] > (ncols * maxrows):
         lowthres = np.percentile(img_data, 5)
         bbox_data = np.ones_like(img_data)
