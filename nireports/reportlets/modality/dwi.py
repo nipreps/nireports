@@ -99,7 +99,7 @@ def plot_heatmap(
 
     if sigma is not None:
         max_snr = imax / sigma
-        labels_bins = [2.0, 5.0, 7.0, 10.0, max_snr]
+        labels_bins = [1.937, 5.0, 8.0, round(max_snr, 1)]
         labels_bins_position = bins[0] * np.array(labels_bins) / max_snr
 
     else:
@@ -110,7 +110,7 @@ def plot_heatmap(
         labels_bins_position,
         labels=labels_bins_position
         if sigma is None
-        else [f"{v:.1f}\n[{round(10 * np.log(v), 0):.0f} dB]" for v in labels_bins],
+        else [f"{v}\n[{round(10 * np.log(v), 0):.0f} dB]" for v in labels_bins],
         fontsize=14,
     )
     axs[-1].legend([f"{b}" for b in bvals], ncol=len(bvals), title="$b$ value")
