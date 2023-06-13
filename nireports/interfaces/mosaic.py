@@ -111,7 +111,7 @@ class PlotContours(SimpleInterface):
 
 class _PlotMosaicInputSpec(_PlotBaseInputSpec):
     bbox_mask_file = File(exists=True, desc="brain mask")
-    only_noise = traits.Bool(False, desc="plot only noise")
+    only_noise = traits.Bool(False, usedefault=True, desc="plot only noise")
     view = traits.List(
         traits.Enum("axial", "sagittal", "coronal"),
         value=["axial", "sagittal"],
