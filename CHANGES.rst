@@ -1,3 +1,33 @@
+23.1.0 (June 13, 2023)
+======================
+A new minor release including several bugfixes and a new module for diffusion MRI data plotting tools.
+
+CHANGES
+-------
+**Full Changelog**: https://github.com/nipreps/nireports/compare/23.0.1...23.1.0
+
+* FIX: Calculation of aspect ratio of mosaics (#76)
+* FIX: Bugs discovered generating DWI reports (#73)
+* FIX: Improve handling of reportlet style (#68)
+* FIX: Plugin inclusion via main bootstrap file did not work (#64)
+* ENH: Better SNR levels for representation in DWI heatmaps (#77)
+* ENH: Add a new DWI heatmap for quality control (#75)
+* ENH: Port basic report-capable interfaces from *NiWorkflows* (#74)
+* ENH: Add a ``bval-<label>`` entity (#72)
+* ENH: Allow CSS styling of reportlets in bootstrap file (#67)
+* ENH: Improve handling of auth token by rating-widget (#66)
+* ENH: Advanced metadata interpolation (#65)
+* ENH: BIDS filters and support *plugins* (incl. a rating widget as the example) (#62)
+* ENH: Allow different types of reportlets, not only BIDS-based (#60)
+* ENH: Upgrade bootstrap to 5.0.2 (#59)
+* ENH: Allow plotting of image rotated to cardinal axes (#650)
+* DOC: Adds a docstring to the ``compose_view`` function. (#63)
+* DOC: Ensure copyright notice in all headers' comment (#635)
+* MAINT: Replace distutils use, upgrade versioneer (#725)
+* MAINT: Refactor structure of interfaces (#603)
+* CI: Try older codecov orb (#70)
+* CI: Purge codecov Python package (#69)
+
 23.0.1 (March 10, 2023)
 =======================
 Hotfix release porting `nipreps/niworkflows#785 <https://github.com/nipreps/niworkflows/pull/785>`__.
