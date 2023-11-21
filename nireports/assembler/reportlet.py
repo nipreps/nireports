@@ -311,7 +311,7 @@ class Reportlet:
             path = config.get("path", None)
             if custom == "errors":
                 self.name = "errors"
-                # Intepolate error log directory
+                # Interpolate error log directory
                 error_dir = Path(path)
                 # Read in all crash files
                 errors = [
