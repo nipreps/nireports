@@ -44,7 +44,7 @@ except ValueError as e:
     if "Configuration 'figures' already exists" != str(e):
         raise
 
-PLURAL_SUFFIX = defaultdict(str("s").format, [("echo", "es")])
+PLURAL_SUFFIX = defaultdict("s".format, [("echo", "es")])
 
 OUTPUT_NAME_PATTERN = [
     "sub-{subject}[_ses-{session}]_task-{task}[_acq-{acquisition}][_ce-{ceagent}]"
