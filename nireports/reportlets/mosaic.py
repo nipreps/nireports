@@ -92,7 +92,7 @@ def plot_segs(
         plot_params["cut_coords"] = cuts[d]
         svg = _plot_anat_with_contours(image_nii, segs=seg_niis, compress=compress, **plot_params)
         # Find and replace the figure_1 id.
-        svg = svg.replace("figure_1", "segmentation-%s-%s" % (d, uuid4()), 1)
+        svg = svg.replace("figure_1", f"segmentation-{d}-{uuid4()}", 1)
         out_files.append(fromstring(svg))
 
     return out_files
@@ -172,7 +172,7 @@ def plot_registration(
         display.close()
 
         # Find and replace the figure_1 id.
-        svg = svg.replace("figure_1", "%s-%s-%s" % (div_id, mode, uuid4()), 1)
+        svg = svg.replace("figure_1", f"{div_id}-{mode}-{uuid4()}", 1)
         out_files.append(fromstring(svg))
 
     return out_files

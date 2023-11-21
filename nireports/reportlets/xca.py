@@ -145,7 +145,7 @@ def plot_melodic_components(
         if noise_components.size == n_components:
             ncomps = "ALL"
         ax.annotate(
-            "WARNING: {} components were classified as noise".format(ncomps),
+            f"WARNING: {ncomps} components were classified as noise",
             xy=(0.0, 0.5),
             xycoords="axes fraction",
             xytext=(0.01, 0.5),
@@ -280,7 +280,7 @@ def compcor_variance_plot(
         if len(metadata_files) == 1:
             metadata_sources = ["CompCor"]
         else:
-            metadata_sources = ["Decomposition {:d}".format(i) for i in range(len(metadata_files))]
+            metadata_sources = [f"Decomposition {i:d}" for i in range(len(metadata_files))]
     for file, source in zip(metadata_files, metadata_sources):
         metadata[source] = pd.read_csv(str(file), sep=r"\s+")
         metadata[source]["source"] = source
@@ -314,10 +314,10 @@ def compcor_variance_plot(
     for m, (source, mask) in enumerate(decompositions):
         components = metadata[(metadata["mask"] == mask) & (metadata["source"] == source)]
         if len([m for s, m in decompositions if s == source]) > 1:
-            title_mask = " ({} mask)".format(mask)
+            title_mask = f" ({mask} mask)"
         else:
             title_mask = ""
-        fig_title = "{}{}".format(source, title_mask)
+        fig_title = f"{source}{title_mask}"
 
         ax[m].plot(
             np.arange(components.shape[0] + 1),
@@ -338,7 +338,7 @@ def compcor_variance_plot(
                 + 1
             )
             ax[m].axhline(y=100 * thr, color="lightgrey", linewidth=0.25)
-            ax[m].axvline(x=varexp[thr], color="C{}".format(i), linewidth=2, linestyle=":")
+            ax[m].axvline(x=varexp[thr], color=f"C{i}", linewidth=2, linestyle=":")
             ax[m].text(
                 0,
                 100 * thr,
