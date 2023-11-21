@@ -204,7 +204,7 @@ class ReportingInterface(reporting.ReportCapableInterface):
     output_spec = reporting.ReportCapableOutputSpec
 
     def __init__(self, generate_report=True, **kwargs):
-        super(ReportingInterface, self).__init__(generate_report=generate_report, **kwargs)
+        super().__init__(generate_report=generate_report, **kwargs)
 
     def _run_interface(self, runtime):
         return runtime
@@ -236,7 +236,7 @@ class SimpleBeforeAfterRPT(RegistrationRC, ReportingInterface):
             self._moving_image,
         )
 
-        return super(SimpleBeforeAfterRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _ResampleBeforeAfterInputSpecRPT(_SimpleBeforeAfterInputSpecRPT):
@@ -268,7 +268,7 @@ class ResampleBeforeAfterRPT(SimpleBeforeAfterRPT):
             self._moving_image,
         )
 
-        runtime = super(ResampleBeforeAfterRPT, self)._post_run_hook(runtime)
+        runtime = super()._post_run_hook(runtime)
         _LOGGER.info("Successfully created report (%s)", self._out_report)
         Path(fname).unlink(missing_ok=True)
 
