@@ -252,10 +252,16 @@ class Report:
         out_dir = Path(out_dir)
         root = Path(reportlets_dir or out_dir)
 
-        if "subject" in bids_filters:
+        if bids_filters.get("subject"):
             subject_id = bids_filters["subject"]
             bids_filters["subject"] = (
                 subject_id[4:] if subject_id.startswith("sub-") else subject_id
+            )
+
+        if bids_filters.get("session"):
+            session_id = bids_filters["session"]
+            bids_filters["session"] = (
+                session_id[4:] if session_id.startswith("ses-") else session_id
             )
 
         if bids_filters and out_filename == "report.html":
