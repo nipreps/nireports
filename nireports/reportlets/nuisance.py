@@ -812,6 +812,7 @@ def confounds_correlation_plot(
     max_dim=20,
     output_file=None,
     reference="global_signal",
+    ignore_initial_volumes=0,
 ):
     """
     Generate a bar plot with the correlation of confounds.
@@ -840,6 +841,8 @@ def confounds_correlation_plot(
         of each confound regressor with a reference column. By default, this
         is the global signal (so that collinearities with the global signal
         can readily be assessed).
+    ignore_initial_volumes : :obj:`int`
+        Number of non-steady-state volumes at the beginning of the scan to ignore.
 
     Returns
     -------
@@ -859,7 +862,8 @@ def confounds_correlation_plot(
         confounds_data = confounds_data[list(columns)]
 
     confounds_data = confounds_data.loc[
-        :, np.logical_not(np.isclose(confounds_data.var(skipna=True), 0))
+        ignore_initial_volumes:,
+        np.logical_not(np.isclose(confounds_data.var(skipna=True), 0)),
     ]
     corr = confounds_data.corr()
 
