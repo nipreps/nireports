@@ -23,6 +23,9 @@
 """Tests plotting interfaces."""
 import os
 from shutil import copy
+
+import pytest
+
 from nireports.interfaces.nuisance import CompCorVariancePlot, ConfoundsCorrelationPlot
 
 
@@ -42,24 +45,13 @@ def test_CompCorVariancePlot(datadir):
     _smoke_test_report(cc_rpt, "compcor_variance.svg")
 
 
+@pytest.mark.parametrize(ignore_initial_volumes, (0, 1))
 def test_ConfoundsCorrelationPlot(datadir):
     """confounds correlation report test"""
     confounds_file = os.path.join(datadir, "confounds_test.tsv")
     cc_rpt = ConfoundsCorrelationPlot(
         confounds_file=confounds_file,
         reference_column="a",
-        ignore_initial_volumes=1,
+        ignore_initial_volumes=ignore_initial_volumes,
     )
-    _smoke_test_report(cc_rpt, "confounds_correlation.svg")
-
-
-def test_ConfoundsCorrelationPlotColumns(datadir):
-    """confounds correlation report test"""
-    confounds_file = os.path.join(datadir, "confounds_test.tsv")
-    cc_rpt = ConfoundsCorrelationPlot(
-        confounds_file=confounds_file,
-        reference_column="a",
-        columns=["b", "d", "f"],
-        ignore_initial_volumes=0,
-    )
-    _smoke_test_report(cc_rpt, "confounds_correlation_cols.svg")
+    _smoke_test_report(cc_rpt, f"confounds_correlation_{ignore_initial_volumes}.svg")
