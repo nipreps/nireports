@@ -358,9 +358,9 @@ def compcor_variance_plot(
 
         ax[m].set_yticks([])
         ax[m].set_yticklabels([])
-        for tick in ax[m].xaxis.get_major_ticks():
-            tick.label1.set_fontsize("x-small")
-            tick.label1.set_rotation("vertical")
+        for label in ax[m].xaxis.get_majorticklabels():
+            label.set_fontsize("x-small")
+            label.set_rotation("vertical")
         for side in ["top", "right", "left"]:
             ax[m].spines[side].set_color("none")
             ax[m].spines[side].set_visible(False)
