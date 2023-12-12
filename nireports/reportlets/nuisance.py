@@ -70,7 +70,7 @@ def plot_fd(fd_file, fd_radius, mean_fd_dist=None, figsize=DINA4_LANDSCAPE):
         sns.distplot(mean_fd_dist, ax=ax)
         ax.set_xlabel("Mean Frame Displacement (over all subjects) [mm]")
         mean_fd = fd_power.mean()
-        label = r"$\overline{{\text{{FD}}}}$ = {0:g}".format(mean_fd)
+        label = fr"$\overline{{\text{{FD}}}}$ = {mean_fd:g}"
         plot_vline(mean_fd, label, ax=ax)
 
     return fig
@@ -97,7 +97,7 @@ def plot_dist(
     ax = fig.add_subplot(gsp[1, 0])
     sns.distplot(np.array(distribution).astype(np.double), ax=ax)
     cur_val = np.median(data)
-    label = "{0!g}".format(cur_val)
+    label = f"{cur_val:g}"
     plot_vline(cur_val, label, ax=ax)
     ax.set_xlabel(xlabel2)
 
@@ -649,13 +649,13 @@ def confoundplot(
         else:
             ax_ts.set_xlabel("time (s)")
             labels = tr * np.array(xticks)
-            ax_ts.set_xticklabels(["%.02f" % t for t in labels.tolist()])
+            ax_ts.set_xticklabels([f"{t:.02f}" for t in labels.tolist()])
     else:
         ax_ts.set_xticklabels([])
 
     if name is not None:
         if units is not None:
-            name += " [%s]" % units
+            name += f" [{units}]"
 
         ax_ts.annotate(
             name,
@@ -723,10 +723,11 @@ def confoundplot(
         stdv = 0
         p95 = 0
 
+    units = units or ""
     stats_label = (
-        r"max: {max:.3f}{units} $\bullet$ mean: {mean:.3f}{units} "
-        r"$\bullet$ $\sigma$: {sigma:.3f}"
-    ).format(max=maxv, mean=mean, units=units or "", sigma=stdv)
+        fr"max: {maxv:.3f}{units} $\bullet$ mean: {mean:.3f}{units} "
+        fr"$\bullet$ $\sigma$: {stdv:.3f}"
+    )
     ax_ts.annotate(
         stats_label,
         xy=(0.98, 0.7),
@@ -905,7 +906,7 @@ def confounds_correlation_plot(
     )
 
     ax1.set_xlabel("Confound time series")
-    ax1.set_ylabel("Magnitude of correlation with {}".format(reference))
+    ax1.set_ylabel(f"Magnitude of correlation with {reference}")
     ax1.tick_params(axis="x", which="both", width=0)
     ax1.tick_params(axis="y", which="both", width=5, length=5)
 
