@@ -312,3 +312,33 @@ def test_subject(tmp_path, subject, out_html):
         subject=subject,
     )
     assert report.out_filename.name == out_html
+
+
+@pytest.mark.parametrize(
+    "subject,session,out_html",
+    [
+        ("sub-01", "ses-01", "sub-01_ses-01.html"),
+        ("sub-sub1", "ses-ses1", "sub-sub1_ses-ses1.html"),
+        ("01", "pre", "sub-01_ses-pre.html"),
+        ("sub1", None, "sub-sub1.html"),
+    ],
+)
+def test_session(tmp_path, subject, session, out_html):
+    reports = tmp_path / "reports"
+    p = Path(
+        reports
+        / "nireports"
+        / (subject if subject.startswith("sub-") else f"sub-{subject}")
+    )
+    if session:
+        p = p / (session if session.startswith("ses-") else f"ses-{session}")
+    p.mkdir(parents=True)
+
+    report = Report(
+        str(Path(tmp_path) / "nireports"),
+        "uniqueid",
+        reportlets_dir=reports / "nireports",
+        subject=subject,
+        session=session,
+    )
+    assert report.out_filename.name == out_html
