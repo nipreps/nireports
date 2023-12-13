@@ -92,7 +92,7 @@ exclude = [
 [tool.hatch.version]
 validate-bump = true
 source = "vcs"
-# raw-options = { version_scheme = "nipreps-calver" }
+raw-options = { version_scheme = "nipreps-calver" }
 
 [tool.hatch.build.hooks.vcs]
 version-file = "nireports/_version.py"
