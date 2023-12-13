@@ -27,11 +27,10 @@ __copyright__ = "2023, The NiPreps developers"
 try:
     from ._version import __version__
 except ModuleNotFoundError:
-    from pkg_resources import DistributionNotFound, get_distribution
-
+    from importlib.metadata import version, PackageNotFoundError
     try:
-        __version__ = get_distribution(__packagename__).version
-    except DistributionNotFound:
-        __version__ = "unknown"
-    del get_distribution
-    del DistributionNotFound
+        __version__ = version(__packagename__)
+    except PackageNotFoundError:
+        __version__ = "0+unknown"
+    del version
+    del PackageNotFoundError
