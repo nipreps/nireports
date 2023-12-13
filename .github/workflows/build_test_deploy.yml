@@ -80,24 +80,19 @@ jobs:
       TEMPLATEFLOW_HOME: /tmp/templateflow
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Fetch packages
         uses: actions/download-artifact@v3
         with:
           name: dist
           path: dist/
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
-      - name: Generate requirements file and install them
-        run: |
-          python -m pip install --upgrade pip-tools
-          python -m piptools compile --output-file=requirements.txt pyproject.toml
-          pip install -r requirements.txt
 
       - name: Install package
         run: pip install $PACKAGE
