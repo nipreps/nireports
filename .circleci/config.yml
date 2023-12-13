@@ -1,12 +1,12 @@
 version: 2.1
 orbs:
-  docker: circleci/docker@2.2.0
-  codecov: codecov/codecov@3.2.4
+  docker: circleci/docker@2.4.0
+  codecov: codecov/codecov@3.3.0
 
 jobs:
   test_pytest:
-    docker: # executor type
-      - image: nipreps/miniconda:py39_2209.01
+    docker:
+      - image: cimg/python:3.12
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PAT
@@ -16,14 +16,13 @@ jobs:
       - TEMPLATEFLOW_HOME: /tmp/templateflow
     steps:
       - checkout
+      - run:
+          name: Install package
+          command: pip install .[test]
 
       - restore_cache:
           keys:
-            - tf-v0-{{ .Branch }}-{{ .Revision }}
-            - tf-v0--{{ .Revision }}
-            - tf-v0-{{ .Branch }}-
-            - tf-v0-master-
-            - tf-v0-
+            - tf-v0
           paths:
             - /tmp/templateflow
 
@@ -34,7 +33,7 @@ jobs:
             python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
 
       - save_cache:
-         key: tf-v0-{{ .Branch }}-{{ .Revision }}
+         key: tf-v0
          paths:
             - /tmp/templateflow
 
@@ -60,8 +59,8 @@ jobs:
 
 
   build_docs:
-    docker: # executor type
-      - image: nipreps/miniconda:py39_2209.01
+    docker:
+      - image: cimg/python:3.12
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PAT
@@ -77,7 +76,7 @@ jobs:
       - run:
           name: Install deps
           command: |
-            python -m pip install --no-cache-dir -U "pip>=20.3"
+            python -m pip install --no-cache-dir -U pip
       - run:
           name: Install Nireports
           command: |
