@@ -58,37 +58,6 @@ jobs:
           flags: unittests
 
 
-  build_docs:
-    docker:
-      - image: cimg/python:3.12
-        auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PAT
-
-    environment:
-      - FSLOUTPUTTYPE: NIFTI
-      - SUBJECTS_DIR: /tmp/subjects
-    steps:
-      - checkout
-      - run:
-          name: Create subjects folder
-          command: mkdir -p $SUBJECTS_DIR
-      - run:
-          name: Install deps
-          command: |
-            python -m pip install --no-cache-dir -U pip
-      - run:
-          name: Install Nireports
-          command: |
-            python -m pip install .[docs]
-      - run:
-          name: Build only this commit
-          command: |
-            BRANCH=$( echo $CIRCLE_BRANCH | sed 's+/+_+g' )
-            make -C docs SPHINXOPTS="-W" BUILDDIR="/tmp/docs" OUTDIR=${CIRCLE_TAG:-$BRANCH} html
-      - store_artifacts:
-          path: /tmp/docs
-
 workflows:
   version: 2
   build_test_deploy:
@@ -102,11 +71,3 @@ workflows:
             branches:
               ignore:
                 - /docs?\/.*/
-
-      - build_docs:
-          filters:
-            branches:
-              ignore:
-                - /tests?\/.*/
-            tags:
-              only: /.*/
