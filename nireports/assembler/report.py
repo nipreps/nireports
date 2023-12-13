@@ -27,19 +27,19 @@ import re
 from collections import defaultdict
 from itertools import compress
 from pathlib import Path
-from yaml import safe_load as load
 
 import jinja2
+import yaml
 from bids.layout import BIDSLayout, BIDSLayoutIndexer, add_config_paths
 from bids.layout.writing import build_path
-from pkg_resources import resource_filename as pkgrf
 
+from nireports.assembler import data
 from nireports.assembler.reportlet import Reportlet
 
 
 # Add a new figures spec
 try:
-    add_config_paths(figures=pkgrf("nireports.assembler", "data/nipreps.json"))
+    add_config_paths(figures=data.load("nipreps.json"))
 except ValueError as e:
     if "Configuration 'figures' already exists" != str(e):
         raise
@@ -85,10 +85,10 @@ class Report:
 
     .. testsetup::
 
-       >>> from pkg_resources import resource_filename
        >>> from shutil import copytree
        >>> from bids.layout import BIDSLayout
-       >>> test_data_path = Path(resource_filename('nireports', 'assembler/data'))
+       >>> from nireports.assembler import data
+       >>> test_data_path = data.load()
        >>> testdir = Path(tmpdir)
        >>> data_dir = copytree(
        ...     test_data_path / 'tests' / 'work',
@@ -277,7 +277,7 @@ class Report:
         # Initialize structuring elements
         self.sections = []
 
-        bootstrap_file = Path(bootstrap_file or pkgrf("nireports.assembler", "data/default.yml"))
+        bootstrap_file = Path(bootstrap_file or data.load("default.yml"))
 
         bootstrap_text = []
 
@@ -299,7 +299,7 @@ class Report:
             bootstrap_text.append(line)
 
         # Load report schema (settings YAML file)
-        settings = load("\n".join(bootstrap_text))
+        settings = yaml.safe_load("\n".join(bootstrap_text))
 
         # Set the output path
         self.out_filename = Path(out_filename)
@@ -309,7 +309,7 @@ class Report:
         # Path to the Jinja2 template
         self.template_path = (
             Path(settings["template_path"]) if "template_path" in settings
-            else Path(pkgrf("nireports.assembler", "data/report.tpl")).absolute()
+            else data.load("report.tpl").absolute()
         )
 
         if not self.template_path.is_absolute():
@@ -329,7 +329,7 @@ class Report:
         # Override plugins specified in the bootstrap with arg
         if plugins is not None or (plugins := settings.get("plugins", [])):
             settings["plugins"] = [
-                load(Path(pkgrf(plugin["module"], plugin["path"])).read_text())
+                yaml.safe_load(data.Loader(plugin["module"]).readable(plugin["path"]).read_text())
                 for plugin in plugins
             ]
 
@@ -343,7 +343,7 @@ class Report:
         """
         # Initialize a BIDS layout
         _indexer = BIDSLayoutIndexer(
-            config_filename=pkgrf("nireports.assembler", "data/nipreps.json"),
+            config_filename=data.load("nipreps.json"),
             index_metadata=False,
             validate=False,
         )

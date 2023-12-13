@@ -26,8 +26,8 @@
 from pathlib import Path
 from uuid import uuid4
 import re
-from pkg_resources import resource_filename as pkgrf
 from nipype.utils.filemanip import copyfile
+from nireports.assembler import data
 from nireports.assembler.misc import dict2html, read_crashfile
 
 
@@ -118,15 +118,15 @@ class Reportlet:
 
     .. testsetup::
 
-       >>> from pkg_resources import resource_filename as pkgrf
        >>> from shutil import copytree
        >>> from bids.layout import BIDSLayout, add_config_paths
-       >>> test_data_path = pkgrf('nireports', 'assembler/data/tests/work')
+       >>> from nireports.assembler import data
+       >>> test_data_path = data.load('tests', 'work')
        >>> testdir = Path(tmpdir)
        >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
        >>> out_figs = testdir / 'out' / 'fmriprep'
        >>> try:
-       ...     add_config_paths(figures=pkgrf("nireports.assembler", "data/nipreps.json"))
+       ...     add_config_paths(figures=data.load("nipreps.json"))
        ... except ValueError as e:
        ...     if "Configuration 'figures' already exists" != str(e):
        ...         raise
@@ -382,7 +382,7 @@ class Reportlet:
                         )
                         text = f"""<pre>{text}</pre>
 <h3>Bibliography</h3>
-<pre>{Path(pkgrf(*bibfile)).read_text()}</pre>
+<pre>{data.Loader(bibfile[0]).readable(bibfile[1]).read_text()}</pre>
 """
                         tab_title = "LaTeX"
 

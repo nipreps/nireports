@@ -41,9 +41,9 @@ def run_reports(
     --------
     .. testsetup::
 
-       >>> from pkg_resources import resource_filename
        >>> from shutil import copytree
-       >>> test_data_path = resource_filename('nireports', 'assembler/data/tests/work')
+       >>> from nireports.assembler import data
+       >>> test_data_path = data.load('tests', 'work')
        >>> testdir = Path(tmpdir)
        >>> data_dir = copytree(test_data_path, str(testdir / 'work'))
        >>> (testdir / 'nireports').mkdir(parents=True, exist_ok=True)

@@ -1,12 +1,12 @@
 version: 2.1
 orbs:
-  docker: circleci/docker@2.2.0
-  codecov: codecov/codecov@3.2.4
+  docker: circleci/docker@2.4.0
+  codecov: codecov/codecov@3.3.0
 
 jobs:
   test_pytest:
-    docker: # executor type
-      - image: nipreps/miniconda:py39_2209.01
+    docker:
+      - image: cimg/python:3.12
         auth:
           username: $DOCKER_USER
           password: $DOCKER_PAT
@@ -16,14 +16,13 @@ jobs:
       - TEMPLATEFLOW_HOME: /tmp/templateflow
     steps:
       - checkout
+      - run:
+          name: Install package
+          command: pip install .[test]
 
       - restore_cache:
           keys:
-            - tf-v0-{{ .Branch }}-{{ .Revision }}
-            - tf-v0--{{ .Revision }}
-            - tf-v0-{{ .Branch }}-
-            - tf-v0-master-
-            - tf-v0-
+            - tf-v0
           paths:
             - /tmp/templateflow
 
@@ -34,7 +33,7 @@ jobs:
             python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
 
       - save_cache:
-         key: tf-v0-{{ .Branch }}-{{ .Revision }}
+         key: tf-v0
          paths:
             - /tmp/templateflow
 
@@ -59,37 +58,6 @@ jobs:
           flags: unittests
 
 
-  build_docs:
-    docker: # executor type
-      - image: nipreps/miniconda:py39_2209.01
-        auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PAT
-
-    environment:
-      - FSLOUTPUTTYPE: NIFTI
-      - SUBJECTS_DIR: /tmp/subjects
-    steps:
-      - checkout
-      - run:
-          name: Create subjects folder
-          command: mkdir -p $SUBJECTS_DIR
-      - run:
-          name: Install deps
-          command: |
-            python -m pip install --no-cache-dir -U "pip>=20.3"
-      - run:
-          name: Install Nireports
-          command: |
-            python -m pip install .[docs]
-      - run:
-          name: Build only this commit
-          command: |
-            BRANCH=$( echo $CIRCLE_BRANCH | sed 's+/+_+g' )
-            make -C docs SPHINXOPTS="-W" BUILDDIR="/tmp/docs" OUTDIR=${CIRCLE_TAG:-$BRANCH} html
-      - store_artifacts:
-          path: /tmp/docs
-
 workflows:
   version: 2
   build_test_deploy:
@@ -103,11 +71,3 @@ workflows:
             branches:
               ignore:
                 - /docs?\/.*/
-
-      - build_docs:
-          filters:
-            branches:
-              ignore:
-                - /tests?\/.*/
-            tags:
-              only: /.*/

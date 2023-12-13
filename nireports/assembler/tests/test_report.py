@@ -30,12 +30,13 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pytest
+import yaml
 from bids.layout import BIDSLayout
 from bids.layout.writing import build_path
-from pkg_resources import resource_filename as pkgrf
-from yaml import safe_load as load
 
 from nireports.assembler.report import Report
+
+from nireports.assembler import data
 
 
 summary_meta = {
@@ -118,16 +119,13 @@ def bids_sessions(tmpdir_factory):
 
 @pytest.fixture()
 def test_report1():
-    test_data_path = pkgrf(
-        "nireports",
-        os.path.join("assembler", "data", "tests", "work", "reportlets"),
-    )
+    test_data_path = data.load("tests", "work", "reportlets")
     out_dir = tempfile.mkdtemp()
 
     return Report(
         Path(out_dir) / "nireports",
         "fakeuuid",
-        reportlets_dir=Path(test_data_path) / "nireports",
+        reportlets_dir=test_data_path / "nireports",
         metadata={"summary-meta": summary_meta},
         subject="01",
     )
@@ -186,11 +184,8 @@ def test_process_orderings_small(
     expected_value_combos,
 ):
     report = test_report1
-    layout_root = pkgrf(
-        "nireports",
-        os.path.join("assembler", "data", "tests", "work", "reportlets"),
-    )
-    layout = BIDSLayout(Path(layout_root) / "nireports", config="figures", validate=False)
+    layout_root = data.load("tests", "work", "reportlets")
+    layout = BIDSLayout(layout_root / "nireports", config="figures", validate=False)
     entities, value_combos = report._process_orderings(orderings, layout.get())
 
     assert entities == expected_entities
@@ -260,8 +255,7 @@ def test_generated_reportlets(bids_sessions, ordering):
         reportlets_dir=Path(bids_sessions) / "nireports",
         subject="01",
     )
-    config = Path(pkgrf("nireports.assembler", "data/default.yml"))
-    settings = load(config.read_text())
+    settings = yaml.safe_load(data.load.readable("default.yml").read_text())
     settings["root"] = str(Path(bids_sessions) / "nireports")
     settings["out_dir"] = str(out_dir / "nireports")
     settings["run_uuid"] = "fakeuuid"
