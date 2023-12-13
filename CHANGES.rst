@@ -1,3 +1,21 @@
+23.2.0 (December 13, 2023)
+==========================
+
+A new minor release with support for Python 3.12, matplotlib 3.8,
+and dropping the implicit dependency on setuptools.
+
+CHANGES
+-------
+
+**Full Changelog**: https://github.com/nipreps/nireports/compare/23.1.0...23.2.0
+
+* FIX: Fix AttributeError Xtick has no attribute label (#84)
+* FIX: Typos found by codespell (#79)
+* ENH: Add session filtering to report generation (#82)
+* ENH: Add `ignore_initial_volumes` param to `ConfoundsCorrelationPlot` (#83)
+* RF: Purge pkg_resources, add data loader (#85)
+* STY: Assorted pyupgrade suggestions (#80)
+
 23.1.0 (June 13, 2023)
 ======================
 A new minor release including several bugfixes and a new module for diffusion MRI data plotting tools.
