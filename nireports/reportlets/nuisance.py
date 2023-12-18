@@ -283,7 +283,7 @@ def plot_carpet(
     if detrend:
         from nilearn.signal import clean
 
-        data = clean(data.T, t_r=tr, filter=False).T
+        data = clean(data.T, t_r=tr, filter=False, standardize='zscore_sample').T
 
     # We want all subplots to have the same dynamic range
     vminmax = (np.percentile(data, 2), np.percentile(data, 98))
