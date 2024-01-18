@@ -36,7 +36,7 @@ os.environ['NO_ET'] = '1'
 
 _datadir = (Path(__file__).parent / "tests" / "data").resolve(strict=True)
 niprepsdev_path = Path(os.getenv(
-    "TEST_DATA_HOME", str(Path.home() / ".cache" / "nipreps-dev")
+    "TEST_DATA_HOME", Path.home() / ".cache" / "nipreps-dev"
 ))
 test_output_dir = os.getenv("TEST_OUTPUT_DIR")
 test_workdir = os.getenv("TEST_WORK_DIR")
