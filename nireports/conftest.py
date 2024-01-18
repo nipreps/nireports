@@ -36,7 +36,7 @@ import pytest
 os.environ["NO_ET"] = "1"
 
 _datadir = (Path(__file__).parent / "tests" / "data").absolute()
-niprepsdev_path = Path(os.getenv("TEST_DATA_HOME", str(Path.home() / ".cache" / "nipreps-dev")))
+niprepsdev_path = Path(os.getenv("TEST_DATA_HOME", Path.home() / ".cache" / "nipreps-dev"))
 test_output_dir = os.getenv("TEST_OUTPUT_DIR")
 test_workdir = os.getenv("TEST_WORK_DIR")
 
