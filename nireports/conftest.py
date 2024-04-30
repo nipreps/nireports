@@ -33,7 +33,7 @@ import tempfile
 # disable ET
 os.environ['NO_ET'] = '1'
 
-_datadir = (Path(__file__).parent / "tests" / "data").resolve(strict=True)
+_datadir = (Path(__file__).parent / "tests" / "data").absolute()
 niprepsdev_path = os.getenv(
     "TEST_DATA_HOME", str(Path.home() / ".cache" / "nipreps-dev")
 )
