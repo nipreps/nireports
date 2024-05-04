@@ -29,9 +29,9 @@ from os import path as op
 import math
 import numpy as np
 import nibabel as nb
+from matplotlib import colormaps
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
-from matplotlib.cm import get_cmap
 from svgutils.transform import fromstring
 from nilearn.plotting import plot_anat
 from nilearn import image as nlimage
@@ -269,7 +269,7 @@ def plot_slice(
     annotate=None,
 ):
     if isinstance(cmap, (str, bytes)):
-        cmap = get_cmap(cmap)
+        cmap = colormaps[cmap]
 
     est_vmin, est_vmax = _get_limits(dslice)
     if not vmin:
@@ -359,7 +359,7 @@ def plot_slice_tern(
 ):
 
     if isinstance(cmap, (str, bytes)):
-        cmap = get_cmap(cmap)
+        cmap = colormaps[cmap]
 
     est_vmin, est_vmax = _get_limits(dslice)
     if not vmin:
