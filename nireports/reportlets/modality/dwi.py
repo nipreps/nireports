@@ -130,12 +130,15 @@ def plot_heatmap(
 
 
 def rotation_matrix(u, v):
-    r"""Calculate the rotation matrix *R* such that :math:`R \cdot \mathbf{u} = \mathbf{v}`.
+    r"""
+    Calculate the rotation matrix *R* such that :math:`R \cdot \mathbf{u} = \mathbf{v}`.
+
     Extracted from `Emmanuel Caruyer's code
     <https://github.com/ecaruyer/qspace/blob/master/qspace/visu/visu_points.py>`__,
     which is distributed under the revised BSD License:
     Copyright (c) 2013-2015, Emmanuel Caruyer
     All rights reserved.
+
     .. admonition :: List of changes
         Only minimal updates to leverage Numpy.
 
@@ -150,6 +153,7 @@ def rotation_matrix(u, v):
     -------
     R : :obj:`numpy.ndarray`
         The rotation matrix.
+
     """
 
     # the axis is given by the product u x v
@@ -178,12 +182,15 @@ def rotation_matrix(u, v):
 
 
 def draw_circles(positions, radius, n_samples=20):
-    r"""Draw circular patches (lying on a sphere) at given positions.
+    r"""
+    Draw circular patches (lying on a sphere) at given positions.
+
     Adapted from `Emmanuel Caruyer's code
     <https://github.com/ecaruyer/qspace/blob/master/qspace/visu/visu_points.py>`__,
     which is distributed under the revised BSD License:
     Copyright (c) 2013-2015, Emmanuel Caruyer
     All rights reserved.
+
     .. admonition :: List of changes
         Modified to take the full list of normalized bvecs and corresponding circle
         radii instead of taking the list of bvecs and radii for a specific shell
@@ -202,6 +209,7 @@ def draw_circles(positions, radius, n_samples=20):
     -------
     circles : :obj:`numpy.ndarray`
         Circular patches.
+
     """
 
     # A circle centered at [1, 0, 0] with radius r
@@ -222,12 +230,15 @@ def draw_circles(positions, radius, n_samples=20):
 
 
 def draw_points(gradients, ax, rad_min=0.3, rad_max=0.7, colormap="viridis"):
-    """Draw the vectors on a shell.
+    """
+    Draw the vectors on a shell.
+
     Adapted from `Emmanuel Caruyer's code
     <https://github.com/ecaruyer/qspace/blob/master/qspace/visu/visu_points.py>`__,
     which is distributed under the revised BSD License:
     Copyright (c) 2013-2015, Emmanuel Caruyer
     All rights reserved.
+
     .. admonition :: List of changes
         * The input is a single 2D numpy array of the gradient table in RAS+B format
         * The scaling of the circle radius for each bvec proportional to the inverse of
@@ -247,6 +258,7 @@ def draw_points(gradients, ax, rad_min=0.3, rad_max=0.7, colormap="viridis"):
         Maximum radius of the circle that renders a gradient direction.
     colormap : :obj:`matplotlib.pyplot.cm.ColorMap`
         matplotlib colormap name.
+
     """
 
     # Initialize 3D view
@@ -295,7 +307,8 @@ def plot_gradients(
     spacing=0.05,
     **kwargs,
 ):
-    """Draw the vectors on a unit sphere with color code for multiple b-value.
+    """
+    Draw the vectors on a unit sphere with color code for multiple b-value.
 
     Parameters
     ----------
@@ -313,7 +326,8 @@ def plot_gradients(
     Returns
     -------
     ax : :obj:`matplotlib.axes.Axis`
-        The figure's axis where the data is plot.
+        The figure's axis where the data is plotted.
+
     """
 
     # Initialize figure
