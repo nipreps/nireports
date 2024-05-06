@@ -21,10 +21,66 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """Visualizations for diffusion MRI data."""
+import nibabel as nb
 import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import art3d
+from nilearn.plotting import plot_anat
+
+
+def plot_dwi(dataobj, affine, gradient=None, **kwargs):
+    """
+    Plot orthogonal (axial, coronal, sagittal) slices of a given DWI volume. The
+    slices displayed are determined by a tuple contained in the ``cut_coords``
+    keyword argument.
+
+    Parameters
+    ----------
+    dataobj : :obj:`numpy.ndarray`
+        DWI volume data: a single 3D volume from a given gradient direction.
+    affine : :obj:`numpy.ndarray`
+        Affine transformation matrix.
+    gradient : :obj:`numpy.ndarray`
+        Gradient values in RAS+b format at the chosen gradient direction.
+    kwargs : :obj:`dict`
+        Extra args given to :obj:`nilearn.plotting.plot_anat()`.
+
+    Returns
+    -------
+    :class:`nilearn.plotting.displays.OrthoSlicer` or None
+        An instance of the OrthoSlicer class. If ``output_file`` is defined,
+        None is returned.
+
+    """
+
+    plt.rcParams.update(
+        {
+            "text.usetex": True,
+            "font.family": "sans-serif",
+            "font.sans-serif": ["Helvetica"],
+        }
+    )
+
+    affine = np.diag(nb.affines.voxel_sizes(affine).tolist() + [1])
+    affine[:3, 3] = -1.0 * (affine[:3, :3] @ ((np.array(dataobj.shape) - 1) * 0.5))
+
+    vmax = kwargs.pop("vmax", None) or np.percentile(dataobj, 98)
+    cut_coords = kwargs.pop("cut_coords", None) or (0, 0, 0)
+
+    return plot_anat(
+        nb.Nifti1Image(dataobj, affine, None),
+        vmax=vmax,
+        cut_coords=cut_coords,
+        title=(
+            r"Reference $b$=0"
+            if gradient is None
+            else f"""\
+$b$={gradient[3].astype(int)}, \
+$\\vec{{b}}$ = ({', '.join(str(v) for v in gradient[:3])})"""
+        ),
+        **kwargs,
+    )
 
 
 def plot_heatmap(
