@@ -128,7 +128,6 @@ def plot_heatmap(
     return fig
 
 
-
 def rotation_matrix(u, v):
     r"""
     Calculate the rotation matrix *R* such that :math:`R \cdot \mathbf{u} = \mathbf{v}`.
