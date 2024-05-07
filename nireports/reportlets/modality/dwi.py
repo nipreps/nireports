@@ -128,7 +128,6 @@ def plot_heatmap(
     return fig
 
 
-
 def rotation_matrix(u, v):
     r"""
     Calculate the rotation matrix *R* such that :math:`R \cdot \mathbf{u} = \mathbf{v}`.
@@ -308,7 +307,7 @@ def plot_gradients(
     **kwargs,
 ):
     """
-    Draw the vectors on a unit sphere with color code for multiple b-value.
+    Draw the vectors on a unit sphere with color code for multiple b-values.
 
     Parameters
     ----------
