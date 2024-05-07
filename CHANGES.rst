@@ -1,3 +1,14 @@
+23.2.1 (May 07, 2024)
+=====================
+Bug-fix release in the 23.2.x series.
+
+CHANGES
+-------
+
+**Full Changelog**: https://github.com/nipreps/nireports/compare/23.2.0...23.2.1
+
+* MNT: Fix matplotlib.cm.get_cmap deprecation (#98)
+
 23.2.0 (December 13, 2023)
 ==========================
 
