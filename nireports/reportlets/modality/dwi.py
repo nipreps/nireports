@@ -308,7 +308,7 @@ def plot_gradients(
     **kwargs,
 ):
     """
-    Draw the vectors on a unit sphere with color code for multiple b-value.
+    Draw the vectors on a unit sphere with color code for multiple b-values.
 
     Parameters
     ----------

@@ -56,7 +56,7 @@ class _DWIHeatmapOutputSpec(TraitedSpec):
 
 
 class DWIHeatmap(SimpleInterface):
-    """Prepare an fMRI summary plot for the report."""
+    """Prepare an dMRI summary plot for the report."""
 
     input_spec = _DWIHeatmapInputSpec
     output_spec = _DWIHeatmapOutputSpec
