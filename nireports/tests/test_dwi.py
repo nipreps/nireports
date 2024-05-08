@@ -32,29 +32,26 @@ from matplotlib import pyplot as plt
 from nireports.reportlets.modality.dwi import plot_dwi, plot_gradients
 
 
-@pytest.mark.parametrize(
-    'dwi', 'dwi_btable',
-    ['ds000114_sub-01_ses-test_dwi.nii.gz', 'ds000114_singleshell'],
-)
-def test_plot_dwi(tmp_path, testdata_path, dwi, dwi_btable, outdir):
+def test_plot_dwi(tmp_path, testdata_path, outdir):
     """Check the plot of DWI data."""
 
-    dwi_img = nb.load(testdata_path / f'{dwi}')
+    dwi_img = nb.load(testdata_path / 'ds000114_sub-01_ses-test_dwi.nii.gz')
     affine = dwi_img.affine
 
-    bvecs = np.loadtxt(testdata_path / f'{dwi_btable}.bvec').T
-    bvals = np.loadtxt(testdata_path / f'{dwi_btable}.bval')
+    bvecs = np.loadtxt(testdata_path / 'ds000114_singleshell.bvec').T
+    bvals = np.loadtxt(testdata_path / 'ds000114_singleshell.bval')
 
     gradients = np.hstack([bvecs, bvals[:, None]])
 
     # Pick a random volume to show
     rng = np.random.default_rng(1234)
+    # The image is truncated, so limit the range by volumes, not gradients
     idx = rng.integers(low=0, high=dwi_img.shape[-1], size=1).item()
 
     _ = plot_dwi(dwi_img.get_fdata()[..., idx], affine, gradient=gradients[idx])
 
     if outdir is not None:
-        plt.savefig(outdir / f'{Path(dwi).with_suffix("").stem}.svg', bbox_inches='tight')
+        plt.savefig(outdir / 'ds000114_dwi.svg', bbox_inches='tight')
 
 
 @pytest.mark.parametrize(
