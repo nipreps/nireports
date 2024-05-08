@@ -307,7 +307,10 @@ def plot_gradients(
     **kwargs,
 ):
     """
-    Draw the vectors on a unit sphere with color code for multiple b-values.
+    Draw the vectors on a unit sphere using a different color (as given by the
+    ``colormap`` property in the extra keywowrd arguments) for each b-value.
+
+    .. seealso:: :meth:`~nireports.reportlets.modality.dwi.draw_points`.
 
     Parameters
     ----------
@@ -320,7 +323,7 @@ def plot_gradients(
     spacing : :obj:`float`
         Plot spacing.
     kwargs : :obj:`dict`
-        Extra args given to :obj:`eddymotion.viz.draw_points()`.
+        Extra args given to :meth:`~nireports.reportlets.modality.dwi.draw_points`.
 
     Returns
     -------
