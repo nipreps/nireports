@@ -50,7 +50,6 @@ extensions = [
 autodoc_mock_imports = [
     "nilearn",
     "nitime",
-    "numpy",
     "pandas",
     "seaborn",
     "skimage",
