@@ -103,7 +103,7 @@ jobs:
       - name: Install tex
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends texlive
+          sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super
 
       - name: Install package
         run: pip install $PACKAGE
