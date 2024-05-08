@@ -94,6 +94,17 @@ jobs:
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
 
+      - uses: actions/cache@v4
+        with:
+          path: /var/lib/apt
+          key: apt-cache-v0
+          restore-keys: |
+            apt-cache-v0
+      - name: Install tex
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends texlive
+
       - name: Install package
         run: pip install $PACKAGE
       - name: Verify installation
