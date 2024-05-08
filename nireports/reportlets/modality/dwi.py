@@ -139,6 +139,7 @@ def rotation_matrix(u, v):
     All rights reserved.
 
     .. admonition :: List of changes
+
         Only minimal updates to leverage Numpy.
 
     Parameters
@@ -191,6 +192,7 @@ def draw_circles(positions, radius, n_samples=20):
     All rights reserved.
 
     .. admonition :: List of changes
+
         Modified to take the full list of normalized bvecs and corresponding circle
         radii instead of taking the list of bvecs and radii for a specific shell
         (*b*-value).
@@ -239,6 +241,7 @@ def draw_points(gradients, ax, rad_min=0.3, rad_max=0.7, colormap="viridis"):
     All rights reserved.
 
     .. admonition :: List of changes
+
         * The input is a single 2D numpy array of the gradient table in RAS+B format
         * The scaling of the circle radius for each bvec proportional to the inverse of
           the bvals. A minimum/maximal value for the radii can be specified.
@@ -307,7 +310,10 @@ def plot_gradients(
     **kwargs,
 ):
     """
-    Draw the vectors on a unit sphere with color code for multiple b-values.
+    Draw the vectors on a unit sphere using a different color (as given by the
+    ``colormap`` property in the extra keywowrd arguments) for each b-value.
+
+    .. seealso:: :func:`draw_points`.
 
     Parameters
     ----------
@@ -320,7 +326,7 @@ def plot_gradients(
     spacing : :obj:`float`
         Plot spacing.
     kwargs : :obj:`dict`
-        Extra args given to :obj:`eddymotion.viz.draw_points()`.
+        Extra args given to :func:`draw_points`.
 
     Returns
     -------
