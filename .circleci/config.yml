@@ -30,7 +30,7 @@ jobs:
           name: Install texlive
           command: |
             sudo apt-get update
-            sudo apt-get install -y --no-install-recommends texlive
+            sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super
 
       - save_cache:
          key: apt-v0
