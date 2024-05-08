@@ -29,7 +29,7 @@ from os import path as op
 import math
 import numpy as np
 import nibabel as nb
-from matplotlib import colormaps
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from svgutils.transform import fromstring
@@ -269,7 +269,7 @@ def plot_slice(
     annotate=None,
 ):
     if isinstance(cmap, (str, bytes)):
-        cmap = colormaps[cmap]
+        cmap = mpl.colormaps[cmap]
 
     est_vmin, est_vmax = _get_limits(dslice)
     if not vmin:
@@ -359,7 +359,7 @@ def plot_slice_tern(
 ):
 
     if isinstance(cmap, (str, bytes)):
-        cmap = colormaps[cmap]
+        cmap = mpl.colormaps[cmap]
 
     est_vmin, est_vmax = _get_limits(dslice)
     if not vmin:
@@ -665,9 +665,7 @@ def plot_mosaic(
             )
 
             if overlay_mask:
-                from matplotlib import cm
-
-                msk_cmap = cm.Reds  # @UndefinedVariable
+                msk_cmap = mpl.colormaps['Reds']
                 msk_cmap._init()
                 alphas = np.linspace(0, 0.75, msk_cmap.N + 3)
                 msk_cmap._lut[:, -1] = alphas

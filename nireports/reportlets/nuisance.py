@@ -27,7 +27,7 @@ import math
 import os.path as op
 
 import numpy as np
-from matplotlib import colormaps
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.backends.backend_pdf import FigureCanvasPdf as FigureCanvas
@@ -274,9 +274,9 @@ def plot_carpet(
         legend = False
 
     if cmap is None:
-        colors = colormaps["tab10"].colors
+        colors = mpl.colormaps["tab10"].colors
     elif cmap == "paired":
-        colors = list(colormaps["Paired"].colors)
+        colors = list(mpl.colormaps["Paired"].colors)
         colors[0], colors[1] = colors[1], colors[0]
         colors[2], colors[7] = colors[7], colors[2]
 
@@ -469,7 +469,7 @@ def spikesplot(
     ntsteps = ts_z.shape[1]
 
     # Load a colormap
-    my_cmap = colormaps[cmap]
+    my_cmap = mpl.colormaps[cmap]
     norm = Normalize(vmin=0, vmax=float(nslices - 1))
     colors = [my_cmap(norm(sl)) for sl in range(nslices)]
 
@@ -597,7 +597,7 @@ def spikesplot_cb(position, cmap="viridis", fig=None):
     cax = fig.add_axes(position)
     cb = ColorbarBase(
         cax,
-        cmap=colormaps[cmap],
+        cmap=mpl.colormaps[cmap],
         spacing="proportional",
         orientation="horizontal",
         drawedges=False,
