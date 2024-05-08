@@ -49,7 +49,7 @@ def test_plot_dwi(tmp_path, testdata_path, dwi, dwi_btable, outdir):
 
     # Pick a random volume to show
     rng = np.random.default_rng(1234)
-    idx = rng.integers(low=0, high=len(bvals), size=1).item()
+    idx = rng.integers(low=0, high=dwi_img.shape[-1], size=1).item()
 
     _ = plot_dwi(dwi_img.get_fdata()[..., idx], affine, gradient=gradients[idx])
 
