@@ -22,8 +22,8 @@
 #
 """Visualizations for diffusion MRI data."""
 import numpy as np
+import matplotlib as mpl
 from matplotlib import pyplot as plt
-from matplotlib.pyplot import cm
 from mpl_toolkits.mplot3d import art3d
 
 
@@ -258,7 +258,7 @@ def draw_points(gradients, ax, rad_min=0.3, rad_max=0.7, colormap="viridis"):
         Minimum radius of the circle that renders a gradient direction.
     rad_max : :obj:`float` between 0 and 1
         Maximum radius of the circle that renders a gradient direction.
-    colormap : :obj:`matplotlib.pyplot.cm.ColorMap`
+    colormap : :class:`str`
         matplotlib colormap name.
 
     """
@@ -273,7 +273,7 @@ def draw_points(gradients, ax, rad_min=0.3, rad_max=0.7, colormap="viridis"):
     bvals = bvals / bvals.max()
 
     # Colormap depending on bvalue (for visualization)
-    cmap = cm.get_cmap(colormap)
+    cmap = mpl.colormaps[colormap]
     colors = cmap(bvals)
 
     # Relative shell radii proportional to the inverse of bvalue (for visualization)
