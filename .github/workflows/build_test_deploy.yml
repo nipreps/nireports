@@ -133,6 +133,8 @@ jobs:
         run: pytest --cov nireports nireports
       - uses: codecov/codecov-action@v4
         if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   deploy:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
