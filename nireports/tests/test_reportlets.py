@@ -35,9 +35,10 @@ from templateflow.api import get
 
 from nireports.reportlets.modality.func import fMRIPlot
 from nireports.reportlets.mosaic import plot_mosaic
-from nireports.reportlets.nuisance import plot_carpet
+from nireports.reportlets.nuisance import plot_carpet, plot_raincloud
 from nireports.reportlets.surface import cifti_surfaces_plot
 from nireports.reportlets.xca import compcor_variance_plot, plot_melodic_components
+from nireports.tests.utils import _generate_raincloud_random_data
 from nireports.tools.timeseries import cifti_timeseries as _cifti_timeseries
 from nireports.tools.timeseries import get_tr as _get_tr
 from nireports.tools.timeseries import nifti_timeseries as _nifti_timeseries
@@ -367,4 +368,106 @@ def test_mriqc_plot_mosaic_2(tmp_path, testdata_path, outdir):
         out_file=(outdir / "rodent_mosaic.svg") if outdir is not None else None,
         maxrows=12,
         annotate=True,
+    )
+
+
+@pytest.mark.parametrize("orient", ["h", "v"])
+@pytest.mark.parametrize("density", (True, False))
+def test_plot_raincloud(orient, density, tmp_path):
+    features_label = "value"
+    group_label = "group"
+    group_names = ["group1", "group2"]
+    min_val_grp1 = 0.3
+    max_val_grp1 = 1.0
+    min_max_group1 = (min_val_grp1, max_val_grp1)
+    min_val_grp2 = 0.0
+    max_val_grp2 = 0.6
+    min_max_group2 = (min_val_grp2, max_val_grp2)
+    min_max = [min_max_group1, min_max_group2]
+    n_grp_samples = 250
+    data_file = tmp_path / "data.tsv"
+
+    _generate_raincloud_random_data(
+        min_max, n_grp_samples, features_label, group_label, group_names, data_file
+    )
+
+    palette = "Set2"
+    mark_nans = False
+    output_file = tmp_path / f"raincloud_reg_orient-{orient}_density-{density}.png"
+
+    plot_raincloud(
+        data_file,
+        group_label,
+        features_label,
+        palette=palette,
+        orient=orient,
+        density=density,
+        mark_nans=mark_nans,
+        output_file=output_file,
+    )
+
+    group_nans = [50, 0]
+
+    _generate_raincloud_random_data(
+        min_max,
+        n_grp_samples,
+        features_label,
+        group_label,
+        group_names,
+        data_file,
+        group_nans=group_nans,
+    )
+
+    mark_nans = True
+    nans_value = 2.0
+    output_file = tmp_path / f"raincloud_nans_orient-{orient}_density-{density}.png"
+
+    plot_raincloud(
+        data_file,
+        group_label,
+        features_label,
+        palette=palette,
+        orient=orient,
+        density=density,
+        mark_nans=mark_nans,
+        nans_value=nans_value,
+        output_file=output_file,
+    )
+
+    min_val_grp1 = 0.3
+    max_val_grp1 = 8.0
+    min_max_group1 = (min_val_grp1, max_val_grp1)
+    min_val_grp2 = -0.2
+    max_val_grp2 = 0.6
+    min_max_group2 = (min_val_grp2, max_val_grp2)
+    min_max = [min_max_group1, min_max_group2]
+
+    _generate_raincloud_random_data(
+        min_max,
+        n_grp_samples,
+        features_label,
+        group_label,
+        group_names,
+        data_file,
+        group_nans=group_nans,
+    )
+
+    upper_limit_value = 1.0
+    lower_limit_value = 0.0
+    limit_offset = 0.5
+    output_file = tmp_path / f"raincloud_nans_limits_orient-{orient}_density-{density}.png"
+
+    plot_raincloud(
+        data_file,
+        group_label,
+        features_label,
+        palette=palette,
+        orient=orient,
+        density=density,
+        upper_limit_value=upper_limit_value,
+        lower_limit_value=lower_limit_value,
+        limit_offset=limit_offset,
+        mark_nans=mark_nans,
+        nans_value=nans_value,
+        output_file=output_file,
     )
