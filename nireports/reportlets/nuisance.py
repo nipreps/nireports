@@ -25,11 +25,13 @@
 """Plotting distributions."""
 
 import math
+import operator
 import os.path as op
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 from matplotlib.backends.backend_pdf import FigureCanvasPdf as FigureCanvas
 from matplotlib.colorbar import ColorbarBase
@@ -626,8 +628,6 @@ def confoundplot(
     cutoff=None,
     ylims=None,
 ):
-    import seaborn as sns
-
     # Define TR and number of frames
     notr = False
     if tr is None:
@@ -856,8 +856,6 @@ def confounds_correlation_plot(
     output_file: :obj:`str`
         The file where the figure is saved.
     """
-    import pandas as pd
-    import seaborn as sns
 
     confounds_data = pd.read_table(confounds_file)
 
@@ -932,3 +930,277 @@ def confounds_correlation_plot(
         figure = None
         return output_file
     return [ax0, ax1], gs
+
+
+def _plot_density(x, y, df, group_name, palette, orient):
+    ax = sns.violinplot(
+        x=x,
+        y=y,
+        data=df,
+        hue=group_name,
+        dodge=False,
+        palette=palette,
+        density_norm="width",
+        inner=None,
+        orient=orient,
+    )
+
+    # Cut half of the violins
+    for violin in ax.collections:
+        bbox = violin.get_paths()[0].get_extents()
+        x0, y0, width, height = bbox.bounds
+        width_denom = 2
+        height_denom = 1
+        if orient == "h":
+            width_denom = 1
+            height_denom = 2
+        violin.set_clip_path(
+            plt.Rectangle(
+                (x0, y0), width / width_denom, height / height_denom, transform=ax.transData
+            )
+        )
+
+    return ax
+
+
+def _jitter_data_points(old_len_collections, orient, width, ax):
+    offset = np.array([width, 0])
+    if orient == "h":
+        offset = np.array([0, width])
+    for dots in ax.collections[old_len_collections:]:
+        dots.set_offsets(dots.get_offsets() + offset)
+
+
+def _plot_nans(df, x, y, color, orient, ax):
+    df_nans = df[df.isna().any(axis=1)]
+    sns.stripplot(
+        x=x,
+        y=y,
+        data=df_nans,
+        color=color,
+        orient=orient,
+        ax=ax,
+    )
+
+
+def _plot_out_of_range(
+    df,
+    x,
+    feature,
+    orient,
+    limit_offset,
+    limit_value,
+    limit_color,
+    limit_name,
+    color_vble_name,
+    _op,
+    ax,
+):
+    if limit_color is None:
+        raise ValueError(
+            f"``{color_vble_name}`` must be provided if ``{limit_name}`` is provided."
+        )
+    if limit_offset is None:
+        raise ValueError(f"``limit_offset`` must be provided if ``{limit_name}`` is provided.")
+    if _op == operator.gt:
+        arithm = operator.add
+    elif _op == operator.lt:
+        arithm = operator.sub
+    else:
+        raise ValueError(f"``{_op}`` must be either ``gt`` or ``lt``.")
+
+    df_overflow = df[_op(df[feature], limit_value)]
+    sns.stripplot(
+        x=x,
+        y=arithm(limit_value, limit_offset),
+        data=df_overflow,
+        color=limit_color,
+        orient=orient,
+        ax=ax,
+    )
+
+
+def plot_raincloud(
+    data_file,
+    group_name,
+    feature,
+    palette="Set2",
+    orient="v",
+    density=True,
+    upper_limit_value=None,
+    upper_limit_color="gray",
+    lower_limit_value=None,
+    lower_limit_color="gray",
+    limit_offset=None,
+    mark_nans=True,
+    nans_value=None,
+    nans_color="black",
+    figure=None,
+    output_file=None,
+):
+    """
+    Generate a raincloud plot with the data points corresponding to the
+    ``feature`` value contained in the data file. If ``upper_limit_value`` or
+    ``lower_limit_value`` is provided, the values outside that range are
+    clipped. Thus, a large density around those values, together with the values
+    plot with the distinctive ``upper_limit_color`` and ``lower_limit_color``
+    styles may be indicative of unexpected values in the data. Similarly, NaN
+    values, if present, will be marked with the distinctive ``nans_color``
+    style, and may again be indicative of unexpected values in the data.
+
+    Parameters
+    ----------
+    data_file : :obj:`str`
+        File containing the data of interest.
+    figure : :obj:`matplotlib.pyplot.figure` or None
+        Existing figure on which to plot.
+    group_name : :obj:`str`
+        The group name of interest to be plot.
+    feature : :obj:`str`
+        The feature of interest to be plot.
+    palette : :obj:`str`, optional
+        Color palette name provided to :func:`sns.stripplot`.
+    orient : :obj:`str`, optional
+        Plot orientation (``v`` or ``h``).
+    density : :obj:`bool`, optional
+        ``True`` to plot the density of the data points.
+    upper_limit_value : :obj:`float`, optional
+        Upper limit value over which any value in the data will be styled with a
+        different style.
+    upper_limit_color : :obj:`str`, optional
+        Color name to represent values over ``upper_limit_value``.
+    lower_limit_value : :obj:`float`, optional
+        Lower limit value under which any value in the data will be styled with
+        a different style.
+    lower_limit_color : :obj:`str`, optional
+        Color name to represent values under ``lower_limit_value``.
+    limit_offset : :obj:`float`, optional
+        Offset to plot the values over/under the upper/lower limit values.
+    mark_nans : :obj:`bool`, optional
+        ``True`` to plot NaNs as dots. ``nans_values`` must be provided if True.
+    nans_value : :obj:`float`, optional
+        Value to use for NaN values.
+    nans_color : :obj:`str`, optional
+        Color name to represent NaN values.
+    output_file : :obj:`str` or :obj:`None`
+        Path where the output figure should be saved. If this is not defined,
+        then the plotting axes will be returned instead of the saved figure
+        path.
+
+    Returns
+    -------
+    axes and gridspec
+        Plotting axes and gridspec. Returned only if ``output_file`` is ``None``.
+    output_file : :obj:`str`
+        The file where the figure is saved.
+    """
+
+    df = pd.read_csv(data_file, sep=r"[\t\s]+", engine="python")
+
+    df_clip = df.copy(deep=True)
+    df_clip[feature] = df[feature].clip(lower=lower_limit_value, upper=upper_limit_value)
+
+    if figure is None:
+        plt.figure(figsize=(7, 5))
+
+    gs = GridSpec(1, 1)
+    ax = plt.subplot(gs[0, 0])
+
+    sns.set(style="white", font_scale=2)
+
+    x = feature
+    y = group_name
+    # Swap x/y if the requested orientation is vertical
+    if orient == "v":
+        x = group_name
+        y = feature
+
+    # Plot the density
+    if density:
+        ax = _plot_density(x, y, df_clip, group_name, palette, orient)
+
+    # Add boxplots
+    width = 0.15
+    sns.boxplot(
+        x=x,
+        y=y,
+        data=df_clip,
+        color="black",
+        width=width,
+        zorder=10,
+        showcaps=True,
+        boxprops={"facecolor": "none", "zorder": 10},
+        showfliers=True,
+        whiskerprops={"linewidth": 2, "zorder": 10},
+        saturation=1,
+        orient=orient,
+        ax=ax,
+    )
+
+    old_len_collections = len(ax.collections)
+
+    # Plot the data points as dots
+    sns.stripplot(
+        x=x,
+        y=y,
+        hue=group_name,
+        data=df_clip,
+        palette=palette,
+        edgecolor="white",
+        size=3,
+        jitter=0.1,
+        zorder=0,
+        orient=orient,
+        ax=ax,
+    )
+
+    # Offset the dots that would be otherwise shadowed by the violins
+    if density:
+        _jitter_data_points(old_len_collections, orient, width, ax)
+
+    # Draw nans if any
+    if mark_nans:
+        if nans_value is None:
+            raise ValueError("``nans_value`` must be provided if ``mark_nans`` is True.")
+        _plot_nans(df, x, nans_value, nans_color, orient, ax)
+
+    # If upper/lower limits are provided, draw the points with a different color
+    if upper_limit_value is not None:
+        _plot_out_of_range(
+            df,
+            x,
+            feature,
+            orient,
+            limit_offset,
+            upper_limit_value,
+            upper_limit_color,
+            "upper_limit_value",
+            "upper_limit_color",
+            operator.gt,
+            ax,
+        )
+
+    if lower_limit_value is not None:
+        _plot_out_of_range(
+            df,
+            x,
+            feature,
+            orient,
+            limit_offset,
+            lower_limit_value,
+            lower_limit_color,
+            "lower_limit_value",
+            "lower_limit_color",
+            operator.lt,
+            ax,
+        )
+
+    if output_file is not None:
+        figure = plt.gcf()
+        plt.tight_layout()
+        figure.savefig(output_file, bbox_inches="tight")
+        plt.close(figure)
+        figure = None
+        return output_file
+
+    return ax, gs
