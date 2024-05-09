@@ -23,11 +23,35 @@
 """Test DWI reportlets."""
 
 import pytest
+from pathlib import Path
 
+import nibabel as nb
 import numpy as np
 from matplotlib import pyplot as plt
 
-from nireports.reportlets.modality.dwi import plot_gradients
+from nireports.reportlets.modality.dwi import plot_dwi, plot_gradients
+
+
+def test_plot_dwi(tmp_path, testdata_path, outdir):
+    """Check the plot of DWI data."""
+
+    stem = 'ds000114_sub-01_ses-test_desc-trunc_dwi'
+    dwi_img = nb.load(testdata_path / f'{stem}.nii.gz')
+    affine = dwi_img.affine
+
+    bvecs = np.loadtxt(testdata_path / f'{stem}.bvec').T
+    bvals = np.loadtxt(testdata_path / f'{stem}.bval')
+
+    gradients = np.hstack([bvecs, bvals[:, None]])
+
+    # Pick a random volume to show
+    rng = np.random.default_rng(1234)
+    idx = rng.integers(low=0, high=dwi_img.shape[-1], size=1).item()
+
+    _ = plot_dwi(dwi_img.get_fdata()[..., idx], affine, gradient=gradients[idx])
+
+    if outdir is not None:
+        plt.savefig(outdir / f'{stem}.svg', bbox_inches='tight')
 
 
 @pytest.mark.parametrize(
