@@ -49,19 +49,12 @@ def read_md_table(md_text):
             break
 
         values = [v.strip() or None for v in line.split("|")][1:-1]
-        retval.append({k: v for k, v in zip(keys, values) if v})
+        retval.append({k: v for k, v in zip(keys, values, strict=True) if v})
 
     return retval
 
 
-def sort_contributors(entries, git_lines, exclude=None, last=None):
-    """Return a list of author dictionaries, ordered by contribution."""
-    last = last or []
-    sorted_authors = sorted(entries, key=lambda i: i["name"])
-
-    first_last = [" ".join(val["name"].split(",")[::-1]).strip() for val in sorted_authors]
-    first_last_excl = [" ".join(val["name"].split(",")[::-1]).strip() for val in exclude or []]
-
+def _extract_git_contributor_matches(git_lines, sorted_authors, first_last, first_last_excl):
     unmatched = []
     author_matches = []
     for ele in git_lines:
@@ -78,17 +71,38 @@ def sort_contributors(entries, git_lines, exclude=None, last=None):
         if val not in author_matches:
             author_matches.append(val)
 
+    return author_matches, unmatched
+
+
+def _get_position_matches(author_matches):
+    position_matches = []
+    for i, item in enumerate(author_matches):
+        pos = item.pop("position", None)
+        if pos is not None:
+            position_matches.append((i, int(pos)))
+
+    return position_matches
+
+
+def sort_contributors(entries, git_lines, exclude=None, last=None):
+    """Return a list of author dictionaries, ordered by contribution."""
+    last = last or []
+    sorted_authors = sorted(entries, key=lambda i: i["name"])
+
+    first_last = [" ".join(val["name"].split(",")[::-1]).strip() for val in sorted_authors]
+    first_last_excl = [" ".join(val["name"].split(",")[::-1]).strip() for val in exclude or []]
+
+    author_matches, unmatched = _extract_git_contributor_matches(
+        git_lines, sorted_authors, first_last, first_last_excl
+    )
+
     names = {" ".join(val["name"].split(",")[::-1]).strip() for val in author_matches}
     for missing_name in first_last:
         if missing_name not in names:
             missing = sorted_authors[first_last.index(missing_name)]
             author_matches.append(missing)
 
-    position_matches = []
-    for i, item in enumerate(author_matches):
-        pos = item.pop("position", None)
-        if pos is not None:
-            position_matches.append((i, int(pos)))
+    position_matches = _get_position_matches(author_matches)
 
     for i, pos in position_matches:
         if pos < 0:
@@ -114,7 +128,7 @@ def get_git_lines(fname="line-contributors.txt"):
     if not lines and git_line_summary_path:
         print("Running git-line-summary on repo")
         lines = sp.check_output([git_line_summary_path]).decode().splitlines()
-        lines = [l for l in lines if "Not Committed Yet" not in l]
+        lines = [ele for ele in lines if "Not Committed Yet" not in ele]
         contrib_file.write_text("\n".join(lines))
 
     if not lines:
@@ -146,7 +160,10 @@ def cli():
 @click.option("-z", "--zenodo-file", type=click.Path(exists=True), default=".zenodo.json")
 @click.option("-m", "--maintainers", type=click.Path(exists=True), default=".maint/MAINTAINERS.md")
 @click.option(
-    "-c", "--contributors", type=click.Path(exists=True), default=".maint/CONTRIBUTORS.md"
+    "-c",
+    "--contributors",
+    type=click.Path(exists=True),
+    default=".maint/CONTRIBUTORS.md",
 )
 @click.option("--pi", type=click.Path(exists=True), default=".maint/PIs.md")
 @click.option("-f", "--former-file", type=click.Path(exists=True), default=".maint/FORMER.md")
@@ -211,7 +228,10 @@ def zenodo(
 @cli.command()
 @click.option("-m", "--maintainers", type=click.Path(exists=True), default=".maint/MAINTAINERS.md")
 @click.option(
-    "-c", "--contributors", type=click.Path(exists=True), default=".maint/CONTRIBUTORS.md"
+    "-c",
+    "--contributors",
+    type=click.Path(exists=True),
+    default=".maint/CONTRIBUTORS.md",
 )
 @click.option("--pi", type=click.Path(exists=True), default=".maint/PIs.md")
 @click.option("-f", "--former-file", type=click.Path(exists=True), default=".maint/FORMER.md")
@@ -274,7 +294,12 @@ def publication(
     print("Authors (%d):" % len(hits))
     print(
         "%s."
-        % "; ".join(["%s \\ :sup:`%s`\\ " % (i["name"], idx) for i, idx in zip(hits, aff_indexes)])
+        % "; ".join(
+            [
+                "%s \\ :sup:`%s`\\ " % (i["name"], idx)
+                for i, idx in zip(hits, aff_indexes, strict=True)
+            ]
+        )
     )
 
     print(
