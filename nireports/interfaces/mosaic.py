@@ -26,6 +26,7 @@
 # https://github.com/nipreps/mriqc/blob/1ffd4c8d1a20b44ebfea648a7b12bb32a425d4ec/
 # mriqc/interfaces/viz.py
 """Visualization of n-D images with mosaics cutting through planes."""
+
 from pathlib import Path
 
 import numpy as np
@@ -127,7 +128,6 @@ class _PlotMosaicOutputSpec(TraitedSpec):
 
 
 class PlotMosaic(SimpleInterface):
-
     """
     Plots slices of a 3D volume into a pdf file
     """
@@ -136,10 +136,7 @@ class PlotMosaic(SimpleInterface):
     output_spec = _PlotMosaicOutputSpec
 
     def _run_interface(self, runtime):
-        mask = (
-            self.inputs.bbox_mask_file if isdefined(self.inputs.bbox_mask_file)
-            else None
-        )
+        mask = self.inputs.bbox_mask_file if isdefined(self.inputs.bbox_mask_file) else None
 
         title = self.inputs.title if isdefined(self.inputs.title) else None
 

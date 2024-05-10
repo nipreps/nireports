@@ -21,9 +21,10 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """Visualizations for diffusion MRI data."""
+
+import matplotlib as mpl
 import nibabel as nb
 import numpy as np
-import matplotlib as mpl
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import art3d
 from nilearn.plotting import plot_anat
@@ -114,7 +115,7 @@ def plot_heatmap(
         figsize=(20, 1.6 * (len(b_indices) + 1)),
     )
     axs[-1].spines[:].set_visible(False)
-    axs[-1].grid(which="minor", color="w", linestyle='-', linewidth=1)
+    axs[-1].grid(which="minor", color="w", linestyle="-", linewidth=1)
     for i, shelldata in enumerate(shells):
         x = shelldata[shelldata < imax]
         y = np.array([scalar[mask]] * len(b_indices[i])).reshape(-1)[shelldata < imax]
@@ -127,8 +128,8 @@ def plot_heatmap(
         histdata, _, _ = np.histogram2d(x, y, bins=bins, range=((0, int(imax)), (0, 1)))
         axs[i].imshow(
             histdata.T,
-            interpolation='nearest',
-            origin='lower',
+            interpolation="nearest",
+            origin="lower",
             aspect="auto",
             cmap=cmap,
         )
@@ -144,7 +145,7 @@ def plot_heatmap(
 
         # axs[i].set_xticks(np.arange(bins[0] + 1) - .5, minor=True)
         axs[i].set_yticks(np.arange(bins[1] + 1) - 0.5, minor=True)
-        axs[i].grid(which="minor", color="w", linestyle='-', linewidth=1)
+        axs[i].grid(which="minor", color="w", linestyle="-", linewidth=1)
         axs[i].tick_params(which="minor", bottom=False, left=False)
         axs[i].set_ylabel(f"$b$ = {bvals[i]}\n($n$ = {len(b_indices[i])})", fontsize=15)
 
@@ -174,8 +175,7 @@ def plot_heatmap(
     axs[-1].legend([f"{b}" for b in bvals], ncol=len(bvals), title="$b$ value")
     axs[-1].set_yticks([], labels=[])
     axs[-1].set_xlabel(
-        f"SNR [noise floor estimated at {sigma:0.2f}]" if sigma is not None
-        else "DWI intensity",
+        f"SNR [noise floor estimated at {sigma:0.2f}]" if sigma is not None else "DWI intensity",
         fontsize=20,
     )
     fig.supylabel(scalar_label, fontsize=20, y=0.65)
@@ -222,7 +222,7 @@ def rotation_matrix(u, v):
             u[0] * v[1] - u[1] * v[0],
         ]
     )
-    if (w ** 2).sum() < (np.finfo(w.dtype).eps * 10):
+    if (w**2).sum() < (np.finfo(w.dtype).eps * 10):
         # The vectors u and v are collinear
         return np.eye(3)
 

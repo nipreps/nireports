@@ -1,23 +1,34 @@
+# To install the git pre-commit hook run:
+#   pre-commit install
+# To update the pre-commit hooks run:
+#   pre-commit install-hooks
+
+exclude: |
+    (?x)^(
+        docs/_static/.*|
+        nireports/tests/data/.*|
+        nireports/assembler/data/tests/work/.*|
+        nireports/assembler/data/tests/crashfile.txt|
+        nireports/assembler/data/.*\.tpl
+    )$
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.2.0
     hooks:
-    -   id: trailing-whitespace
-    -   id: end-of-file-fixer
-    -   id: check-yaml
-    -   id: check-json
-    -   id: check-toml
-    -   id: check-case-conflict
-    -   id: check-docstring-first
-    -   id: check-merge-conflict
-    -   id: check-vcs-permalinks
-    -   id: pretty-format-json
-        args: ['--autofix']
--   repo: https://github.com/psf/black
-    rev: 22.3.0
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: debug-statements
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-merge-conflict
+      - id: check-vcs-permalinks
+      - id: pretty-format-json
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.4
     hooks:
-    -   id: black
--   repo: https://github.com/pycqa/isort
-    rev: 5.10.1
-    hooks:
-    -   id: isort
+      - id: ruff
+        args: [ --fix ]
+      - id: ruff-format

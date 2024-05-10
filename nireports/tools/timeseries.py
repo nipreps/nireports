@@ -26,8 +26,9 @@
 # https://github.com/nipreps/niworkflows/blob/fa273d004c362d9562616253180e95694f07be3b/
 # niworkflows/utils/timeseries.py
 """Extracting signals from NIfTI and CIFTI2 files."""
-import numpy as np
+
 import nibabel as nb
+import numpy as np
 
 
 def get_tr(img):
@@ -72,13 +73,8 @@ def cifti_timeseries(dataset):
     }
     seg = {label: [] for label in list(labels.values()) + ["Other"]}
     for bm in matrix.get_index_map(1).brain_models:
-        label = (
-            "Other" if bm.brain_structure not in labels else
-            labels[bm.brain_structure]
-        )
-        seg[label] += list(range(
-            bm.index_offset, bm.index_offset + bm.index_count
-        ))
+        label = "Other" if bm.brain_structure not in labels else labels[bm.brain_structure]
+        seg[label] += list(range(bm.index_offset, bm.index_offset + bm.index_count))
 
     return dataset.get_fdata(dtype="float32").T, seg
 
@@ -108,9 +104,9 @@ def nifti_timeseries(
         if lut is None:
             lut = np.zeros((256,), dtype="uint8")
             lut[100:201] = 1  # Ctx GM
-            lut[30:99] = 2    # dGM
-            lut[1:11] = 3     # WM+CSF
-            lut[255] = 4      # Cerebellum
+            lut[30:99] = 2  # dGM
+            lut[1:11] = 3  # WM+CSF
+            lut[255] = 4  # Cerebellum
         # Apply lookup table
         segmentation = lut[segmentation]
 

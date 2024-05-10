@@ -21,6 +21,7 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """Tests plotting interfaces."""
+
 import os
 from shutil import copy
 
@@ -45,7 +46,7 @@ def test_CompCorVariancePlot(datadir):
     _smoke_test_report(cc_rpt, "compcor_variance.svg")
 
 
-@pytest.mark.parametrize('ignore_initial_volumes', (0, 1))
+@pytest.mark.parametrize("ignore_initial_volumes", (0, 1))
 def test_ConfoundsCorrelationPlot(datadir, ignore_initial_volumes):
     """confounds correlation report test"""
     confounds_file = os.path.join(datadir, "confounds_test.tsv")

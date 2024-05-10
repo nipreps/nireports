@@ -21,20 +21,21 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """Functional MRI -specific visualization."""
-import numpy as np
-import nibabel as nb
 
-from nipype.utils.filemanip import fname_presuffix
+import nibabel as nb
+import numpy as np
 from nipype.interfaces.base import (
-    File,
     BaseInterfaceInputSpec,
-    TraitedSpec,
+    File,
     SimpleInterface,
-    traits,
+    TraitedSpec,
     isdefined,
+    traits,
 )
-from nireports.tools.timeseries import cifti_timeseries, get_tr, nifti_timeseries
+from nipype.utils.filemanip import fname_presuffix
+
 from nireports.reportlets.modality.func import fMRIPlot
+from nireports.tools.timeseries import cifti_timeseries, get_tr, nifti_timeseries
 
 
 class _FMRISummaryInputSpec(BaseInterfaceInputSpec):
@@ -69,40 +70,41 @@ class FMRISummary(SimpleInterface):
             newpath=runtime.cwd,
         )
 
-        dataframe = pd.DataFrame({
-            "outliers": np.loadtxt(self.inputs.outliers, usecols=[0]).tolist(),
-            # Pick non-standardize dvars (col 1)
-            # First timepoint is NaN (difference)
-            "DVARS": [np.nan]
-            + np.loadtxt(self.inputs.dvars, skiprows=1, usecols=[1]).tolist(),
-            # First timepoint is zero (reference volume)
-            "FD": [0.0]
-            + np.loadtxt(self.inputs.fd, skiprows=1, usecols=[0]).tolist(),
-        }) if (
-            isdefined(self.inputs.outliers)
-            and isdefined(self.inputs.dvars)
-            and isdefined(self.inputs.fd)
-        ) else None
+        dataframe = (
+            pd.DataFrame(
+                {
+                    "outliers": np.loadtxt(self.inputs.outliers, usecols=[0]).tolist(),
+                    # Pick non-standardize dvars (col 1)
+                    # First timepoint is NaN (difference)
+                    "DVARS": [np.nan]
+                    + np.loadtxt(self.inputs.dvars, skiprows=1, usecols=[1]).tolist(),
+                    # First timepoint is zero (reference volume)
+                    "FD": [0.0] + np.loadtxt(self.inputs.fd, skiprows=1, usecols=[0]).tolist(),
+                }
+            )
+            if (
+                isdefined(self.inputs.outliers)
+                and isdefined(self.inputs.dvars)
+                and isdefined(self.inputs.fd)
+            )
+            else None
+        )
 
         input_data = nb.load(self.inputs.in_func)
         seg_file = self.inputs.in_segm if isdefined(self.inputs.in_segm) else None
         dataset, segments = (
             cifti_timeseries(input_data)
-            if isinstance(input_data, nb.Cifti2Image) else
-            nifti_timeseries(input_data, seg_file)
+            if isinstance(input_data, nb.Cifti2Image)
+            else nifti_timeseries(input_data, seg_file)
         )
 
         fig = fMRIPlot(
             dataset,
             segments=segments,
             spikes_files=(
-                [self.inputs.in_spikes_bg]
-                if isdefined(self.inputs.in_spikes_bg) else None
+                [self.inputs.in_spikes_bg] if isdefined(self.inputs.in_spikes_bg) else None
             ),
-            tr=(
-                self.inputs.tr if isdefined(self.inputs.tr) else
-                get_tr(input_data)
-            ),
+            tr=(self.inputs.tr if isdefined(self.inputs.tr) else get_tr(input_data)),
             confounds=dataframe,
             units={"outliers": "%", "FD": "mm"},
             vlines={"FD": [self.inputs.fd_thres]},
