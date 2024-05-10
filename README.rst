@@ -1,4 +1,7 @@
 
+.. image:: https://img.shields.io/pypi/v/nireports.svg
+  :target: https://pypi.python.org/pypi/nireports/
+  :alt: Latest Version
 .. image:: https://readthedocs.org/projects/nireports/badge/?version=latest
   :target: https://nireports.readthedocs.io/en/latest/?badge=latest
   :alt: Documentation Status
