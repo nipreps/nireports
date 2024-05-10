@@ -22,11 +22,9 @@
 #
 """Test DWI reportlets."""
 
-import pytest
-from pathlib import Path
-
 import nibabel as nb
 import numpy as np
+import pytest
 from matplotlib import pyplot as plt
 
 from nireports.reportlets.modality.dwi import plot_dwi, plot_gradients
@@ -35,12 +33,12 @@ from nireports.reportlets.modality.dwi import plot_dwi, plot_gradients
 def test_plot_dwi(tmp_path, testdata_path, outdir):
     """Check the plot of DWI data."""
 
-    stem = 'ds000114_sub-01_ses-test_desc-trunc_dwi'
-    dwi_img = nb.load(testdata_path / f'{stem}.nii.gz')
+    stem = "ds000114_sub-01_ses-test_desc-trunc_dwi"
+    dwi_img = nb.load(testdata_path / f"{stem}.nii.gz")
     affine = dwi_img.affine
 
-    bvecs = np.loadtxt(testdata_path / f'{stem}.bvec').T
-    bvals = np.loadtxt(testdata_path / f'{stem}.bval')
+    bvecs = np.loadtxt(testdata_path / f"{stem}.bvec").T
+    bvals = np.loadtxt(testdata_path / f"{stem}.bval")
 
     gradients = np.hstack([bvecs, bvals[:, None]])
 
@@ -51,18 +49,18 @@ def test_plot_dwi(tmp_path, testdata_path, outdir):
     _ = plot_dwi(dwi_img.get_fdata()[..., idx], affine, gradient=gradients[idx])
 
     if outdir is not None:
-        plt.savefig(outdir / f'{stem}.svg', bbox_inches='tight')
+        plt.savefig(outdir / f"{stem}.svg", bbox_inches="tight")
 
 
 @pytest.mark.parametrize(
-    'dwi_btable',
-    ['ds000114_singleshell', 'hcph_multishell', 'ds004737_dsi'],
+    "dwi_btable",
+    ["ds000114_singleshell", "hcph_multishell", "ds004737_dsi"],
 )
 def test_plot_gradients(tmp_path, testdata_path, dwi_btable, outdir):
     """Check the plot of DWI gradients."""
 
-    bvecs = np.loadtxt(testdata_path / f'{dwi_btable}.bvec').T
-    bvals = np.loadtxt(testdata_path / f'{dwi_btable}.bval')
+    bvecs = np.loadtxt(testdata_path / f"{dwi_btable}.bvec").T
+    bvals = np.loadtxt(testdata_path / f"{dwi_btable}.bval")
 
     b0s_mask = bvals < 50
 
@@ -70,4 +68,4 @@ def test_plot_gradients(tmp_path, testdata_path, dwi_btable, outdir):
     _ = plot_gradients(gradients)
 
     if outdir is not None:
-        plt.savefig(outdir / f'{dwi_btable}.svg', bbox_inches='tight')
+        plt.savefig(outdir / f"{dwi_btable}.svg", bbox_inches="tight")

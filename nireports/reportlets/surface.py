@@ -23,11 +23,12 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from
 # NiPreps projects licensed under the Apache-2.0 terms.
 """Plotting surface-supported data."""
-import numpy as np
+
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
-from matplotlib import cm
 import nibabel as nb
+import numpy as np
+from matplotlib import cm
+from matplotlib.colors import Normalize
 
 
 def cifti_surfaces_plot(
@@ -119,25 +120,25 @@ def cifti_surfaces_plot(
     if mx is None:
         mx = np.max(data)
 
-    cmap = kwargs.pop('cmap', 'YlOrRd_r')
+    cmap = kwargs.pop("cmap", "YlOrRd_r")
     cbar_map = cm.ScalarMappable(norm=Normalize(mn, mx), cmap=cmap)
 
     # Make background maps that rescale to a medium gray
-    lh_bg = np.zeros(lh_data.shape, 'int8')
-    rh_bg = np.zeros(rh_data.shape, 'int8')
+    lh_bg = np.zeros(lh_data.shape, "int8")
+    rh_bg = np.zeros(rh_data.shape, "int8")
     lh_bg[:2] = [3, -2]
     rh_bg[:2] = [3, -2]
 
     lh_mesh, rh_mesh = get_surface_meshes(density, surface_type)
-    lh_kwargs = dict(surf_mesh=lh_mesh, surf_map=lh_data, bg_map=lh_bg)
-    rh_kwargs = dict(surf_mesh=rh_mesh, surf_map=rh_data, bg_map=rh_bg)
+    lh_kwargs = {"surf_mesh": lh_mesh, "surf_map": lh_data, "bg_map": lh_bg}
+    rh_kwargs = {"surf_mesh": rh_mesh, "surf_map": rh_data, "bg_map": rh_bg}
 
     # Build the figure
     figure = plt.figure(figsize=plt.figaspect(0.25), constrained_layout=True)
-    for i, view in enumerate(('lateral', 'medial')):
-        for j, hemi in enumerate(('left', 'right')):
-            title = f'{hemi.title()} - {view.title()}'
-            ax = figure.add_subplot(1, 4, i * 2 + j + 1, projection='3d', rasterized=True)
+    for i, view in enumerate(("lateral", "medial")):
+        for j, hemi in enumerate(("left", "right")):
+            title = f"{hemi.title()} - {view.title()}"
+            ax = figure.add_subplot(1, 4, i * 2 + j + 1, projection="3d", rasterized=True)
             hemi_kwargs = (lh_kwargs, rh_kwargs)[j]
             plot_surf(
                 hemi=hemi,
@@ -153,7 +154,7 @@ def cifti_surfaces_plot(
             # plot_surf sets this to 8, which seems a little far out, but 6 starts clipping
             ax.dist = 7
 
-    figure.colorbar(cbar_map, shrink=0.2, ax=figure.axes, location='bottom')
+    figure.colorbar(cbar_map, shrink=0.2, ax=figure.axes, location="bottom")
 
     if output_file is not None:
         figure.savefig(output_file, bbox_inches="tight", dpi=400)

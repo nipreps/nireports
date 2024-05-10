@@ -23,11 +23,11 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
 # another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
 """Plotting results of component decompositions (xCA -- P/I-CA)."""
-import numpy as np
-import nibabel as nb
-import pandas as pd
 
 import matplotlib.pyplot as plt
+import nibabel as nb
+import numpy as np
+import pandas as pd
 from nilearn.plotting.cm import cold_white_hot
 
 from nireports.reportlets.utils import transform_to_2d
@@ -77,11 +77,13 @@ def plot_melodic_components(
 
     """
     import os
+
     import numpy as np
-    from matplotlib.gridspec import GridSpec
     import pylab as plt
     import seaborn as sns
+    from matplotlib.gridspec import GridSpec
     from nilearn.image import index_img, iter_img
+
     try:
         from nilearn.maskers import NiftiMasker
     except ImportError:  # nilearn < 0.9
@@ -152,7 +154,7 @@ def plot_melodic_components(
             textcoords="axes fraction",
             size=12,
             color="#ea8800",
-            bbox=dict(boxstyle="round", fc="#f7dcb7", ec="#FC990E"),
+            bbox={"boxstyle": "round", "fc": "#f7dcb7", "ec": "#FC990E"},
         )
         ax.axes.get_xaxis().set_visible(False)
         ax.axes.get_yaxis().set_visible(False)
@@ -163,7 +165,6 @@ def plot_melodic_components(
     if ICs.ndim == 3:
         ICs = ICs.slicer[..., None]
     for i, img in enumerate(iter_img(ICs)):
-
         col = i % 2
         row = i // 2
         l_row = row * 2 + warning_row

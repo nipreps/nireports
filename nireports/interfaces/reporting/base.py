@@ -21,12 +21,15 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """class mixin and utilities for enabling reports for nipype interfaces."""
+
 from pathlib import Path
+
 from nipype import logging
-from nipype.utils.filemanip import fname_presuffix
-from nipype.interfaces.base import File, traits, isdefined
+from nipype.interfaces.base import File, isdefined, traits
 from nipype.interfaces.mixins import reporting
-from nireports.reportlets.utils import cuts_from_bbox, compose_view
+from nipype.utils.filemanip import fname_presuffix
+
+from nireports.reportlets.utils import compose_view, cuts_from_bbox
 
 _LOGGER = logging.getLogger("nipype.interface")
 
@@ -47,10 +50,16 @@ class _SVGReportCapableInputSpec(reporting.ReportCapableInputSpec):
 
 class _RegistrationRCInputSpecRPT(_SVGReportCapableInputSpec):
     fixed_params = traits.Dict(
-        traits.Str, value={}, usedefault=True, desc="pass parameters to plotter",
+        traits.Str,
+        value={},
+        usedefault=True,
+        desc="pass parameters to plotter",
     )
     moving_params = traits.Dict(
-        traits.Str, value={}, usedefault=True, desc="pass parameters to plotter",
+        traits.Str,
+        value={},
+        usedefault=True,
+        desc="pass parameters to plotter",
     )
 
 
@@ -69,8 +78,9 @@ class RegistrationRC(reporting.ReportCapableInterface):
 
     def _generate_report(self):
         """Generate the visual report."""
-        from nilearn.image import threshold_img, load_img
+        from nilearn.image import load_img, threshold_img
         from nilearn.masking import apply_mask, unmask
+
         from nireports.reportlets.mosaic import plot_registration
 
         _LOGGER.info("Generating visual report")
@@ -157,8 +167,9 @@ class SurfaceSegmentationRC(reporting.ReportCapableInterface):
 
     def _generate_report(self):
         """Generate the visual report."""
-        from nilearn.image import threshold_img, load_img
+        from nilearn.image import load_img, threshold_img
         from nilearn.masking import apply_mask, unmask
+
         from nireports.reportlets.mosaic import plot_registration
 
         _LOGGER.info("Generating visual report")

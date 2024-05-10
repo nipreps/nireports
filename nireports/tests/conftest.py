@@ -20,7 +20,8 @@
 #
 #     https://www.nipreps.org/community/licensing/
 #
-""" py.test configuration file """
+"""py.test configuration file"""
+
 import os
 
 import pytest

@@ -23,7 +23,7 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
 # another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
 """Exercising the visual report system (VRS)."""
-import os
+
 import tempfile
 from itertools import product
 from pathlib import Path
@@ -34,17 +34,14 @@ import yaml
 from bids.layout import BIDSLayout
 from bids.layout.writing import build_path
 
-from nireports.assembler.report import Report
-
 from nireports.assembler import data
-
+from nireports.assembler.report import Report
 
 summary_meta = {
     "Summary": {
         "Structural images": 1,
         "FreeSurfer reconstruction": "Pre-existing directory",
-        "Output spaces":
-            "<code>MNI152NLin2009cAsym</code>, <code>fsaverage5</code>",
+        "Output spaces": "<code>MNI152NLin2009cAsym</code>, <code>fsaverage5</code>",
     }
 }
 
@@ -294,9 +291,7 @@ def test_generated_reportlets(bids_sessions, ordering):
 def test_subject(tmp_path, subject, out_html):
     reports = tmp_path / "reports"
     Path(
-        reports
-        / "nireports"
-        / (subject if subject.startswith("sub-") else f"sub-{subject}")
+        reports / "nireports" / (subject if subject.startswith("sub-") else f"sub-{subject}")
     ).mkdir(parents=True)
 
     report = Report(
@@ -319,11 +314,7 @@ def test_subject(tmp_path, subject, out_html):
 )
 def test_session(tmp_path, subject, session, out_html):
     reports = tmp_path / "reports"
-    p = Path(
-        reports
-        / "nireports"
-        / (subject if subject.startswith("sub-") else f"sub-{subject}")
-    )
+    p = Path(reports / "nireports" / (subject if subject.startswith("sub-") else f"sub-{subject}"))
     if session:
         p = p / (session if session.startswith("ses-") else f"ses-{session}")
     p.mkdir(parents=True)

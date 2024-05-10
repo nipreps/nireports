@@ -23,10 +23,11 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
 # another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
 """Miscellaneous utilities."""
+
 from collections import defaultdict
 from pathlib import Path
-from bids.utils import listify
 
+from bids.utils import listify
 from nipype.utils.filemanip import loadcrash
 
 
@@ -242,7 +243,7 @@ def unfold_columns(indict, prefix=None, delimiter="_"):
 
     """
     prefix = listify(prefix) if prefix is not None else []
-    keys = sorted(set(list(indict.keys())))
+    keys = sorted(set(indict.keys()))
 
     data = []
     subdict = defaultdict(dict, {})
@@ -254,7 +255,7 @@ def unfold_columns(indict, prefix=None, delimiter="_"):
             subdict[col[0]][col[1]] = indict[key]
 
     if subdict:
-        for skey in sorted(list(subdict.keys())):
+        for skey in sorted(subdict.keys()):
             sskeys = list(subdict[skey].keys())
 
             # If there is only one subkey, merge back

@@ -23,20 +23,21 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from
 # NiPreps projects licensed under the Apache-2.0 terms.
 """Base components to generate mosaic-like reportlets."""
-from warnings import warn
-from uuid import uuid4
-from os import path as op
+
 import math
-import numpy as np
-import nibabel as nb
+from os import path as op
+from uuid import uuid4
+from warnings import warn
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import nibabel as nb
+import numpy as np
 from matplotlib.gridspec import GridSpec
-from svgutils.transform import fromstring
-from nilearn.plotting import plot_anat
 from nilearn import image as nlimage
+from nilearn.plotting import plot_anat
+from svgutils.transform import fromstring
 
-from nireports.tools.ndimage import rotate_affine, rotation2canonical
 from nireports.reportlets.utils import (
     _3d_in_file,
     _bbox,
@@ -46,6 +47,7 @@ from nireports.reportlets.utils import (
     get_parula,
     robust_set_limits,
 )
+from nireports.tools.ndimage import rotate_affine, rotation2canonical
 
 
 def plot_segs(
@@ -179,7 +181,6 @@ def plot_registration(
 
 
 def _plot_anat_with_contours(image, segs=None, compress="auto", **plot_params):
-
     nsegs = len(segs or [])
     plot_params = plot_params or {}
     # plot_params' values can be None, however they MUST NOT
@@ -293,8 +294,7 @@ def plot_slice(
         vmin=vmin,
         vmax=vmax,
         cmap=cmap,
-        extent=[0, dslice.shape[1] * spacing[1],
-                0, dslice.shape[0] * spacing[0]],
+        extent=[0, dslice.shape[1] * spacing[1], 0, dslice.shape[0] * spacing[0]],
         interpolation="none",
         origin="lower",
     )
@@ -316,7 +316,7 @@ def plot_slice(
             horizontalalignment="center",
             verticalalignment="top",
             size=14,
-            bbox=dict(boxstyle="square,pad=0", ec=bgcolor, fc=bgcolor),
+            bbox={"boxstyle": "square,pad=0", "ec": bgcolor, "fc": bgcolor},
         )
         ax.text(
             0.05,
@@ -327,7 +327,7 @@ def plot_slice(
             horizontalalignment="center",
             verticalalignment="top",
             size=14,
-            bbox=dict(boxstyle="square,pad=0", ec=bgcolor, fc=bgcolor),
+            bbox={"boxstyle": "square,pad=0", "ec": bgcolor, "fc": bgcolor},
         )
 
     if label is not None:
@@ -340,7 +340,7 @@ def plot_slice(
             horizontalalignment="right",
             verticalalignment="bottom",
             size=14,
-            bbox=dict(boxstyle="square,pad=0", ec=bgcolor, fc=bgcolor),
+            bbox={"boxstyle": "square,pad=0", "ec": bgcolor, "fc": bgcolor},
         )
 
     return ax
@@ -357,7 +357,6 @@ def plot_slice_tern(
     vmax=None,
     vmin=None,
 ):
-
     if isinstance(cmap, (str, bytes)):
         cmap = mpl.colormaps[cmap]
 
@@ -405,7 +404,7 @@ def plot_slice_tern(
             horizontalalignment="center",
             verticalalignment="top",
             size=14,
-            bbox=dict(boxstyle="square,pad=0", ec="k", fc="k"),
+            bbox={"boxstyle": "square,pad=0", "ec": "k", "fc": "k"},
             color="w",
         )
 
@@ -537,15 +536,13 @@ def plot_mosaic(
         out_file = "mosaic.svg"
 
     if plot_sagittal and views[1] is None and views[0] != "sagittal":
-        warn("Argument ``plot_sagittal`` for plot_mosaic() should not be used.")
+        warn("Argument ``plot_sagittal`` for plot_mosaic() should not be used.", stacklevel=2)
         views = (views[0], "sagittal", None)
 
     # Create mask for bounding box
     bbox_data = None
     if bbox_mask_file is not None:
-        bbox_data = np.asanyarray(
-            nb.as_closest_canonical(nb.load(bbox_mask_file)).dataobj
-        ) > 1e-3
+        bbox_data = np.asanyarray(nb.as_closest_canonical(nb.load(bbox_mask_file)).dataobj) > 1e-3
     elif img_data.shape[-1] > (ncols * maxrows):
         lowthres = np.percentile(img_data, 5)
         bbox_data = np.ones_like(img_data)
@@ -575,13 +572,19 @@ def plot_mosaic(
             overlay_data = _bbox(overlay_data, bbox_data)
 
     # Decimate if too many values
-    z_vals = np.unique(np.linspace(
-        0, shape[-1] - 1, num=(ncols * nrows), dtype=int, endpoint=True,
-    ))
+    z_vals = np.unique(
+        np.linspace(
+            0,
+            shape[-1] - 1,
+            num=(ncols * nrows),
+            dtype=int,
+            endpoint=True,
+        )
+    )
     n_gs = sum(bool(v) for v in views)
 
-    main_mosaic_idx = np.full((nrows * ncols, ), -1, dtype=int)
-    main_mosaic_idx[:len(z_vals)] = z_vals
+    main_mosaic_idx = np.full((nrows * ncols,), -1, dtype=int)
+    main_mosaic_idx[: len(z_vals)] = z_vals
     main_mosaic_idx = main_mosaic_idx.reshape(nrows, ncols)
 
     fig_height = []
@@ -613,7 +616,7 @@ def plot_mosaic(
         # top=0.96,
         # bottom=0.01,
         hspace=0.001,
-        height_ratios=np.array(fig_height) / fig_height[0]
+        height_ratios=np.array(fig_height) / fig_height[0],
     )
 
     est_vmin, est_vmax = _get_limits(img_data, only_plot_noise=only_plot_noise)
@@ -665,7 +668,7 @@ def plot_mosaic(
             )
 
             if overlay_mask:
-                msk_cmap = mpl.colormaps['Reds']
+                msk_cmap = mpl.colormaps["Reds"]
                 msk_cmap._init()
                 alphas = np.linspace(0, 0.75, msk_cmap.N + 3)
                 msk_cmap._lut[:, -1] = alphas

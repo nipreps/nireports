@@ -26,21 +26,20 @@
 # https://github.com/nipreps/niworkflows/blob/fa273d004c362d9562616253180e95694f07be3b/
 # niworkflows/viz/utils.py
 """Helper tools for visualization purposes."""
+
+import base64
+import re
+import subprocess
+import warnings
+from io import StringIO
 from pathlib import Path
 from shutil import which
 from tempfile import TemporaryDirectory
-import subprocess
-import base64
-import re
-import warnings
 from uuid import uuid4
-from io import StringIO
 
-import numpy as np
 import nibabel as nb
-
+import numpy as np
 from nipype.utils import filemanip
-
 
 SVGNS = "http://www.w3.org/2000/svg"
 
@@ -175,7 +174,7 @@ def combine_svg(svg_list, axis="vertical"):
     if axis == "vertical":
         # Calculate the scale to fit all widths
         scales = [1.0] * len(svgs)
-        if not all([width[0] == sizes[0][0] for width in sizes[1:]]):
+        if not all(width[0] == sizes[0][0] for width in sizes[1:]):
             ref_size = sizes[0]
             for i, els in enumerate(sizes):
                 scales[i] = ref_size[0] / els[0]
@@ -186,7 +185,7 @@ def combine_svg(svg_list, axis="vertical"):
     elif axis == "horizontal":
         # Calculate the scale to fit all heights
         scales = [1.0] * len(svgs)
-        if not all([height[0] == sizes[0][1] for height in sizes[1:]]):
+        if not all(height[0] == sizes[0][1] for height in sizes[1:]):
             ref_size = sizes[0]
             for i, els in enumerate(sizes):
                 scales[i] = ref_size[1] / els[1]
@@ -231,7 +230,7 @@ def extract_svg(display_object, dpi=300, compress="auto"):
     end_tag = "</svg>"
     end_idx = image_svg.rfind(end_tag)
     if start_idx == -1 or end_idx == -1:
-        warnings.warn("svg tags not found in extract_svg")
+        warnings.warn("svg tags not found in extract_svg", stacklevel=2)
     # rfind gives the start index of the substr. We want this substr
     # included in our return value so we add its length to the index.
     end_idx += len(end_tag)
@@ -340,7 +339,7 @@ def compose_view(bg_svgs, fg_svgs, ref=0, out_file="report.svg"):
 
 def _compose_view(bg_svgs, fg_svgs, ref=0):
     from svgutils.compose import Unit
-    from svgutils.transform import SVGFigure, GroupElement
+    from svgutils.transform import GroupElement, SVGFigure
 
     if fg_svgs is None:
         fg_svgs = []

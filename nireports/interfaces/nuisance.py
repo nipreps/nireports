@@ -21,15 +21,17 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """Screening nuisance signals."""
-from nipype.utils.filemanip import fname_presuffix
+
 from nipype.interfaces.base import (
-    File,
     BaseInterfaceInputSpec,
-    TraitedSpec,
+    File,
     SimpleInterface,
-    traits,
+    TraitedSpec,
     isdefined,
+    traits,
 )
+from nipype.utils.filemanip import fname_presuffix
+
 from nireports.reportlets.nuisance import confounds_correlation_plot
 from nireports.reportlets.xca import compcor_variance_plot
 
@@ -53,9 +55,7 @@ class _CompCorVariancePlotInputSpec(BaseInterfaceInputSpec):
         usedefault=True,
         desc="Levels of explained variance to include in plot",
     )
-    out_file = traits.Either(
-        None, File, value=None, usedefault=True, desc="Path to save plot"
-    )
+    out_file = traits.Either(None, File, value=None, usedefault=True, desc="Path to save plot")
 
 
 class _CompCorVariancePlotOutputSpec(TraitedSpec):
@@ -88,12 +88,8 @@ class CompCorVariancePlot(SimpleInterface):
 
 
 class _ConfoundsCorrelationPlotInputSpec(BaseInterfaceInputSpec):
-    confounds_file = File(
-        exists=True, mandatory=True, desc="File containing confound regressors"
-    )
-    out_file = traits.Either(
-        None, File, value=None, usedefault=True, desc="Path to save plot"
-    )
+    confounds_file = File(exists=True, mandatory=True, desc="File containing confound regressors")
+    out_file = traits.Either(None, File, value=None, usedefault=True, desc="Path to save plot")
     reference_column = traits.Str(
         "global_signal",
         usedefault=True,
@@ -101,10 +97,7 @@ class _ConfoundsCorrelationPlotInputSpec(BaseInterfaceInputSpec):
         "which all correlation magnitudes "
         "should be ranked and plotted",
     )
-    columns = traits.List(
-        traits.Str,
-        desc="Filter out all regressors not found in this list."
-    )
+    columns = traits.List(traits.Str, desc="Filter out all regressors not found in this list.")
     max_dim = traits.Int(
         20,
         usedefault=True,
@@ -116,8 +109,7 @@ class _ConfoundsCorrelationPlotInputSpec(BaseInterfaceInputSpec):
     ignore_initial_volumes = traits.Int(
         0,
         usedefault=True,
-        desc="Number of non-steady-state volumes at the beginning of the scan "
-        "to ignore.",
+        desc="Number of non-steady-state volumes at the beginning of the scan " "to ignore.",
     )
 
 
