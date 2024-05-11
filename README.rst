@@ -5,14 +5,14 @@
 .. image:: https://readthedocs.org/projects/nireports/badge/?version=latest
   :target: https://nireports.readthedocs.io/en/latest/?badge=latest
   :alt: Documentation Status
-.. image:: https://codecov.io/gh/nipreps/nireports/branch/main/graph/badge.svg?token=OPH6D32GWN
-  :target: https://codecov.io/gh/nipreps/nireports
 .. image:: https://circleci.com/gh/nipreps/nireports/tree/main.svg?style=shield
   :target: https://circleci.com/gh/nipreps/nireports/tree/main
   :alt: Testing
 .. image:: https://github.com/nipreps/nireports/actions/workflows/build_test_deploy.yml/badge.svg
   :target: https://github.com/nipreps/nireports/actions/workflows/build_test_deploy.yml
   :alt: Build-Test-Deploy
+.. image:: https://codecov.io/gh/nipreps/nireports/branch/main/graph/badge.svg?token=OPH6D32GWN
+  :target: https://codecov.io/gh/nipreps/nireports
 
 *NiReports*: the *NiPreps*' reporting and visualization tools
 =============================================================
