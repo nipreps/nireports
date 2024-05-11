@@ -2,6 +2,9 @@
 .. image:: https://img.shields.io/pypi/v/nireports.svg
   :target: https://pypi.python.org/pypi/nireports/
   :alt: Latest Version
+.. image:: https://img.shields.io/badge/License-Apache_2.0-blue.svg
+  :target: https://github.com/nipreps/eddymotion/blob/main/LICENSE
+  :alt: License
 .. image:: https://readthedocs.org/projects/nireports/badge/?version=latest
   :target: https://nireports.readthedocs.io/en/latest/?badge=latest
   :alt: Documentation Status
