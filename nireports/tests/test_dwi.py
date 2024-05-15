@@ -82,8 +82,8 @@ def test_plot_carpet(tmp_path, testdata_path, outdir):
     bvals = np.loadtxt(testdata_path / f'{testdata_name}.bval')
 
     nii_data = nii.get_fdata()
-    segmentation = nii_data > 3000
-    segment_labels = {"<3000": [0], ">3000": [1]}
+    segmentation = round(3*np.rand(nii_data.shape))
+    segment_labels = {"0": [0], "1": [1], "2": [2], "3": [3]}
 
     image_path = None
 
