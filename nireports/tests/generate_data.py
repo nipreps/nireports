@@ -10,12 +10,12 @@ def _create_dtseries_cifti(timepoints, models):
     def create_series_map():
         return ci.Cifti2MatrixIndicesMap(
             (0,),
-            'CIFTI_INDEX_TYPE_SERIES',
+            "CIFTI_INDEX_TYPE_SERIES",
             number_of_series_points=timepoints,
             series_exponent=0,
             series_start=0,
             series_step=1,
-            series_unit='SECOND',
+            series_unit="SECOND",
         )
 
     def create_geometry_map():
@@ -41,7 +41,7 @@ def _create_dtseries_cifti(timepoints, models):
             setattr(bm, attr, indices)
             if model_type == "CIFTI_MODEL_TYPE_SURFACE":
                 # define total vertices for surface models
-                setattr(bm, "surface_number_of_vertices", 32492)
+                bm.surface_number_of_vertices = 32492
             index_offset += len(data)
             brain_models.append(bm)
             timeseries = np.column_stack((timeseries, data.T))

@@ -23,6 +23,7 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
 # another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
 """Core objects representing reports."""
+
 import re
 from collections import defaultdict
 from itertools import compress
@@ -35,7 +36,6 @@ from bids.layout.writing import build_path
 
 from nireports.assembler import data
 from nireports.assembler.reportlet import Reportlet
-
 
 # Add a new figures spec
 try:
@@ -270,8 +270,7 @@ class Report:
         metadata = metadata or {}
         if "filename" not in metadata:
             metadata["filename"] = Path(out_filename).name.replace(
-                "".join(Path(out_filename).suffixes),
-                ""
+                "".join(Path(out_filename).suffixes), ""
             )
 
         # Initialize structuring elements
@@ -287,9 +286,7 @@ class Report:
             "out_dir": str(out_dir),
             "reportlets_dir": str(root),
         }
-        meta_repl.update({
-            kk: vv for kk, vv in metadata.items() if isinstance(vv, str)
-        })
+        meta_repl.update({kk: vv for kk, vv in metadata.items() if isinstance(vv, str)})
         meta_repl.update(bids_filters)
         expr = re.compile(f'{{({"|".join(meta_repl.keys())})}}')
 
@@ -308,7 +305,8 @@ class Report:
 
         # Path to the Jinja2 template
         self.template_path = (
-            Path(settings["template_path"]) if "template_path" in settings
+            Path(settings["template_path"])
+            if "template_path" in settings
             else data.load("report.tpl").absolute()
         )
 
@@ -383,7 +381,8 @@ class Report:
                     # do not display entities with the value None.
                     c_filt = [
                         f'{key} <span class="bids-entity">{c_value}</span>'
-                        for key, c_value in zip(entities, c) if c_value is not None
+                        for key, c_value in zip(entities, c)
+                        if c_value is not None
                     ]
                     # Set a common title for this particular combination c
                     title = "Reports for: %s." % ", ".join(c_filt)
@@ -420,11 +419,11 @@ class Report:
         self.footer = []
 
         plugins = config.get("plugins", None)
-        for plugin in (plugins or []):
+        for plugin in plugins or []:
             env = jinja2.Environment(
-                loader=jinja2.FileSystemLoader(searchpath=str(
-                    Path(__file__).parent / "data" / f"{plugin['type']}"
-                )),
+                loader=jinja2.FileSystemLoader(
+                    searchpath=str(Path(__file__).parent / "data" / f"{plugin['type']}")
+                ),
                 trim_blocks=True,
                 lstrip_blocks=True,
                 autoescape=False,
@@ -434,12 +433,17 @@ class Report:
             plugin_meta.update((metadata or {}).get(plugin["type"], {}))
             for member in ("header", "navbar", "footer"):
                 old_value = getattr(self, member)
-                setattr(self, member, old_value + [
-                    env.get_template(f"{member}.tpl").render(
-                        config=plugin,
-                        metadata=plugin_meta,
-                    )
-                ])
+                setattr(
+                    self,
+                    member,
+                    old_value
+                    + [
+                        env.get_template(f"{member}.tpl").render(
+                            config=plugin,
+                            metadata=plugin_meta,
+                        )
+                    ],
+                )
 
     def generate_report(self):
         """Once the Report has been indexed, the final HTML can be generated"""

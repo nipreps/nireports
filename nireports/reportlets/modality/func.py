@@ -23,10 +23,11 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from
 # other NiPreps projects licensed under the Apache-2.0 terms.
 """Visualizations specific to functional imaging."""
-import numpy as np
+
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
+import numpy as np
 import pandas as pd
+from matplotlib.gridspec import GridSpec
 
 from nireports.reportlets.nuisance import confoundplot, plot_carpet, spikesplot
 

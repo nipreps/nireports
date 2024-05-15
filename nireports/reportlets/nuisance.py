@@ -23,17 +23,19 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from
 # other NiPreps projects licensed under the Apache-2.0 terms.
 """Plotting distributions."""
+
 import math
 import os.path as op
 
-import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 import seaborn as sns
 from matplotlib.backends.backend_pdf import FigureCanvasPdf as FigureCanvas
-from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
-from matplotlib.colors import Normalize
 from matplotlib.colorbar import ColorbarBase
+from matplotlib.colors import Normalize
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
+
 from nireports.tools.ndimage import _get_values_inside_a_mask
 
 DEFAULT_DPI = 300
@@ -42,7 +44,6 @@ DINA4_PORTRAIT = (8.27, 11.69)
 
 
 def plot_fd(fd_file, fd_radius, mean_fd_dist=None, figsize=DINA4_LANDSCAPE):
-
     fd_power = _calc_fd(fd_file, fd_radius)
 
     fig = plt.Figure(figsize=figsize)
@@ -70,7 +71,7 @@ def plot_fd(fd_file, fd_radius, mean_fd_dist=None, figsize=DINA4_LANDSCAPE):
         sns.distplot(mean_fd_dist, ax=ax)
         ax.set_xlabel("Mean Frame Displacement (over all subjects) [mm]")
         mean_fd = fd_power.mean()
-        label = fr"$\overline{{\text{{FD}}}}$ = {mean_fd:g}"
+        label = rf"$\overline{{\text{{FD}}}}$ = {mean_fd:g}"
         plot_vline(mean_fd, label, ax=ax)
 
     return fig
@@ -297,7 +298,7 @@ def plot_carpet(
 
     # Cluster segments (if argument enabled)
     if sort_rows:
-        from scipy.cluster.hierarchy import linkage, dendrogram
+        from scipy.cluster.hierarchy import dendrogram, linkage
         from sklearn.cluster import ward_tree
 
         for seg_label, seg_idx in segments.items():
@@ -337,6 +338,7 @@ def plot_carpet(
         height_ratios=[len(v) for v in segments.values()],
     )
 
+    label = ""
     for i, (label, indices) in enumerate(segments.items()):
         # Carpet plot
         ax = plt.subplot(gs[i])
@@ -403,7 +405,7 @@ def plot_carpet(
             ax,
             width="100%",
             height=0.01,
-            loc='lower center',
+            loc="lower center",
             borderpad=-4.1,
         )
         axlegend.grid(False)
@@ -415,14 +417,16 @@ def plot_carpet(
             axlegend.spines[loc].set_visible(False)
 
         axlegend.legend(
-            handles=[Patch(color=colors[i], label=l) for i, l in enumerate(segments.keys())],
+            handles=[
+                Patch(color=colors[i], label=_label) for i, _label in enumerate(segments.keys())
+            ],
             loc="upper center",
             bbox_to_anchor=(0.5, 0),
             shadow=False,
             fancybox=False,
             ncol=min(len(segments.keys()), 5),
             frameon=False,
-            prop={'size': 8},
+            prop={"size": 8},
         )
 
     if output_file is not None:
@@ -725,8 +729,8 @@ def confoundplot(
 
     units = units or ""
     stats_label = (
-        fr"max: {maxv:.3f}{units} $\bullet$ mean: {mean:.3f}{units} "
-        fr"$\bullet$ $\sigma$: {stdv:.3f}"
+        rf"max: {maxv:.3f}{units} $\bullet$ mean: {mean:.3f}{units} "
+        rf"$\bullet$ $\sigma$: {stdv:.3f}"
     )
     ax_ts.annotate(
         stats_label,
@@ -764,7 +768,7 @@ def confoundplot(
     if cutoff is None:
         cutoff = []
 
-    for i, thr in enumerate(cutoff):
+    for thr in cutoff:
         ax_ts.plot((0, ntsteps - 1), [thr] * 2, linewidth=0.2, color="dimgray")
 
         ax_ts.annotate(

@@ -23,13 +23,15 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
 # another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
 """The reporting visualization unit or *reportlet*."""
+
+import re
 from pathlib import Path
 from uuid import uuid4
-import re
+
 from nipype.utils.filemanip import copyfile
+
 from nireports.assembler import data
 from nireports.assembler.misc import dict2html, read_crashfile
-
 
 SVG_SNIPPET = [
     """\
@@ -104,7 +106,7 @@ style="--bs-bg-opacity: .04;{style}">{body}</div>
         </div>
 """
 
-HTML_BOILER_STYLE = ' font-family: \'Bitstream Charter\', \'Georgia\', Times;'
+HTML_BOILER_STYLE = " font-family: 'Bitstream Charter', 'Georgia', Times;"
 
 
 class Reportlet:
@@ -231,7 +233,6 @@ class Reportlet:
                 if ext == ".html":
                     contents = src.read_text().strip()
                 elif ext == ".svg":
-
                     entities = dict(bidsfile.entities)
                     if desc_text:
                         desc_text = desc_text.format(**entities)
@@ -258,9 +259,7 @@ class Reportlet:
                         if line.strip().startswith("<svg"):
                             # It is critical that viewBox is correctly spelled out
                             fixedline = expr.sub("", line.replace("viewbox", "viewBox"))
-                            dst.write_text("\n".join(
-                                [fixedline] + svglines[ll + 1:]
-                            ))
+                            dst.write_text("\n".join([fixedline] + svglines[ll + 1 :]))
                             break
 
                     style = {"width": "100%"} if is_static else {}
@@ -282,12 +281,14 @@ class Reportlet:
                 meta_reportlet = metadata.get(meta_id)
 
                 if not meta_reportlet:
-                    self.components.append((
-                        '<p class="alert alert-success" role="alert">'
-                        f'Could not find metadata for reportlet "{meta_id}"'
-                        '</p>',
-                        ""
-                    ))
+                    self.components.append(
+                        (
+                            '<p class="alert alert-success" role="alert">'
+                            f'Could not find metadata for reportlet "{meta_id}"'
+                            "</p>",
+                            "",
+                        )
+                    )
                     return
             # meta_folded = meta_settings.get("folded", None)
 
@@ -412,7 +413,7 @@ class Reportlet:
                     self.components.append(
                         (
                             '<p class="alert alert-danger" role="alert">'
-                            'Failed to generate the boilerplate</p>',
+                            "Failed to generate the boilerplate</p>",
                             desc_text,
                         )
                     )

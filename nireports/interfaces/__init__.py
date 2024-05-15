@@ -21,9 +21,10 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """NiPype interfaces to generate reportlets."""
+
 from nireports.interfaces.fmri import FMRISummary
-from nireports.interfaces.nuisance import CompCorVariancePlot, ConfoundsCorrelationPlot
 from nireports.interfaces.mosaic import PlotContours, PlotMosaic, PlotSpikes
+from nireports.interfaces.nuisance import CompCorVariancePlot, ConfoundsCorrelationPlot
 
 __all__ = (
     "CompCorVariancePlot",

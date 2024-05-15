@@ -23,7 +23,9 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from niworkflows,
 # another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
 """Utilities for the :mod:`~nireports.assembler` module."""
+
 from pathlib import Path
+
 from nireports.assembler.report import Report
 
 

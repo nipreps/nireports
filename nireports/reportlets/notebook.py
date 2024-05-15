@@ -26,11 +26,14 @@
 # https://github.com/nipreps/niworkflows/blob/fa273d004c362d9562616253180e95694f07be3b/
 # niworkflows/viz/notebook.py
 """Visualization component for Jupyter Notebooks."""
+
 from pathlib import Path
-import numpy as np
+
 import nibabel as nb
-from nireports.reportlets.utils import compose_view, cuts_from_bbox
+import numpy as np
+
 from nireports.reportlets.mosaic import plot_registration
+from nireports.reportlets.utils import compose_view, cuts_from_bbox
 
 
 def display(
@@ -42,7 +45,8 @@ def display(
     moving_label="M",
 ):
     """Plot the flickering panels to show a registration process."""
-    from IPython.display import SVG, display as _disp
+    from IPython.display import SVG
+    from IPython.display import display as _disp
 
     if isinstance(fixed_image, (str, Path)):
         fixed_image = nb.load(str(fixed_image))

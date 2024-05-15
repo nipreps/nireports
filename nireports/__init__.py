@@ -21,13 +21,15 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """Add metadata on import."""
+
 __packagename__ = "nireports"
 __copyright__ = "2023, The NiPreps developers"
 
 try:
     from ._version import __version__
 except ModuleNotFoundError:
-    from importlib.metadata import version, PackageNotFoundError
+    from importlib.metadata import PackageNotFoundError, version
+
     try:
         __version__ = version(__packagename__)
     except PackageNotFoundError:

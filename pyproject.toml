@@ -50,10 +50,8 @@ doc = [
 ]
 
 dev = [
-    "black ~= 22.3.0",
+    "ruff",
     "pre-commit",
-    "isort ~= 5.10.1",
-    "flake8-pyproject",
 ]
 
 test = [
@@ -101,39 +99,52 @@ version-file = "nireports/_version.py"
 # Developer tool configurations
 #
 
-[tool.black]
+[tool.ruff]
 line-length = 99
-target-version = ['py39']
-skip-string-normalization = true
-exclude = '''
-# Directories
-/(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | venv
-  | _build
-  | build
-  | dist
-)/
-'''
-
-[tool.isort]
-profile = 'black'
-skip_gitignore = true
-
-[tool.flake8]
-max-line-length = "99"
-doctests = "False"
-exclude = "*build/"
-ignore = ["W503", "E203"]
-per-file-ignores = [
-    "**/__init__.py : F401",
-    "docs/conf.py : E265",
+target-version = "py39"
+exclude = [
+  ".eggs",
+  ".git",
+  ".hg",
+  ".mypy_cache",
+  ".tox",
+  ".venv",
+  "venv",
+  "_build",
+  "build",
+  "dist",
+  "nireports/tests/data/**",
+  "nireports/assembler/data/tests/work/**",
+  "nireports/assembler/data/tests/crashfile.txt",
+  "nireports/assembler/data/**/*.tpl",
 ]
+
+[tool.ruff.lint]
+select = [
+  "F",
+  "E",
+  "C",
+  "W",
+  "B",
+  "I",
+]
+ignore = [
+  "E203",
+]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"*/__init__.py" = ["F401"]
+"docs/conf.py" = ["E265"]
+"/^\\s*\\.\\. _.*?: http/" = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint.isort]
+known-first-party=["nireports"]
 
 [tool.pytest.ini_options]
 norecursedirs = [".git"]

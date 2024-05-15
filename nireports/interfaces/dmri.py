@@ -21,18 +21,19 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """Diffusion MRI -specific visualization."""
-import numpy as np
-import nibabel as nb
 
-from nipype.utils.filemanip import fname_presuffix
+import nibabel as nb
+import numpy as np
 from nipype.interfaces.base import (
-    File,
     BaseInterfaceInputSpec,
-    TraitedSpec,
+    File,
     SimpleInterface,
-    traits,
+    TraitedSpec,
     isdefined,
+    traits,
 )
+from nipype.utils.filemanip import fname_presuffix
+
 from nireports.reportlets.modality.dwi import plot_heatmap
 
 

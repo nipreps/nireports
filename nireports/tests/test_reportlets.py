@@ -21,22 +21,22 @@
 #     https://www.nipreps.org/community/licensing/
 #
 """Test reportlets module."""
+
 import os
-from pathlib import Path
-from itertools import permutations
 from functools import partial
+from itertools import permutations
+from pathlib import Path
 
 import nibabel as nb
 import numpy as np
 import pandas as pd
 import pytest
-
 from templateflow.api import get
 
 from nireports.reportlets.modality.func import fMRIPlot
+from nireports.reportlets.mosaic import plot_mosaic
 from nireports.reportlets.nuisance import plot_carpet
 from nireports.reportlets.surface import cifti_surfaces_plot
-from nireports.reportlets.mosaic import plot_mosaic
 from nireports.reportlets.xca import compcor_variance_plot, plot_melodic_components
 from nireports.tools.timeseries import cifti_timeseries as _cifti_timeseries
 from nireports.tools.timeseries import get_tr as _get_tr
@@ -270,8 +270,8 @@ def create_surface_dtseries():
     out_file = _create_dtseries_cifti(
         timepoints=10,
         models=[
-            ('CIFTI_STRUCTURE_CORTEX_LEFT', np.random.rand(29696, 10)),
-            ('CIFTI_STRUCTURE_CORTEX_RIGHT', np.random.rand(29716, 10)),
+            ("CIFTI_STRUCTURE_CORTEX_LEFT", np.random.rand(29696, 10)),
+            ("CIFTI_STRUCTURE_CORTEX_RIGHT", np.random.rand(29716, 10)),
         ],
     )
     yield str(out_file)
@@ -328,10 +328,9 @@ def test_nifti_carpetplot(tmp_path, testdata_path, outdir):
     )
 
 
-_views = (
-    list(permutations(("axial", "sagittal", "coronal", None), 3))
-    + [(v, None, None) for v in ("axial", "sagittal", "coronal")]
-)
+_views = list(permutations(("axial", "sagittal", "coronal", None), 3)) + [
+    (v, None, None) for v in ("axial", "sagittal", "coronal")
+]
 
 
 @pytest.mark.parametrize("views", _views)
@@ -339,9 +338,7 @@ _views = (
 def test_mriqc_plot_mosaic(tmp_path, testdata_path, outdir, views, plot_sagittal):
     """Exercise the generation of mosaics."""
 
-    fname = (
-        f"mosaic_{'_'.join(v or 'none' for v in views)}_{plot_sagittal:d}.svg"
-    )
+    fname = f"mosaic_{'_'.join(v or 'none' for v in views)}_{plot_sagittal:d}.svg"
 
     testfunc = partial(
         plot_mosaic,

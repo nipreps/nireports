@@ -26,6 +26,7 @@
 # https://github.com/nipreps/mriqc/blob/1ffd4c8d1a20b44ebfea648a7b12bb32a425d4ec/
 # mriqc/interfaces/viz.py
 """NiPype interface -- basic tooling."""
+
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
