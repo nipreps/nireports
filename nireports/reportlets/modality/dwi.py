@@ -410,7 +410,7 @@ def plot_gradients(
 
 def plot_carpet(
     nii,
-    gtab,
+    bvals,
     segmentation=None,
     sort_by_bval=False,
     output_file=None,
@@ -424,8 +424,8 @@ def plot_carpet(
     ----------
     nii : Nifti1Image
         DW imaging data
-    gtab : :obj:`GradientTable`
-        DW imaging data gradient data
+    bvals : :obj:`numpy.ndarray`
+        Rounded bvals
     segmentation : Nifti1Image
         Boolean or segmentation mask of DW imaging data
     sort_by_bval : :obj:`bool`
@@ -448,16 +448,16 @@ def plot_carpet(
 
     nii_data = nii.get_fdata()
 
-    b0_data = nii_data[..., gtab.b0s_mask]
-    dw_data = nii_data[..., ~gtab.b0s_mask]
+    b0_data = nii_data[..., bvals == 0]
+    dw_data = nii_data[..., bvals > 0]
 
     bzero = np.mean(b0_data, -1)
 
     nii_data_div_b0 = dw_data / bzero[..., np.newaxis]
 
     sort_inds = (
-        np.argsort(gtab.bvals[~gtab.b0s_mask] if sort_by_bval
-                   else np.arange(len(gtab.bvals[~gtab.b0s_mask])))
+        np.argsort(bvals[bvals > 0] if sort_by_bval
+                   else np.arange(len(bvals[bvals > 0])))
     )
     nii_data_div_b0 = nii_data_div_b0[..., sort_inds]
 
