@@ -81,9 +81,18 @@ def test_plot_carpet(tmp_path, testdata_path, outdir):
     nii = nb.load(testdata_path / f'{testdata_name}.nii.gz')
     bvals = np.loadtxt(testdata_path / f'{testdata_name}.bval')
 
+    nii_data = nii.get_fdata()
+    segmentation = nii_data > 3000
+    segment_labels = {"<3000": [0], ">3000": [1]}
+
     image_path = None
 
     if outdir is not None:
         image_path = outdir / f'{testdata_name}_carpet.svg'
 
-    plot_carpet(nii, bvals, output_file=image_path)
+    plot_carpet(nii,
+                bvals=bvals,
+                segmentation=segmentation,
+                segment_labels=segment_labels,
+                output_file=image_path
+                )

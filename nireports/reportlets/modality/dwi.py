@@ -410,7 +410,7 @@ def plot_gradients(
 
 def plot_carpet(
     nii,
-    bvals,
+    bvals=None,
     segmentation=None,
     sort_by_bval=False,
     output_file=None,
@@ -448,28 +448,29 @@ def plot_carpet(
 
     nii_data = nii.get_fdata()
 
-    b0_data = nii_data[..., bvals == 0]
-    dw_data = nii_data[..., bvals > 0]
+    if bvals is not None:
+        b0_data = nii_data[..., bvals == 0]
+        dw_data = nii_data[..., bvals > 0]
 
-    bzero = np.mean(b0_data, -1)
+        bzero = np.mean(b0_data, -1)
 
-    nii_data_div_b0 = dw_data / bzero[..., np.newaxis]
+        nii_data = dw_data / bzero[..., np.newaxis]
 
-    sort_inds = (
-        np.argsort(bvals[bvals > 0] if sort_by_bval
-                   else np.arange(len(bvals[bvals > 0])))
-    )
-    nii_data_div_b0 = nii_data_div_b0[..., sort_inds]
+        sort_inds = (
+            np.argsort(bvals[bvals > 0] if sort_by_bval
+                       else np.arange(len(bvals[bvals > 0])))
+        )
+        nii_data = nii_data[..., sort_inds]
 
     # Reshape
-    nii_data_reshaped = nii_data_div_b0.reshape(-1, nii_data_div_b0.shape[-1])
+    nii_data = nii_data.reshape(-1, nii_data.shape[-1])
 
     if segmentation is not None:
         segmentation_data = np.asanyarray(segmentation.dataobj, dtype=np.int16)
 
         # Apply mask
         segmentation_reshaped = segmentation_data.reshape(-1)
-        nii_data_masked = nii_data_reshaped[segmentation_reshaped > 0, :]
+        nii_data = nii_data[segmentation_reshaped > 0, :]
         segmentation_masked = segmentation_reshaped[segmentation_reshaped > 0]
 
         if segment_labels is not None:
@@ -483,19 +484,16 @@ def plot_carpet(
                     )
                 segments[label] = indices
 
-    else:
-        nii_data_masked = nii_data_reshaped
+    bad_row_ind = np.where(~np.isfinite(nii_data))[0]
 
-    bad_row_ind = np.where(~np.isfinite(nii_data_masked))[0]
-
-    good_row_ind = np.ones(nii_data_masked.shape[0], dtype=bool)
+    good_row_ind = np.ones(nii_data.shape[0], dtype=bool)
     good_row_ind[bad_row_ind] = False
 
-    nii_data_masked = nii_data_masked[good_row_ind, :]
+    nii_data = nii_data[good_row_ind, :]
 
     # Plot
     return nw_plot_carpet(
-        nii_data_masked,
+        nii_data,
         detrend=detrend,
         segments=segments,
         output_file=output_file
