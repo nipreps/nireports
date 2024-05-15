@@ -82,7 +82,10 @@ def test_plot_carpet(tmp_path, testdata_path, outdir):
     bvals = np.loadtxt(testdata_path / f'{testdata_name}.bval')
 
     nii_data = nii.get_fdata()
-    segmentation = round(3*np.rand(nii_data.shape))
+    segmentation = np.round(3*np.random.rand(nii_data.shape[0],
+                                             nii_data.shape[1],
+                                             nii_data.shape[2],
+                                             nii_data.shape[3]))
     segment_labels = {"0": [0], "1": [1], "2": [2], "3": [3]}
 
     image_path = None
