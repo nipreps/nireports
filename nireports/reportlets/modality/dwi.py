@@ -426,8 +426,9 @@ def plot_carpet(
         DW imaging data
     bvals : :obj:`numpy.ndarray`
         Rounded bvals
-    segmentation : Nifti1Image
+    segmentation : :obj:`numpy.ndarray`
         Boolean or segmentation mask of DW imaging data
+        e.g. np.asanyarray(Nifti1Image.dataobj, dtype=np.int16)
     sort_by_bval : :obj:`bool`
         Flag to reorder time points by bvalue
     output_file : :obj:`string`
@@ -466,10 +467,8 @@ def plot_carpet(
     nii_data = nii_data.reshape(-1, nii_data.shape[-1])
 
     if segmentation is not None:
-        segmentation_data = np.asanyarray(segmentation.dataobj, dtype=np.int16)
-
         # Apply mask
-        segmentation_reshaped = segmentation_data.reshape(-1)
+        segmentation_reshaped = segmentation.reshape(-1)
         nii_data = nii_data[segmentation_reshaped > 0, :]
         segmentation_masked = segmentation_reshaped[segmentation_reshaped > 0]
 
