@@ -27,7 +27,10 @@ import numpy as np
 import pytest
 from matplotlib import pyplot as plt
 
-from nireports.reportlets.modality.dwi import plot_dwi, plot_gradients
+import os.path as op
+import dipy.core.gradients as dpg
+from nireports.reportlets.modality.dwi \
+    import plot_dwi, plot_gradients, plot_carpet
 
 
 def test_plot_dwi(tmp_path, testdata_path, outdir):
@@ -69,3 +72,19 @@ def test_plot_gradients(tmp_path, testdata_path, dwi_btable, outdir):
 
     if outdir is not None:
         plt.savefig(outdir / f"{dwi_btable}.svg", bbox_inches="tight")
+
+
+def test_plot_carpet(tmp_path, testdata_path, outdir):
+    """Check the carpet plot"""
+
+    testdata_name = "ds000114_sub-01_ses-test_desc-trunc_dwi"
+
+    nii_path = testdata_path / f'{testdata_name}.nii.gz'
+    bvec_path = testdata_path / f'{testdata_name}.bvec'
+    bval_path = testdata_path / f'{testdata_name}.bval'
+
+    nii = nb.load(nii_path)
+    gtab = dpg.gradient_table(bval_path, bvec_path)
+    image_path = outdir / f'{testdata_name}_carpet.png'
+
+    plot_carpet(nii, gtab, output_file=image_path)
