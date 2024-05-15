@@ -1,0 +1,38 @@
+package: funconn
+sections:
+- name: Group report 
+  reportlets:
+  - bids:
+      desc: censoring
+      extension: [.html]
+      suffix: bold
+    caption: |
+      fMRI duration after censoring computed as the number of good timepoints multiplied by the repetition time (TR). 
+      The red line corresponds to the QC cutoff of 5 minutes (300 seconds). Less than 5 minutes of fMRI is not enough to 
+      reliably estimate connectivity.
+    subtitle: Report about censoring.
+  - bids: {desc: fcdist, suffix: bold}
+    caption: Density distributions of within-session FC strengths. The FC distribution from each session are overlaid.
+    subtitle: Functional connectivity density distributions.
+    style:
+      max-width: 600px
+
+  - bids: {desc: qcfc, suffix: bold}
+    caption: |
+      QC-FC plots tested functional connectivity associations with three image quality metrics (fd_mean, fd_num, and
+      fd_perc). Plots were generated from functional data from all sessions. Red dotted lines represent a theoretical 
+      artifact-free null-hypothesis distribution obtained through permutation analyses. QC-FC percent match level represents the distance
+      between the observed and the null-hypothesis distribution and is computed using the R implementation of the two-sample Kolmogorov-Smirnov 
+      test for goodness of fit. Red label indicates that the QC-FC distribution did not reach above the 95% cutoff.
+    subtitle: QC-FC correlation distributions.
+    style:
+      max-width: 1350px
+
+  - bids: {desc: qcfcvseuclidean, suffix: bold}
+    caption: |
+      Correlation between QC-FC and Euclidean distance separating nodes. The euclidean distance is computed from the centers of mass 
+      of each region in the atlas used to compute the FC.
+    subtitle: Distance-dependent effect of motion.
+    style:
+      max-width: 1350px
+
