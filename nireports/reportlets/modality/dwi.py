@@ -28,6 +28,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import art3d
 from nilearn.plotting import plot_anat
+from nireports.reportlets.nuisance import plot_carpet as nw_plot_carpet
 
 
 def plot_dwi(dataobj, affine, gradient=None, **kwargs):
@@ -405,3 +406,97 @@ def plot_gradients(
         plt.suptitle(title)
 
     return ax
+
+
+def plot_carpet(
+    nii,
+    gtab,
+    segmentation=None,
+    sort_by_bval=False,
+    output_file=None,
+    segment_labels=None,
+    detrend=False,
+):
+    """
+    Return carpet plot using niworkflows carpet_plot
+
+    Parameters
+    ----------
+    nii : Nifti1Image
+        DW imaging data
+    gtab : :obj:`GradientTable`
+        DW imaging data gradient data
+    segmentation : Nifti1Image
+        Boolean or segmentation mask of DW imaging data
+    sort_by_bval : :obj:`bool`
+        Flag to reorder time points by bvalue
+    output_file : :obj:`string`
+        Path to save the plot
+    segment_labels : :obj:`dict`
+        Dictionary of segment labels
+        e.g. {'Cerebral_White_Matter': [2, 41],
+              'Cerebral_Cortex': [3, 42],
+              'Ventricle': [4, 14, 15, 43, 72]}
+    detrend : :obj:`bool`
+        niworkflows plot_carpet detrend flag
+
+    Returns
+    ---------
+    matplotlib GridSpec object
+    """
+    segments = None
+
+    nii_data = nii.get_fdata()
+
+    b0_data = nii_data[..., gtab.b0s_mask]
+    dw_data = nii_data[..., ~gtab.b0s_mask]
+
+    bzero = np.mean(b0_data, -1)
+
+    nii_data_div_b0 = dw_data / bzero[..., np.newaxis]
+
+    sort_inds = (
+        np.argsort(gtab.bvals[~gtab.b0s_mask] if sort_by_bval
+                   else np.arange(len(gtab.bvals[~gtab.b0s_mask])))
+    )
+    nii_data_div_b0 = nii_data_div_b0[..., sort_inds]
+
+    # Reshape
+    nii_data_reshaped = nii_data_div_b0.reshape(-1, nii_data_div_b0.shape[-1])
+
+    if segmentation is not None:
+        segmentation_data = np.asanyarray(segmentation.dataobj, dtype=np.int16)
+
+        # Apply mask
+        segmentation_reshaped = segmentation_data.reshape(-1)
+        nii_data_masked = nii_data_reshaped[segmentation_reshaped > 0, :]
+        segmentation_masked = segmentation_reshaped[segmentation_reshaped > 0]
+
+        if segment_labels is not None:
+            segments = dict()
+            labels = list(segment_labels.keys())
+            for label in labels:
+                indices = np.array([], dtype=int)
+                for ii in segment_labels[label]:
+                    indices = np.concatenate(
+                        [indices, np.where(segmentation_masked == ii)[0]]
+                    )
+                segments[label] = indices
+
+    else:
+        nii_data_masked = nii_data_reshaped
+
+    bad_row_ind = np.where(~np.isfinite(nii_data_masked))[0]
+
+    good_row_ind = np.ones(nii_data_masked.shape[0], dtype=bool)
+    good_row_ind[bad_row_ind] = False
+
+    nii_data_masked = nii_data_masked[good_row_ind, :]
+
+    # Plot
+    return nw_plot_carpet(
+        nii_data_masked,
+        detrend=detrend,
+        segments=segments,
+        output_file=output_file
+    )
