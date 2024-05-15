@@ -85,6 +85,10 @@ def test_plot_carpet(tmp_path, testdata_path, outdir):
 
     nii = nb.load(nii_path)
     gtab = dpg.gradient_table(bval_path, bvec_path)
-    image_path = outdir / f'{testdata_name}_carpet.png'
+
+    image_path = None
+
+    if outdir is not None:
+        image_path = outdir / f'{testdata_name}_carpet.svg'
 
     plot_carpet(nii, gtab, output_file=image_path)
