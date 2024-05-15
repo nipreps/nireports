@@ -428,6 +428,7 @@ def plot_carpet(
         Rounded bvals
     segmentation : :obj:`numpy.ndarray`
         Boolean or segmentation mask of DW imaging data
+        Data corresponding to 0 values will be dropped
         e.g. np.asanyarray(Nifti1Image.dataobj, dtype=np.int16)
     sort_by_bval : :obj:`bool`
         Flag to reorder time points by bvalue
