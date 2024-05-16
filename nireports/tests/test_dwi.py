@@ -27,9 +27,10 @@ import numpy as np
 import pytest
 from matplotlib import pyplot as plt
 
-import os.path as op
 from nireports.reportlets.modality.dwi \
-    import plot_dwi, plot_gradients, plot_carpet
+    import plot_dwi, plot_gradients, nii_to_carpetplot_data, get_segment_labels
+
+from nireports.reportlets.nuisance import plot_carpet
 
 
 def test_plot_dwi(tmp_path, testdata_path, outdir):
@@ -73,28 +74,32 @@ def test_plot_gradients(tmp_path, testdata_path, dwi_btable, outdir):
         plt.savefig(outdir / f"{dwi_btable}.svg", bbox_inches="tight")
 
 
-def test_plot_carpet(tmp_path, testdata_path, outdir):
-    """Check the carpet plot"""
+def test_nii_to_carpetplot_data(tmp_path, testdata_path, outdir):
+    """Check the nii to carpet plot data function"""
 
     testdata_name = "ds000114_sub-01_ses-test_desc-trunc_dwi"
 
     nii = nb.load(testdata_path / f'{testdata_name}.nii.gz')
     bvals = np.loadtxt(testdata_path / f'{testdata_name}.bval')
 
-    nii_data = nii.get_fdata()
-    segmentation = np.round(3*np.random.rand(nii_data.shape[0],
-                                             nii_data.shape[1],
-                                             nii_data.shape[2]))
-    segment_labels = {"0": [0], "1": [1], "2": [2], "3": [3]}
-
     image_path = None
 
     if outdir is not None:
-        image_path = outdir / f'{testdata_name}_carpet.svg'
+        image_path = outdir / f'{testdata_name}_nii_to_carpet.svg'
 
-    plot_carpet(nii,
-                bvals=bvals,
-                segmentation=segmentation,
-                segment_labels=segment_labels,
-                output_file=image_path
-                )
+    data, segments = nii_to_carpetplot_data(nii, bvals=bvals)
+
+    plot_carpet(data, segments, output_file=image_path)
+
+
+def test_get_segment_labels(tmp_path, testdata_path):
+    """Check the segment label function"""
+
+    testdata_name = "aseg.auto_noCCseg.label_intensities.txt"
+
+    filepath = testdata_path / testdata_name
+    keywords = ["Cerebral_White_Matter", "Cerebral_Cortex", "Ventricle"]
+
+    segment_labels = get_segment_labels(filepath, keywords)
+
+    assert segment_labels is not None
