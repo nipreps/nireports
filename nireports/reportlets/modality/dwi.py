@@ -452,7 +452,7 @@ def nii_to_carpetplot_data(
     nii_data = nii.get_fdata()
 
     if mask_nii is None:
-        mask_data = np.ones(nii_data.shape[0:2])
+        mask_data = np.ones(nii_data.shape[0:3])
     else:
         mask_data = np.asanyarray(mask_nii.dataobj, dtype=np.int16)
 
