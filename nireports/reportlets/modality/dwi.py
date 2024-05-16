@@ -498,3 +498,52 @@ def plot_carpet(
         segments=segments,
         output_file=output_file
     )
+
+
+def get_segment_labels(
+        filepath,
+        keywords,
+        delimiter=" ",
+        index_position=0,
+        label_position=1
+):
+    """
+    Return segment labels for plot_carpet function
+    Parameters
+    ----------
+    filepath : :obj:`string`
+        Path to segment label text file, such as freesurfer label file
+    keywords : list of :obj:`string`
+        List of label keywords.
+        All labels containing the keyword will be grouped together.
+        e.g. ["Cerebral_White_Matter", "Cerebral_Cortex", "Ventricle"]
+    delimiter : :obj:`string`
+        Delimiter between label index and label string in label file
+        (' ' for freesurfer label file)
+    index_position : :obj:`int`
+        Position of label index in label file
+        (0 for freesurfer label file)
+    label_position : :obj:`int`
+        Position of label string in label file
+        (1 for freesurfer label file)
+    Returns
+    ---------
+    dict
+    e.g. {'Cerebral_White_Matter': [2, 41],
+          'Cerebral_Cortex': [3, 42],
+          'Ventricle': [4, 14, 15, 43, 72]}
+    """
+    segment_labels = {}
+
+    with open(filepath, "r") as f:
+        labels = f.read()
+
+    labels_s = [label.split(delimiter) for label in labels.split("\n")
+                if label != ""]
+
+    for keyword in keywords:
+        ind = [int(i[index_position]) for i in labels_s
+               if keyword in i[label_position]]
+        segment_labels[keyword] = ind
+
+    return segment_labels
