@@ -101,6 +101,7 @@ def test_nii_to_carpetplot_data(tmp_path, testdata_path, outdir):
 
     data, segments = nii_to_carpetplot_data(nii,
                                             bvals=bvals,
+                                            drop_b0=False,
                                             mask_nii=mask_nii,
                                             segment_labels=segment_labels)
 
