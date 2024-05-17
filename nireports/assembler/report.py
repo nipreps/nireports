@@ -377,7 +377,7 @@ class Report:
                         )
                         reportlets.append(rlet)
                     except ReportletException as e:
-                        exceptions.append(e) 
+                        exceptions.append(e)
                 list_combos = subrep_cfg.get("nested", False)
             else:
                 # Do not use dictionary for queries, as we need to preserve ordering
@@ -411,10 +411,12 @@ class Report:
 
             # Filter out empty reportlets
             reportlets = [r for r in reportlets if not r.is_empty()]
-    
+
             # When support python < 3.11 dropped we can use ExceptionGroups
             if exceptions:
-                raise NiReportsException(('There were errors generating report {self}', *exceptions))
+                raise NiReportsException(
+                    ("There were errors generating report {self}", *exceptions)
+                )
 
             if reportlets:
                 sub_report = SubReport(
@@ -457,9 +459,9 @@ class Report:
                         )
                     ],
                 )
-    
+
     def __str__(self):
-        return f'<Report {self.title}>'
+        return f"<Report {self.title}>"
 
     def generate_report(self):
         """Once the Report has been indexed, the final HTML can be generated"""
