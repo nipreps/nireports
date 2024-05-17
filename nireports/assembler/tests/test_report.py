@@ -36,7 +36,7 @@ from bids.layout.writing import build_path
 
 from nireports.assembler import data
 from nireports.assembler.report import Report
-from nireports.exceptions import NiReportsException, RequiredReportletException
+from nireports.exceptions import NiReportsException
 
 summary_meta = {
     "Summary": {
