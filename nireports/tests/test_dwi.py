@@ -82,12 +82,27 @@ def test_nii_to_carpetplot_data(tmp_path, testdata_path, outdir):
     nii = nb.load(testdata_path / f'{testdata_name}.nii.gz')
     bvals = np.loadtxt(testdata_path / f'{testdata_name}.bval')
 
+    mask_data = np.round(82 * np.random.rand(nii.shape[0],
+                                             nii.shape[1],
+                                             nii.shape[2],
+                                             nii.shape[3]))
+
+    mask_nii = nb.Nifti1Image(mask_data, np.eye(4))
+
+    filepath = testdata_path / "aseg.auto_noCCseg.label_intensities.txt"
+    keywords = ["Cerebral_White_Matter", "Cerebral_Cortex", "Ventricle"]
+
+    segment_labels = get_segment_labels(filepath, keywords)
+
     image_path = None
 
     if outdir is not None:
         image_path = outdir / f'{testdata_name}_nii_to_carpet.svg'
 
-    data, segments = nii_to_carpetplot_data(nii, bvals=bvals)
+    data, segments = nii_to_carpetplot_data(nii,
+                                            bvals=bvals,
+                                            mask_nii=mask_nii,
+                                            segment_labels=segment_labels)
 
     plot_carpet(data, segments, output_file=image_path)
 
