@@ -450,7 +450,6 @@ class Reportlet:
         if config.get("required", False) and self.is_empty():
             raise RequiredReportletException(config)
 
-
     def is_empty(self):
         """Determine whether the reportlet has no components."""
         return len(self.components) == 0
