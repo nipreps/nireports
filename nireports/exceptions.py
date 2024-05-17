@@ -8,6 +8,6 @@ class ReportletException(NiReportsException):
 
 class RequiredReportletException(ReportletException):
     def __init__(self, config):
-        self.args = (
-            f"No content found while generated reportlet listed as required with the following config: {config}",
-        )
+        message = (f"No content found while generated reportlet listed as required with the"
+        f"following config: {config}")
+        self.args = (message)
