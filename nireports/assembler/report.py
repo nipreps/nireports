@@ -36,6 +36,7 @@ from bids.layout.writing import build_path
 
 from nireports.assembler import data
 from nireports.assembler.reportlet import Reportlet
+from nireports.exceptions import NiReportsException, ReportletException
 
 # Add a new figures spec
 try:
@@ -339,6 +340,7 @@ class Report:
 
         This method also places figures in their final location.
         """
+        exceptions = []
         # Initialize a BIDS layout
         _indexer = BIDSLayoutIndexer(
             config_filename=data.load("nipreps.json"),
@@ -361,22 +363,25 @@ class Report:
             orderings = [s for s in subrep_cfg.get("ordering", "").strip().split(",") if s]
             entities, list_combos = self._process_orderings(orderings, layout.get(**bids_filters))
 
+            reportlets = []
+
             if not list_combos:  # E.g. this is an anatomical reportlet
-                reportlets = [
-                    Reportlet(
-                        layout,
-                        config=cfg,
-                        out_dir=out_dir,
-                        bids_filters=bids_filters,
-                        metadata=metadata,
-                    )
-                    for cfg in subrep_cfg["reportlets"]
-                ]
+                for cfg in subrep_cfg["reportlets"]:
+                    try:
+                        rlet = Reportlet(
+                            layout,
+                            config=cfg,
+                            out_dir=out_dir,
+                            bids_filters=bids_filters,
+                            metadata=metadata,
+                        )
+                        reportlets.append(rlet)
+                    except ReportletException as e:
+                        exceptions.append(e) 
                 list_combos = subrep_cfg.get("nested", False)
             else:
                 # Do not use dictionary for queries, as we need to preserve ordering
                 # of ordering columns.
-                reportlets = []
                 for c in list_combos:
                     # do not display entities with the value None.
                     c_filt = [
@@ -389,20 +394,28 @@ class Report:
 
                     for cfg in subrep_cfg["reportlets"]:
                         cfg["bids"].update({entities[i]: c[i] for i in range(len(c))})
-                        rlet = Reportlet(
-                            layout,
-                            config=cfg,
-                            out_dir=out_dir,
-                            bids_filters=bids_filters,
-                            metadata=metadata,
-                        )
-                        if not rlet.is_empty():
-                            rlet.title = title
-                            title = None
-                            reportlets.append(rlet)
+                        try:
+                            rlet = Reportlet(
+                                layout,
+                                config=cfg,
+                                out_dir=out_dir,
+                                bids_filters=bids_filters,
+                                metadata=metadata,
+                            )
+                            if not rlet.is_empty():
+                                rlet.title = title
+                                title = None
+                                reportlets.append(rlet)
+                        except ReportletException as e:
+                            exceptions.append(e)
 
             # Filter out empty reportlets
             reportlets = [r for r in reportlets if not r.is_empty()]
+    
+            # When support python < 3.11 dropped we can use ExceptionGroups
+            if exceptions:
+                raise NiReportsException(('There were errors generating report {self}', *exceptions))
+
             if reportlets:
                 sub_report = SubReport(
                     subrep_cfg["name"],
@@ -444,6 +457,9 @@ class Report:
                         )
                     ],
                 )
+    
+    def __str__(self):
+        return f'<Report {self.title}>'
 
     def generate_report(self):
         """Once the Report has been indexed, the final HTML can be generated"""
