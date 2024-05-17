@@ -84,8 +84,7 @@ def test_nii_to_carpetplot_data(tmp_path, testdata_path, outdir):
 
     mask_data = np.round(82 * np.random.rand(nii.shape[0],
                                              nii.shape[1],
-                                             nii.shape[2],
-                                             nii.shape[3]))
+                                             nii.shape[2]))
 
     mask_nii = nb.Nifti1Image(mask_data, np.eye(4))
 
@@ -101,7 +100,6 @@ def test_nii_to_carpetplot_data(tmp_path, testdata_path, outdir):
 
     data, segments = nii_to_carpetplot_data(nii,
                                             bvals=bvals,
-                                            drop_b0=False,
                                             mask_nii=mask_nii,
                                             segment_labels=segment_labels)
 
