@@ -15,7 +15,7 @@ sections:
     caption: Density distributions of within-session FC strengths. The FC distribution from each session are overlaid.
     subtitle: Functional connectivity density distributions.
     style:
-      max-width: 600px
+      max-width: 1200px
 
   - bids: {desc: qcfc, suffix: bold}
     caption: |
