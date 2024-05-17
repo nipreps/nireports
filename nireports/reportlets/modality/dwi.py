@@ -524,7 +524,7 @@ def get_segments(
         indices = np.array([], dtype=int)
         for ii in idx:
             indices = np.concatenate(
-                [indices, np.nonzero(segment_mask == ii)]
+                [indices, np.nonzero(segment_mask == ii)[0]]
             )
         segments[label] = indices
 
