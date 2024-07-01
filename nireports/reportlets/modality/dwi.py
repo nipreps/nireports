@@ -414,7 +414,7 @@ def nii_to_carpetplot_data(
     drop_b0=True,
     sort_by_bval=False,
     mask_nii=None,
-    segment_labels=None
+    segment_labels=None,
 ):
     """
     Convert nii to data matrix for carpet plot
@@ -495,10 +495,7 @@ def nii_to_carpetplot_data(
     return data, segments
 
 
-def get_segments(
-    segment_mask,
-    segment_labels
-):
+def get_segments(segment_mask, segment_labels):
     """
     Return segments dict for plot_carpet function
 
@@ -518,26 +515,18 @@ def get_segments(
         A mapping between segment labels (e.g., `"Left Cortex"`)
         and list of indexes in the data array.
     """
-    segments = dict()
+    segments = {}
 
     for label, idx in segment_labels.items():
         indices = np.array([], dtype=int)
         for ii in idx:
-            indices = np.concatenate(
-                [indices, np.nonzero(segment_mask == ii)[0]]
-            )
+            indices = np.concatenate([indices, np.nonzero(segment_mask == ii)[0]])
         segments[label] = indices
 
     return segments
 
 
-def get_segment_labels(
-        filepath,
-        keywords,
-        delimiter=" ",
-        index_position=0,
-        label_position=1
-):
+def get_segment_labels(filepath, keywords, delimiter=" ", index_position=0, label_position=1):
     """
     Get segment labels from file by keyword for get_segments function
 
@@ -570,12 +559,10 @@ def get_segment_labels(
     with open(filepath, "r") as f:
         labels = f.read()
 
-    labels_s = [label.split(delimiter) for label in labels.split("\n")
-                if label != ""]
+    labels_s = [label.split(delimiter) for label in labels.split("\n") if label != ""]
 
     for keyword in keywords:
-        ind = [int(i[index_position]) for i in labels_s
-               if keyword in i[label_position]]
+        ind = [int(i[index_position]) for i in labels_s if keyword in i[label_position]]
         segment_labels[keyword] = ind
 
     return segment_labels
