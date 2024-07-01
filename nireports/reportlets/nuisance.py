@@ -339,7 +339,7 @@ def plot_carpet(
     )
 
     label = ""
-    for i, (label, indices) in enumerate(segments.items()):
+    for i, (_, indices) in enumerate(segments.items()):
         # Carpet plot
         ax = plt.subplot(gs[i])
 
