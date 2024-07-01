@@ -24,7 +24,7 @@ dependencies = [
     "nibabel >= 3.0.1",
     "nilearn >= 0.5.2",
     "nipype",
-    "numpy",
+    "numpy < 2.0",
     "pandas",
     "pybids",
     "pyyaml",
