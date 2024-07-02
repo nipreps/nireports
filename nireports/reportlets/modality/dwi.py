@@ -29,6 +29,8 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import art3d
 from nilearn.plotting import plot_anat
 
+from nireports.reportlets.nuisance import plot_raincloud
+
 
 def plot_dwi(dataobj, affine, gradient=None, **kwargs):
     """
@@ -405,6 +407,32 @@ def plot_gradients(
         plt.suptitle(title)
 
     return ax
+
+
+def plot_tissue_values(data_file, group_name, feature, **kwargs):
+    """Generate a raincloud plot with the data points corresponding to the
+    ``feature`` value contained in the data file.
+
+    Parameters
+    ----------
+    data_file : :obj:`str`
+        File containing the data of interest.
+    group_name : :obj:`str`
+        The group name of interest to be plot.
+    feature : :obj:`str`
+        The feature of interest to be plot.
+    kwargs : :obj:`dict`
+        Extra args given to :func:~`nireports.reportlets.nuisance.plot_raincloud`.
+
+    Returns
+    -------
+    axes and gridspec
+        Plotting axes and gridspec. Returned only if ``output_file`` is ``None``.
+    output_file : :obj:`str`
+        The file where the figure is saved.
+    """
+
+    return plot_raincloud(data_file, group_name, feature, **kwargs)
 
 
 def nii_to_carpetplot_data(

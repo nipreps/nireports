@@ -32,8 +32,10 @@ from nireports.reportlets.modality.dwi import (
     nii_to_carpetplot_data,
     plot_dwi,
     plot_gradients,
+    plot_tissue_values,
 )
 from nireports.reportlets.nuisance import plot_carpet
+from nireports.tests.utils import _generate_raincloud_random_data
 
 
 def test_plot_dwi(tmp_path, testdata_path, outdir):
@@ -75,6 +77,45 @@ def test_plot_gradients(tmp_path, testdata_path, dwi_btable, outdir):
 
     if outdir is not None:
         plt.savefig(outdir / f"{dwi_btable}.svg", bbox_inches="tight")
+
+
+def test_plot_tissue_values(tmp_path):
+    features_label = "fa"
+    group_label = "tissue"
+    group_names = ["CSF", "GM", "WM"]
+    min_val_csf = 0.0
+    max_val_csf = 0.2
+    min_max_csf = (min_val_csf, max_val_csf)
+    min_val_gm = 0.0
+    max_val_gm = 0.6
+    min_max_gm = (min_val_gm, max_val_gm)
+    min_val_wm = 0.3
+    max_val_wm = 1.0
+    min_max_wm = (min_val_wm, max_val_wm)
+    min_max = [min_max_csf, min_max_gm, min_max_wm]
+    n_grp_samples = 250
+    data_file = tmp_path / "tissue_fa.tsv"
+
+    _generate_raincloud_random_data(
+        min_max, n_grp_samples, features_label, group_label, group_names, data_file
+    )
+
+    palette = "Set2"
+    orient = "v"
+    density = True
+    output_file = tmp_path / "tissue_fa.png"
+    mark_nans = False
+
+    plot_tissue_values(
+        data_file,
+        group_label,
+        features_label,
+        palette=palette,
+        orient=orient,
+        density=density,
+        mark_nans=mark_nans,
+        output_file=output_file,
+    )
 
 
 def test_nii_to_carpetplot_data(tmp_path, testdata_path, outdir):
