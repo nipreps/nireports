@@ -24,7 +24,7 @@ dependencies = [
     "nibabel >= 3.0.1",
     "nilearn >= 0.5.2",
     "nipype",
-    "numpy",
+    "numpy < 2.0",
     "pandas",
     "pybids",
     "pyyaml",
@@ -130,6 +130,8 @@ select = [
 ]
 ignore = [
   "E203",
+  "B019",
+  "C901",
 ]
 
 [tool.ruff.lint.flake8-quotes]

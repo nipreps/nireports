@@ -27,7 +27,12 @@ from shutil import copy
 
 import pytest
 
-from nireports.interfaces.nuisance import CompCorVariancePlot, ConfoundsCorrelationPlot
+from nireports.interfaces.nuisance import (
+    CompCorVariancePlot,
+    ConfoundsCorrelationPlot,
+    RaincloudPlot,
+)
+from nireports.tests.utils import _generate_raincloud_random_data
 
 
 def _smoke_test_report(report_interface, artifact_name):
@@ -56,3 +61,38 @@ def test_ConfoundsCorrelationPlot(datadir, ignore_initial_volumes):
         ignore_initial_volumes=ignore_initial_volumes,
     )
     _smoke_test_report(cc_rpt, f"confounds_correlation_{ignore_initial_volumes}.svg")
+
+
+@pytest.mark.parametrize("orient", ["h", "v"])
+@pytest.mark.parametrize("density", (True, False))
+def test_RaincloudPlot(orient, density, tmp_path):
+    """Raincloud plot report test"""
+    features_label = "value"
+    group_label = "group"
+    group_names = ["group1", "group2"]
+    min_val_grp1 = 0.3
+    max_val_grp1 = 1.0
+    min_max_group1 = (min_val_grp1, max_val_grp1)
+    min_val_grp2 = 0.0
+    max_val_grp2 = 0.6
+    min_max_group2 = (min_val_grp2, max_val_grp2)
+    min_max = [min_max_group1, min_max_group2]
+    n_grp_samples = 250
+    data_file = tmp_path / "data.tsv"
+
+    _generate_raincloud_random_data(
+        min_max, n_grp_samples, features_label, group_label, group_names, data_file
+    )
+
+    palette = "Set2"
+    mark_nans = False
+    rc_rpt = RaincloudPlot(
+        data_file=data_file,
+        group_name=group_label,
+        feature=features_label,
+        palette=palette,
+        orient=orient,
+        density=density,
+        mark_nans=mark_nans,
+    )
+    _smoke_test_report(rc_rpt, f"raincloud_orient-{orient}_density-{density}.svg")

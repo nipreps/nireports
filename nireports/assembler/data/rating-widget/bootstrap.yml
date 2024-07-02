@@ -7,7 +7,7 @@ defaults:
   endpoint: "https://localhost:8000/"
   access_token: <secret_token>
 settings:
-  style: 'width: 30%; top: 100px; left: 65%;'
+  style: 'width: 30%; top: 100px; left: 65%; max-height: 85%; overflow-y: auto;'
   navbar_label: Rating widget
   mintime: 10
 components:

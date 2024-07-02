@@ -32,7 +32,7 @@ from nipype.interfaces.base import (
 )
 from nipype.utils.filemanip import fname_presuffix
 
-from nireports.reportlets.nuisance import confounds_correlation_plot
+from nireports.reportlets.nuisance import confounds_correlation_plot, plot_raincloud
 from nireports.reportlets.xca import compcor_variance_plot
 
 
@@ -140,5 +140,111 @@ class ConfoundsCorrelationPlot(SimpleInterface):
             output_file=self._results["out_file"],
             reference=self.inputs.reference_column,
             ignore_initial_volumes=self.inputs.ignore_initial_volumes,
+        )
+        return runtime
+
+
+class _RaincloudPlotInputSpec(BaseInterfaceInputSpec):
+    data_file = File(exists=True, mandatory=True, desc="File containing the data")
+    out_file = traits.Either(None, File, value=None, usedefault=True, desc="Path to save plot")
+    group_name = traits.Str(
+        "group_name",
+        mandatory=True,
+        desc="Group name of interest",
+    )
+    feature = traits.Str(
+        "feature",
+        mandatory=True,
+        desc="Feature of interest",
+    )
+    palette = traits.Str(
+        "Set2",
+        usedefault=True,
+        desc="Color palette name",
+    )
+    orient = traits.Str(
+        "v",
+        usedefault=True,
+        desc="Orientation",
+    )
+    density = traits.Bool(
+        True,
+        usedefault=True,
+        desc="``True`` to plot the density",
+    )
+    upper_limit_value = traits.Float(
+        None,
+        usedefault=True,
+        desc="Upper limit value over which any value in the data will be styled "
+        "with a different style",
+    )
+    upper_limit_color = traits.Str(
+        "gray",
+        usedefault=True,
+        desc="Lower limit value under which any value in the data will be styled "
+        "with a different style",
+    )
+    lower_limit_value = traits.Float(
+        None,
+        usedefault=True,
+        desc="",
+    )
+    lower_limit_color = traits.Str(
+        "gray",
+        usedefault=True,
+        desc="Color name to represent values under ``lower_limit_value``",
+    )
+    limit_offset = traits.Float(
+        None,
+        usedefault=True,
+        desc="Offset to plot the values over/under the upper/lower limit values",
+    )
+    mark_nans = traits.Bool(
+        True,
+        usedefault=True,
+        desc="``True`` to plot NaNs as dots. ``nans_values`` must be provided if True",
+    )
+    nans_value = traits.Float(
+        None,
+        usedefault=True,
+        desc="Value to use for NaN values`",
+    )
+    nans_color = traits.Str(
+        "black",
+        usedefault=True,
+        desc="Color name to represent NaN values",
+    )
+
+
+class _RaincloudPlotOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Path to saved plot")
+
+
+class RaincloudPlot(SimpleInterface):
+    """Plot a raincloud of values."""
+
+    input_spec = _RaincloudPlotInputSpec
+    output_spec = _RaincloudPlotOutputSpec
+
+    def _run_interface(self, runtime, **kwargs):
+        if self.inputs.out_file is None:
+            self._results["out_file"] = fname_presuffix(
+                self.inputs.data_file,
+                suffix="_raincloud.svg",
+                use_ext=False,
+                newpath=runtime.cwd,
+            )
+        else:
+            self._results["out_file"] = self.inputs.out_file
+        plot_raincloud(
+            data_file=self.inputs.data_file,
+            group_name=self.inputs.group_name,
+            feature=self.inputs.feature,
+            palette=self.inputs.palette,
+            orient=self.inputs.orient,
+            density=self.inputs.density,
+            mark_nans=self.inputs.mark_nans,
+            output_file=self._results["out_file"],
+            **kwargs,
         )
         return runtime
