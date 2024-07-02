@@ -27,7 +27,14 @@ import numpy as np
 import pytest
 from matplotlib import pyplot as plt
 
-from nireports.reportlets.modality.dwi import plot_dwi, plot_gradients, plot_tissue_values
+from nireports.reportlets.modality.dwi import (
+    get_segment_labels,
+    nii_to_carpetplot_data,
+    plot_dwi,
+    plot_gradients,
+    plot_tissue_values,
+)
+from nireports.reportlets.nuisance import plot_carpet
 from nireports.tests.utils import _generate_raincloud_random_data
 
 
@@ -109,3 +116,45 @@ def test_plot_tissue_values(tmp_path):
         mark_nans=mark_nans,
         output_file=output_file,
     )
+
+
+def test_nii_to_carpetplot_data(tmp_path, testdata_path, outdir):
+    """Check the nii to carpet plot data function"""
+
+    testdata_name = "ds000114_sub-01_ses-test_desc-trunc_dwi"
+
+    nii = nb.load(testdata_path / f"{testdata_name}.nii.gz")
+    bvals = np.loadtxt(testdata_path / f"{testdata_name}.bval")
+
+    mask_data = np.round(82 * np.random.rand(nii.shape[0], nii.shape[1], nii.shape[2]))
+
+    mask_nii = nb.Nifti1Image(mask_data, np.eye(4))
+
+    filepath = testdata_path / "aseg.auto_noCCseg.label_intensities.txt"
+    keywords = ["Cerebral_White_Matter", "Cerebral_Cortex", "Ventricle"]
+
+    segment_labels = get_segment_labels(filepath, keywords)
+
+    image_path = None
+
+    if outdir is not None:
+        image_path = outdir / f"{testdata_name}_nii_to_carpet.svg"
+
+    data, segments = nii_to_carpetplot_data(
+        nii, bvals=bvals, mask_nii=mask_nii, segment_labels=segment_labels
+    )
+
+    plot_carpet(data, segments, output_file=image_path)
+
+
+def test_get_segment_labels(tmp_path, testdata_path):
+    """Check the segment label function"""
+
+    testdata_name = "aseg.auto_noCCseg.label_intensities.txt"
+
+    filepath = testdata_path / testdata_name
+    keywords = ["Cerebral_White_Matter", "Cerebral_Cortex", "Ventricle"]
+
+    segment_labels = get_segment_labels(filepath, keywords)
+
+    assert segment_labels is not None
