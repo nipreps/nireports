@@ -220,9 +220,6 @@ class Report:
     ... ).read_text()) - (REPORT_BASELINE_LENGTH + 51892)
     0
 
-    >>> (output_dir / 'nireports' / 'sub-03_task-faketaskwithruns_bold.html').read_text()
-    "test"
-
     >>> len((
     ...     output_dir / 'nireports' / 'sub-03_task-faketaskwithruns_bold.html'
     ... ).read_text()) - RATING_WIDGET_LENGTH
