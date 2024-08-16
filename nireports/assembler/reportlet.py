@@ -270,6 +270,26 @@ class Reportlet:
                         name=html_anchor,
                         style="; ".join(f"{k}: {v}" for k, v in style.items()),
                     )
+                elif ext in (".png", ".jpg", ".jpeg"):
+                    entities = dict(bidsfile.entities)
+                    if desc_text:
+                        desc_text = desc_text.format(**entities)
+
+                    try:
+                        html_anchor = src.relative_to(out_dir)
+                    except ValueError:
+                        html_anchor = src.relative_to(Path(layout.root))
+                        dst = out_dir / html_anchor
+                        dst.parent.mkdir(parents=True, exist_ok=True)
+                        copyfile(src, dst, copy=True, use_hardlink=True)
+
+                    style = {"width": "100%"} if is_static else {}
+                    style.update(config.get("style", {}))
+
+                    stylestr = "; ".join(f"{k}: {v}" for k, v in style.items())
+                    contents = f'<img src="{html_anchor}" style="{stylestr}"/>'
+                else:
+                    raise RuntimeError(f"Unsupported file extension: {ext}")
 
                 if contents:
                     self.components.append((contents, desc_text))
