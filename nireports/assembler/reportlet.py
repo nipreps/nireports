@@ -220,6 +220,7 @@ class Reportlet:
                 "name",
                 "_".join("%s-%s" % i for i in sorted(bidsquery.items())),
             )
+
             # Query the BIDS layout of reportlets
             files = layout.get(**bidsquery)
 
