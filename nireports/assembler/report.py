@@ -211,6 +211,8 @@ class Report:
     ...     output_dir / 'nireports' / 'sub-01.html'
     ... ).read_text()) - REPORT_BASELINE_LENGTH
     0
+    >>> (output_dir / 'nireports' / 'sub-02.html').read_text()
+    'test'
     >>> len((
     ...     output_dir / 'nireports' / 'sub-02.html'
     ... ).read_text()) - (REPORT_BASELINE_LENGTH + 3254)
