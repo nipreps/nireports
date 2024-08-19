@@ -57,6 +57,7 @@ dev = [
 test = [
     "coverage",
     "matplotlib",
+    "packaging",
     "pytest",
     "pytest-cov",
     "pytest-env",
@@ -130,6 +131,8 @@ select = [
 ]
 ignore = [
   "E203",
+  "B019",
+  "C901",
 ]
 
 [tool.ruff.lint.flake8-quotes]

@@ -29,6 +29,8 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import art3d
 from nilearn.plotting import plot_anat
 
+from nireports.reportlets.nuisance import plot_raincloud
+
 
 def plot_dwi(dataobj, affine, gradient=None, **kwargs):
     """
@@ -405,3 +407,190 @@ def plot_gradients(
         plt.suptitle(title)
 
     return ax
+
+
+def plot_tissue_values(data_file, group_name, feature, **kwargs):
+    """Generate a raincloud plot with the data points corresponding to the
+    ``feature`` value contained in the data file.
+
+    Parameters
+    ----------
+    data_file : :obj:`str`
+        File containing the data of interest.
+    group_name : :obj:`str`
+        The group name of interest to be plot.
+    feature : :obj:`str`
+        The feature of interest to be plot.
+    kwargs : :obj:`dict`
+        Extra args given to :func:~`nireports.reportlets.nuisance.plot_raincloud`.
+
+    Returns
+    -------
+    axes and gridspec
+        Plotting axes and gridspec. Returned only if ``output_file`` is ``None``.
+    output_file : :obj:`str`
+        The file where the figure is saved.
+    """
+
+    return plot_raincloud(data_file, group_name, feature, **kwargs)
+
+
+def nii_to_carpetplot_data(
+    nii,
+    bvals=None,
+    divide_by_b0=True,
+    drop_b0=True,
+    sort_by_bval=False,
+    mask_nii=None,
+    segment_labels=None,
+):
+    """
+    Convert nii to data matrix for carpet plot
+
+    Parameters
+    ----------
+    nii : Nifti1Image
+        DW imaging data
+    bvals : :obj:`numpy.ndarray`, optional
+        Rounded bvals
+    divide_by_b0 : :obj:`bool`, optional
+        Divide data by mean b0
+    drop_b0 : :obj:`bool`, optional
+        Flag to drop b0 data
+    sort_by_bval : :obj:`bool`, optional
+        Flag to reorder time points by bvalue
+    mask_nii : Nifti1Image, optional
+        Boolean or segmentation mask of DW imaging data
+    segment_labels : :obj:`dict`, optional
+        Dictionary of segment labels
+        e.g. {'Cerebral_White_Matter': [2, 41],
+              'Cerebral_Cortex': [3, 42],
+              'Ventricle': [4, 14, 15, 43, 72]}
+
+    Returns
+    ---------
+    data : N x T :obj:`numpy.array`
+        The functional data to be plotted
+        (*N* sampling locations by *T* timepoints).
+    segments: :obj:`dict`
+        A mapping between segment labels (e.g., `"Left Cortex"`)
+        and list of indexes in the data array.
+    """
+
+    nii_data = nii.get_fdata()
+
+    if mask_nii is None:
+        mask_data = np.ones(nii_data.shape[0:3])
+    else:
+        mask_data = np.asanyarray(mask_nii.dataobj, dtype=np.int16)
+
+    if bvals is not None:
+        if divide_by_b0:
+            b0_data = nii_data[..., bvals == 0]
+            bzero = np.mean(b0_data, -1)
+            nii_data = nii_data / bzero[..., np.newaxis]
+
+        if drop_b0:
+            nii_data = nii_data[..., bvals > 0]
+            bvals = bvals[bvals > 0]
+
+        if sort_by_bval:
+            sort_inds = np.argsort(bvals)
+            nii_data = nii_data[..., sort_inds]
+
+    # Reshape
+    data = nii_data.reshape(-1, nii_data.shape[-1])
+    mask_data = mask_data.reshape(-1)
+
+    # Apply mask
+    data = data[mask_data > 0, :]
+    mask_data = mask_data[mask_data > 0]
+
+    # Remove bad rows
+    bad_row_ind = np.where(~np.isfinite(data))[0]
+    good_row_ind = np.ones(data.shape[0], dtype=bool)
+    good_row_ind[bad_row_ind] = False
+
+    data = data[good_row_ind, :]
+    mask_data = mask_data[good_row_ind]
+
+    # Get segments dict
+    if mask_nii is None or segment_labels is None:
+        segments = None
+    else:
+        segments = get_segments(mask_data, segment_labels)
+
+    return data, segments
+
+
+def get_segments(segment_mask, segment_labels):
+    """
+    Return segments dict for plot_carpet function
+
+    Parameters
+    ----------
+    segment_mask : :obj:`numpy.ndarray`
+        Segmentation mask of DW imaging data
+    segment_labels : :obj:`dict`
+        Dictionary of segment labels
+        e.g. {'Cerebral_White_Matter': [2, 41],
+              'Cerebral_Cortex': [3, 42],
+              'Ventricle': [4, 14, 15, 43, 72]}
+
+    Returns
+    ---------
+    segments: :obj:`dict`
+        A mapping between segment labels (e.g., `"Left Cortex"`)
+        and list of indexes in the data array.
+    """
+    segments = {}
+
+    for label, idx in segment_labels.items():
+        indices = np.array([], dtype=int)
+        for ii in idx:
+            indices = np.concatenate([indices, np.nonzero(segment_mask == ii)[0]])
+        segments[label] = indices
+
+    return segments
+
+
+def get_segment_labels(filepath, keywords, delimiter=" ", index_position=0, label_position=1):
+    """
+    Get segment labels from file by keyword for get_segments function
+
+    Parameters
+    ----------
+    filepath : :obj:`string`
+        Path to segment label text file, such as freesurfer label file
+    keywords : list of :obj:`string`
+        List of label keywords.
+        All labels containing the keyword will be grouped together.
+        e.g. ["Cerebral_White_Matter", "Cerebral_Cortex", "Ventricle"]
+    delimiter : :obj:`string`, optional
+        Delimiter between label index and label string in label file
+        (' ' for freesurfer label file)
+    index_position : :obj:`int`, optional
+        Position of label index in label file
+        (0 for freesurfer label file)
+    label_position : :obj:`int`, optional
+        Position of label string in label file
+        (1 for freesurfer label file)
+    Returns
+    ---------
+    dict
+    e.g. {'Cerebral_White_Matter': [2, 41],
+          'Cerebral_Cortex': [3, 42],
+          'Ventricle': [4, 14, 15, 43, 72]}
+    """
+    segment_labels = {}
+
+    with open(filepath, "r") as f:
+        labels = f.read()
+
+    labels_s = [label.split(delimiter) for label in labels.split("\n") if label != ""]
+
+    for keyword in keywords:
+        ind = [int(i[index_position]) for i in labels_s if keyword in i[label_position]]
+        segment_labels[keyword] = ind
+
+    return segment_labels
