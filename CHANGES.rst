@@ -1,3 +1,15 @@
+23.2.2 (August 19, 2024)
+========================
+Bug-fix release in the 23.2.x series.
+
+CHANGES
+-------
+
+**Full Changelog**: https://github.com/nipreps/nireports/compare/23.2.1...23.2.2
+
+* ENH: Support PNGs and JPGs in reportlets (#126)
+
+
 23.2.1 (May 07, 2024)
 =====================
 Bug-fix release in the 23.2.x series.
