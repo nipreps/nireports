@@ -31,22 +31,20 @@ from nireports.assembler import data
 from nireports.assembler.misc import dict2html, read_crashfile
 
 
-SVG_SNIPPET = [
-    """\
+IMG_SNIPPET = """\
 <div class="reportlet">
-<object class="svg-reportlet" type="image/svg+xml" data="./{name}" style="{style}">
+<img class="{ext}-reportlet" src="./{name}" style="{style}" />
+</div>
+<small>Get figure file: <a href="./{name}" target="_blank">{name}</a></small>
+"""
+SVG_SNIPPET = """\
+<div class="reportlet">
+<object class="{ext}-reportlet" type="image/{ext}+xml" data="./{name}" style="{style}">
 Problem loading figure {name}. If the link below works, please try \
 reloading the report in your browser.</object>
 </div>
 <small>Get figure file: <a href="./{name}" target="_blank">{name}</a></small>
-""",
-    """\
-<div class="reportlet">
-<img class="svg-reportlet" src="./{name}" style="{style}" />
-</div>
-<small>Get figure file: <a href="./{name}" target="_blank">{name}</a></small>
-""",
-]
+"""
 
 METADATA_ACCORDION_BLOCK = """\
 <div class="accordion accordion-flush" id="{metadata_id}">
@@ -266,7 +264,9 @@ class Reportlet:
                     style = {"width": "100%"} if is_static else {}
                     style.update(config.get("style", {}))
 
-                    contents = SVG_SNIPPET[is_static].format(
+                    snippet = SVG_SNIPPET if is_static else IMG_SNIPPET
+                    contents = snippet.format(
+                        ext=ext[1:],
                         name=html_anchor,
                         style="; ".join(f"{k}: {v}" for k, v in style.items()),
                     )
@@ -283,11 +283,15 @@ class Reportlet:
                         dst.parent.mkdir(parents=True, exist_ok=True)
                         copyfile(src, dst, copy=True, use_hardlink=True)
 
-                    style = {"width": "100%"} if is_static else {}
+                    style = {"width": "100%"}
                     style.update(config.get("style", {}))
 
-                    stylestr = "; ".join(f"{k}: {v}" for k, v in style.items())
-                    contents = f'<img src="{html_anchor}" style="{stylestr}"/>'
+                    snippet = IMG_SNIPPET
+                    contents = snippet.format(
+                        ext=ext[1:],
+                        name=html_anchor,
+                        style="; ".join(f"{k}: {v}" for k, v in style.items()),
+                    )
                 else:
                     raise RuntimeError(f"Unsupported file extension: {ext}")
 
