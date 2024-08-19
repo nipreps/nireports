@@ -41,6 +41,14 @@ test_output_dir = os.getenv("TEST_OUTPUT_DIR")
 test_workdir = os.getenv("TEST_WORK_DIR")
 
 
+@pytest.fixture(scope="session", autouse=True)
+def legacy_printoptions():
+    from packaging.version import Version
+
+    if Version(np.__version__) >= Version("1.22"):
+        np.set_printoptions(legacy="1.21")
+
+
 @pytest.fixture(autouse=True)
 def expand_namespace(doctest_namespace):
     doctest_namespace["PY_VERSION"] = version_info

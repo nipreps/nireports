@@ -24,7 +24,7 @@ dependencies = [
     "nibabel >= 3.0.1",
     "nilearn >= 0.5.2",
     "nipype",
-    "numpy < 2.0",
+    "numpy",
     "pandas",
     "pybids",
     "pyyaml",
@@ -57,6 +57,7 @@ dev = [
 test = [
     "coverage",
     "matplotlib",
+    "packaging",
     "pytest",
     "pytest-cov",
     "pytest-env",
