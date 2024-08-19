@@ -264,7 +264,7 @@ class Reportlet:
                     style = {"width": "100%"} if is_static else {}
                     style.update(config.get("style", {}))
 
-                    snippet = SVG_SNIPPET if is_static else IMG_SNIPPET
+                    snippet = IMG_SNIPPET if is_static else SVG_SNIPPET
                     contents = snippet.format(
                         ext=ext[1:],
                         name=html_anchor,
