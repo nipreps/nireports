@@ -270,7 +270,7 @@ class Reportlet:
                         name=html_anchor,
                         style="; ".join(f"{k}: {v}" for k, v in style.items()),
                     )
-                elif ext in (".png", ".jpg", ".jpeg"):
+                elif ext in (".png", ".jpg", ".jpeg", ".gif"):
                     entities = dict(bidsfile.entities)
                     if desc_text:
                         desc_text = desc_text.format(**entities)
