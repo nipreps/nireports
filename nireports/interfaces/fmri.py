@@ -98,7 +98,7 @@ class FMRISummary(SimpleInterface):
             else nifti_timeseries(input_data, seg_file)
         )
 
-        fig = fMRIPlot(
+        fMRIPlot(
             dataset,
             segments=segments,
             spikes_files=(
@@ -109,6 +109,6 @@ class FMRISummary(SimpleInterface):
             units={"outliers": "%", "FD": "mm"},
             vlines={"FD": [self.inputs.fd_thres]},
             nskip=self.inputs.drop_trs,
-        ).plot()
-        fig.savefig(self._results["out_file"], bbox_inches="tight")
+        ).plot(out_file=self._results["out_file"])
+
         return runtime

@@ -173,6 +173,7 @@ def test_fmriplot(input_files, testdata_path, outdir):
             outdir / f"fmriplot_{dtype}{has_seg}.svg",
             bbox_inches="tight",
         )
+        fig.clf()
 
 
 def test_plot_melodic_components(tmp_path, outdir):

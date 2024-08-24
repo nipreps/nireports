@@ -58,6 +58,7 @@ def test_plot_dwi(tmp_path, testdata_path, outdir):
 
     if outdir is not None:
         plt.savefig(outdir / f"{stem}.svg", bbox_inches="tight")
+        plt.close(plt.gcf())
 
 
 @pytest.mark.parametrize(
@@ -77,6 +78,7 @@ def test_plot_gradients(tmp_path, testdata_path, dwi_btable, outdir):
 
     if outdir is not None:
         plt.savefig(outdir / f"{dwi_btable}.svg", bbox_inches="tight")
+        plt.close(plt.gcf())
 
 
 def test_plot_tissue_values(tmp_path):

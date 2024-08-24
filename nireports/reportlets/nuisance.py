@@ -213,6 +213,7 @@ def plot_qi2(x_grid, ref_pdf, fit_pdf, ref_data, cutoff_idx, out_file=None):
         out_file = op.abspath("qi2_plot.svg")
 
     fig.savefig(out_file, bbox_inches="tight", pad_inches=0, dpi=300)
+    plt.close(fig=fig)
     return out_file
 
 
@@ -340,7 +341,6 @@ def plot_carpet(
         height_ratios=[len(v) for v in segments.values()],
     )
 
-    label = ""
     for i, (_, indices) in enumerate(segments.items()):
         # Carpet plot
         ax = plt.subplot(gs[i])
@@ -397,7 +397,7 @@ def plot_carpet(
             ax.set_title(title)
 
     if nsegments == 1:
-        ax.set_ylabel(label)
+        ax.set_ylabel(list(segments.keys())[0])
 
     if legend:
         from matplotlib.patches import Patch

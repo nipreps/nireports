@@ -158,7 +158,7 @@ def cifti_surfaces_plot(
 
     if output_file is not None:
         figure.savefig(output_file, bbox_inches="tight", dpi=400)
-        plt.close(figure)
+        figure.clf()
         return output_file
 
     return figure
