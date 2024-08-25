@@ -18,3 +18,4 @@ Before every release, unlisted contributors will be invited again to add their n
 | Papadopoulos Orfanos | Dimitri | @DimitriPapadopoulos | 0000-0002-1242-8990 | NeuroSpin, CEA, Université Paris-Saclay, NeuroSpin, Gif-sur-Yvette, France |
 | Rokem | Ariel | @arokem | 0000-0003-0679-1985 | The University of Washington eScience Institute, WA, USA |
 | Salo | Taylor | @tsalo | 0000-0001-9813-3167 | Department of Psychology, Florida International University, FL, USA |
+| Savary | Elodie | @esavary | 0000-0002-3896-6906 | Department of Radiology, Lausanne University Hospital and University of Lausanne, Switzerland  | |

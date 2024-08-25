@@ -211,7 +211,7 @@ def zenodo(
         elif isinstance(creator["affiliation"], list):
             creator["affiliation"] = creator["affiliation"][0]
 
-    Path(zenodo_file).write_text("%s\n" % json.dumps(zenodo, indent=2))
+    Path(zenodo_file).write_text(f"{json.dumps(zenodo, indent=2, sort_keys=True)}\n")
 
 
 @cli.command()

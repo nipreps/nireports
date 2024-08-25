@@ -1,27 +1,27 @@
 {
   "contributors": [
     {
-      "orcid": "0000-0002-6533-164X",
       "affiliation": "Department of Psychology, Stanford University, CA, USA",
       "name": "Christopher J. Markiewicz",
+      "orcid": "0000-0002-6533-164X",
       "type": "Researcher"
     },
     {
-      "orcid": "0000-0001-7159-1387",
       "affiliation": "Sagol School of Neuroscience, Tel Aviv University, Tel Aviv, Israel",
       "name": "Zvi Baratz",
+      "orcid": "0000-0001-7159-1387",
       "type": "Researcher"
     },
     {
-      "orcid": "0000-0002-7252-7771",
       "affiliation": "Department of Psychology, Stanford University, CA, USA",
       "name": "Mathias Goncalves",
+      "orcid": "0000-0002-7252-7771",
       "type": "Researcher"
     },
     {
-      "orcid": "0000-0002-9661-1396",
       "affiliation": "Brigham and Women's Hospital, Mass General Brigham, Harvard Medical School, MA, USA",
       "name": "Jon Haitz Legarreta Gorro\u00f1o",
+      "orcid": "0000-0002-9661-1396",
       "type": "Researcher"
     },
     {
@@ -30,63 +30,64 @@
       "type": "Researcher"
     },
     {
-      "orcid": "0000-0001-9813-3167",
+      "affiliation": "Department of Radiology, Lausanne University Hospital and University of Lausanne, Switzerland",
+      "name": "Elodie Savary",
+      "orcid": "0000-0002-3896-6906",
+      "type": "Researcher"
+    },
+    {
       "affiliation": "Department of Psychology, Florida International University, FL, USA",
       "name": "Taylor Salo",
+      "orcid": "0000-0001-9813-3167",
       "type": "Researcher"
     },
     {
-      "orcid": "0000-0003-3007-1056",
       "affiliation": "Department of Psychology, Stanford University, CA, USA",
       "name": "Ross W. Blair",
+      "orcid": "0000-0003-3007-1056",
       "type": "Researcher"
     },
     {
-      "orcid": "0000-0002-1242-8990",
       "affiliation": "NeuroSpin, CEA, Universit\u00e9 Paris-Saclay, NeuroSpin, Gif-sur-Yvette, France",
       "name": "Dimitri Papadopoulos Orfanos",
+      "orcid": "0000-0002-1242-8990",
       "type": "Researcher"
     },
     {
-      "orcid": "0000-0003-0679-1985",
       "affiliation": "The University of Washington eScience Institute, WA, USA",
       "name": "Ariel Rokem",
+      "orcid": "0000-0003-0679-1985",
       "type": "Researcher"
     },
     {
-      "orcid": "0000-0003-4613-6643",
       "affiliation": "Section on Clinical and Computational Psychiatry, National Institute of Mental Health, Bethesda, MD, USA",
       "name": "Dylan Nielson",
+      "orcid": "0000-0003-4613-6643",
       "type": "Researcher"
     },
     {
-      "orcid": "0000-0001-6755-0259",
       "affiliation": "Department of Psychology, Stanford University, CA, USA",
       "name": "Russell A. Poldrack",
+      "orcid": "0000-0001-6755-0259",
       "type": "Researcher"
     }
   ],
   "creators": [
     {
-      "orcid": "0000-0001-8435-6191",
-      "affiliation": "Lausanne University Hospital and University of Lausanne, Lausanne, Switzerland",
-      "name": "Oscar Esteban"
-    },
-    {
-      "orcid": "0000-0002-3896-6906",
       "affiliation": "Department of Radiology, Lausanne University Hospital and University of Lausanne, Switzerland",
-      "name": "Elodie Savary"
+      "name": "Oscar Esteban",
+      "orcid": "0000-0001-8435-6191"
     },
     {
-      "orcid": "0000-0002-1668-9629",
       "affiliation": "Department of Radiology, Lausanne University Hospital and University of Lausanne, Switzerland",
-      "name": "C\u00e9line Provins"
+      "name": "C\u00e9line Provins",
+      "orcid": "0000-0002-1668-9629"
     },
     {
-      "orcid": "0000-0003-3715-7012",
       "affiliation": "Department of Neuroimaging, Institute of Psychiatry, Psychology and Neuroscience, King's College London, London, UK",
-      "role": "AM (Advisory Member)",
-      "name": "Eilidh MacNicol"
+      "name": "Eilidh MacNicol",
+      "orcid": "0000-0003-3715-7012",
+      "role": "AM (Advisory Member)"
     }
   ],
   "description": "<p>The visual report system (VRS) of <em>NiPreps</em>.</p>",
