@@ -92,7 +92,7 @@ class fMRIPlot:
     def plot(self, figure=None, out_file=None, fontsize=24):
         """Main plotter"""
 
-        plt.rcParams.update({"font.size": 22})
+        plt.rcParams.update({"font.size": fontsize})
 
         nconfounds = len(self.confounds)
         nspikes = len(self.spikes)
@@ -113,6 +113,19 @@ class fMRIPlot:
             hspace=0.05,
             height_ratios=height_ratios,
         )
+
+        # Remove axes visualization for the whole grid
+        for ax in grid.subplots():
+            ax.spines[:].set_visible(False)
+            ax.spines[:].set_color("none")
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
+
+        for ax in figure.axes:
+            ax.spines[:].set_visible(False)
+            ax.spines[:].set_color("none")
+            ax.get_xaxis().set_visible(False)
+            ax.get_yaxis().set_visible(False)
 
         grid_id = 0
         for tsz, name, iszs in self.spikes:
