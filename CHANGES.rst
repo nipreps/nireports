@@ -1,3 +1,45 @@
+24.0.0 (August 25, 2024)
+========================
+The new release series includes a fair share of maintenance, style, and documentation improvements.
+It also includes some bugfixes, one very relevant as memory consumption may have been overseen for a
+long while because many reporters were not closing their *matplotlib* figures.
+Finally, several relevant features, such as new DWI plotting tools, have been included.
+
+CHANGES
+-------
+
+* FIX: Set max height and overflow css for qcrating widget by @rwblair in https://github.com/nipreps/nireports/pull/117
+* FIX: Address memory issues and corruption in ``fMRIPlot`` by @oesteban in https://github.com/nipreps/nireports/pull/131
+* ENH: Add gradient plot method by @jhlegarreta in https://github.com/nipreps/nireports/pull/96
+* ENH: Set the ``seaborn`` barplot ``hue`` property value by @jhlegarreta in https://github.com/nipreps/nireports/pull/100
+* ENH: Add DWI volume plot method by @jhlegarreta in https://github.com/nipreps/nireports/pull/101
+* ENH: Add raincloud plot capabilities by @jhlegarreta in https://github.com/nipreps/nireports/pull/118
+* ENH: Higher-level carpetplot tooling for DWI by @teresamg in https://github.com/nipreps/nireports/pull/119
+* DOC: Update *Readthedocs* and package's docs dependencies by @oesteban in https://github.com/nipreps/nireports/pull/97
+* DOC: Misc documentation and style fixes by @jhlegarreta in https://github.com/nipreps/nireports/pull/102
+* DOC: Fix ``dwi`` module function cross ref in docstring by @jhlegarreta in https://github.com/nipreps/nireports/pull/103
+* MAINT: Fix ``matplotlib.cm.get_cmap`` deprecation by @DimitriPapadopoulos in https://github.com/nipreps/nireports/pull/98
+* MAINT: Consistently use ``matplotlib.colormaps`` in ``mpl`` namespace by @effigies in https://github.com/nipreps/nireports/pull/104
+* MAINT: Add CI badges to ``README`` by @jhlegarreta in https://github.com/nipreps/nireports/pull/111
+* MAINT: Add PyPI badge to ``README`` by @jhlegarreta in https://github.com/nipreps/nireports/pull/112
+* MAINT: Add license badge to ``README`` by @jhlegarreta in https://github.com/nipreps/nireports/pull/113
+* MAINT: Pacify *ruff* by @oesteban in https://github.com/nipreps/nireports/pull/123
+* MAINT: *Numpy* 2.0 compatibility by @effigies in https://github.com/nipreps/nireports/pull/127
+* STY: Apply ruff/flake8-implicit-str-concat rule ISC001 by @DimitriPapadopoulos in https://github.com/nipreps/nireports/pull/99
+* STY: Make coverage badge be last in ``README`` badge list by @jhlegarreta in https://github.com/nipreps/nireports/pull/116
+* STY: Transition to *ruff* for code formatting by @jhlegarreta in https://github.com/nipreps/nireports/pull/114
+* STY: Fix style in ``update_authors.py`` by @jhlegarreta in https://github.com/nipreps/nireports/pull/115
+
+New Contributors
+----------------
+
+* @jhlegarreta made their first contribution in https://github.com/nipreps/nireports/pull/96
+* @teresamg made their first contribution in https://github.com/nipreps/nireports/pull/119
+* @rwblair made their first contribution in https://github.com/nipreps/nireports/pull/117
+
+**Full Changelog**: https://github.com/nipreps/nireports/compare/23.2.2...24.0.0
+
+
 23.2.2 (August 19, 2024)
 ========================
 Bug-fix release in the 23.2.x series.
