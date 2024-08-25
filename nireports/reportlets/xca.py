@@ -310,6 +310,7 @@ def compcor_variance_plot(
     elif len(decompositions) > 1:
         fig, ax = plt.subplots(1, len(decompositions), figsize=(5 * len(decompositions), 5))
     else:
+        fig = plt.gcf()
         ax = [plt.axes()]
 
     for m, (source, mask) in enumerate(decompositions):
@@ -367,8 +368,6 @@ def compcor_variance_plot(
             ax[m].spines[side].set_visible(False)
 
     if output_file is not None:
-        if fig is None:
-            fig = plt.gcf()
         fig.savefig(output_file, bbox_inches="tight")
         fig.clf()
         fig = None

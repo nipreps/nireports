@@ -34,7 +34,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.backends.backend_pdf import FigureCanvasPdf as FigureCanvas
-from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import Normalize
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
@@ -614,26 +613,6 @@ def spikesplot(
     return ax
 
 
-def spikesplot_cb(position, cmap="viridis", fig=None):
-    # Add colorbar
-    if fig is None:
-        fig = plt.gcf()
-
-    cax = fig.add_axes(position)
-    cb = ColorbarBase(
-        cax,
-        cmap=mpl.colormaps[cmap],
-        spacing="proportional",
-        orientation="horizontal",
-        drawedges=False,
-    )
-    cb.set_ticks([0, 0.5, 1.0])
-    cb.set_ticklabels(["Inferior", "(axial slice)", "Superior"])
-    cb.outline.set_linewidth(0)
-    cb.ax.xaxis.set_tick_params(width=0)
-    return cax
-
-
 def confoundplot(
     tseries,
     gs_ts,
@@ -902,8 +881,7 @@ def confounds_correlation_plot(
     corr = corr.loc[features, features]
     np.fill_diagonal(corr.values, 0)
 
-    if figure is None:
-        plt.figure(figsize=(15, 5))
+    figure = figure if figure is not None else plt.figure(figsize=(15, 5))
     gs = GridSpec(1, 21)
     ax0 = plt.subplot(gs[0, :10])
     ax1 = plt.subplot(gs[0, 11:])
@@ -944,7 +922,6 @@ def confounds_correlation_plot(
         ax1.spines[side].set_visible(False)
 
     if output_file is not None:
-        figure = plt.gcf()
         figure.savefig(output_file, bbox_inches="tight")
         plt.close(figure)
         figure = None
@@ -1120,9 +1097,7 @@ def plot_raincloud(
     df_clip = df.copy(deep=True)
     df_clip[feature] = df[feature].clip(lower=lower_limit_value, upper=upper_limit_value)
 
-    if figure is None:
-        plt.figure(figsize=(7, 5))
-
+    figure = figure if figure is not None else plt.figure(figsize=(7, 5))
     gs = GridSpec(1, 1)
     ax = plt.subplot(gs[0, 0])
 
@@ -1216,7 +1191,6 @@ def plot_raincloud(
         )
 
     if output_file is not None:
-        figure = plt.gcf()
         plt.tight_layout()
         figure.savefig(output_file, bbox_inches="tight")
         plt.close(figure)
