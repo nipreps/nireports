@@ -10,6 +10,5 @@ If you are participating because of your affiliation with another organization (
 | **Lastname** | **Name** | **Handle** | **ORCID** | **Affiliation** | **Role** |
 | --- | --- | --- | --- | --- | --- |
 | Provins | Céline | @celprov | 0000-0002-1668-9629 | Department of Radiology, Lausanne University Hospital and University of Lausanne, Switzerland | |
-| Savary | Elodie | @esavary | 0000-0002-3896-6906 | Department of Radiology, Lausanne University Hospital and University of Lausanne, Switzerland  | |
 | MacNicol | Eilidh | @eilidhmacnicol | 0000-0003-3715-7012 | Department of Neuroimaging, Institute of Psychiatry, Psychology and Neuroscience, King's College London, London, UK | AM (Advisory Member) |
-| Esteban | Oscar | @oesteban | 0000-0001-8435-6191 | Lausanne University Hospital and University of Lausanne, Lausanne, Switzerland | |
+| Esteban | Oscar | @oesteban | 0000-0001-8435-6191 | Department of Radiology, Lausanne University Hospital and University of Lausanne, Switzerland | |
