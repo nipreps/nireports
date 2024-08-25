@@ -92,7 +92,7 @@ class fMRIPlot:
     def plot(self, figure=None, out_file=None, fontsize=24):
         """Main plotter"""
 
-        plt.rcParams.update({'font.size': 22})
+        plt.rcParams.update({"font.size": 22})
 
         nconfounds = len(self.confounds)
         nspikes = len(self.spikes)

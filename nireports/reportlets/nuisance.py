@@ -326,7 +326,7 @@ def plot_carpet(
     if subplot is None:
         figure, allaxes = plt.subplots(figsize=(19.2, 10))
         allaxes.spines[:].set_visible(False)
-        allaxes.spines[:].set_color('none')
+        allaxes.spines[:].set_color("none")
         allaxes.get_xaxis().set_visible(False)
         allaxes.get_yaxis().set_visible(False)
         subplot = allaxes.get_subplotspec()
@@ -441,15 +441,9 @@ def plot_carpet(
         )
 
     if fontsize is not None:
-        ax.xaxis.label.set_fontsize(
-            max(8, fontsize * 0.75)
-        )
+        ax.xaxis.label.set_fontsize(max(8, fontsize * 0.75))
         # Change font size according to figure size
-        for item in (
-            [ax.title, ax.yaxis.label]
-            + ax.get_xticklabels()
-            + ax.get_yticklabels()
-        ):
+        for item in [ax.title, ax.yaxis.label] + ax.get_xticklabels() + ax.get_yticklabels():
             item.set_fontsize(fontsize)
 
     if output_file is not None:
@@ -571,7 +565,7 @@ def spikesplot(
         va="center",
         ha="left",
         color="gray",
-        size=plt.rcParams['font.size'] * 0.5,
+        size=plt.rcParams["font.size"] * 0.5,
         bbox={
             "boxstyle": "round",
             "fc": "w",
@@ -677,7 +671,7 @@ def confoundplot(
     else:
         ax_ts.set_xticklabels([])
 
-    fontsize = plt.rcParams['font.size']
+    fontsize = plt.rcParams["font.size"]
     if name is not None:
         if units is not None:
             name += f" [{units}]"
