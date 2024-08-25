@@ -1,4 +1,13 @@
-24.0.0 (August 25, 2024)
+24.0.2 (August 26, 2024)
+========================
+Hotfix release with one bugfix.
+
+CHANGES
+-------
+
+* FIX: Remove all axes before ``fMRIPlot`` by @oesteban in https://github.com/nipreps/nireports/pull/133
+
+24.0.1 (August 25, 2024)
 ========================
 The new release series includes a fair share of maintenance, style, and documentation improvements.
 It also includes some bugfixes, one very relevant as memory consumption may have been overseen for a
