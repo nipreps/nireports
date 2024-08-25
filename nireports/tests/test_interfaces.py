@@ -25,8 +25,11 @@
 import os
 from shutil import copy
 
+import nibabel as nb
+import numpy as np
 import pytest
 
+from nireports.interfaces.fmri import FMRISummary
 from nireports.interfaces.nuisance import (
     CompCorVariancePlot,
     ConfoundsCorrelationPlot,
@@ -96,3 +99,43 @@ def test_RaincloudPlot(orient, density, tmp_path):
         mark_nans=mark_nans,
     )
     _smoke_test_report(rc_rpt, f"raincloud_orient-{orient}_density-{density}.svg")
+
+
+def test_FMRISummary(testdata_path, tmp_path, outdir):
+    """Exercise the FMRISummary interface."""
+    rng = np.random.default_rng(2010)
+
+    in_func = testdata_path / "sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz"
+    ntimepoints = nb.load(in_func).shape[-1]
+
+    np.savetxt(
+        tmp_path / "fd.txt",
+        rng.normal(0.2, 0.2, ntimepoints - 1).T,
+    )
+
+    np.savetxt(
+        tmp_path / "outliers.txt",
+        rng.normal(0.2, 0.2, ntimepoints - 1).T,
+    )
+
+    np.savetxt(
+        tmp_path / "dvars.txt",
+        rng.normal(0.2, 0.2, (ntimepoints - 1, 2)),
+    )
+
+    interface = FMRISummary(
+        in_func=str(in_func),
+        in_segm=str(
+            testdata_path / "sub-ds205s03_task-functionallocalizer_run-01_bold_parc.nii.gz"
+        ),
+        fd=str(tmp_path / "fd.txt"),
+        outliers=str(tmp_path / "outliers.txt"),
+        dvars=str(tmp_path / "dvars.txt"),
+    )
+
+    result = interface.run()
+
+    if outdir is not None:
+        from shutil import copy
+
+        copy(result.outputs.out_file, outdir / "fmriplot_nipype.svg")

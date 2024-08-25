@@ -34,7 +34,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.backends.backend_pdf import FigureCanvasPdf as FigureCanvas
-from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import Normalize
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
@@ -325,14 +324,19 @@ def plot_carpet(
     # If subplot is not defined
     if subplot is None:
         figure, allaxes = plt.subplots(figsize=(19.2, 10))
-        allaxes.spines[:].set_visible(False)
-        allaxes.spines[:].set_color("none")
-        allaxes.get_xaxis().set_visible(False)
-        allaxes.get_yaxis().set_visible(False)
         subplot = allaxes.get_subplotspec()
-        fontsize = fontsize or 24
     else:
-        figure = plt.gcf()
+        subplotax = plt.subplot(subplot)
+        figure = subplotax.get_figure()
+
+    # Remove spines and ticks in all figure's axes
+    for ax in figure.axes:
+        ax.spines[:].set_visible(False)
+        ax.spines[:].set_color("none")
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+
+    fontsize = fontsize or 24
 
     # Length before decimation
     n_trs = data.shape[-1] - drop_trs
@@ -609,26 +613,6 @@ def spikesplot(
     return ax
 
 
-def spikesplot_cb(position, cmap="viridis", fig=None):
-    # Add colorbar
-    if fig is None:
-        fig = plt.gcf()
-
-    cax = fig.add_axes(position)
-    cb = ColorbarBase(
-        cax,
-        cmap=mpl.colormaps[cmap],
-        spacing="proportional",
-        orientation="horizontal",
-        drawedges=False,
-    )
-    cb.set_ticks([0, 0.5, 1.0])
-    cb.set_ticklabels(["Inferior", "(axial slice)", "Superior"])
-    cb.outline.set_linewidth(0)
-    cb.ax.xaxis.set_tick_params(width=0)
-    return cax
-
-
 def confoundplot(
     tseries,
     gs_ts,
@@ -897,8 +881,7 @@ def confounds_correlation_plot(
     corr = corr.loc[features, features]
     np.fill_diagonal(corr.values, 0)
 
-    if figure is None:
-        plt.figure(figsize=(15, 5))
+    figure = figure if figure is not None else plt.figure(figsize=(15, 5))
     gs = GridSpec(1, 21)
     ax0 = plt.subplot(gs[0, :10])
     ax1 = plt.subplot(gs[0, 11:])
@@ -939,7 +922,6 @@ def confounds_correlation_plot(
         ax1.spines[side].set_visible(False)
 
     if output_file is not None:
-        figure = plt.gcf()
         figure.savefig(output_file, bbox_inches="tight")
         plt.close(figure)
         figure = None
@@ -1115,9 +1097,7 @@ def plot_raincloud(
     df_clip = df.copy(deep=True)
     df_clip[feature] = df[feature].clip(lower=lower_limit_value, upper=upper_limit_value)
 
-    if figure is None:
-        plt.figure(figsize=(7, 5))
-
+    figure = figure if figure is not None else plt.figure(figsize=(7, 5))
     gs = GridSpec(1, 1)
     ax = plt.subplot(gs[0, 0])
 
@@ -1211,7 +1191,6 @@ def plot_raincloud(
         )
 
     if output_file is not None:
-        figure = plt.gcf()
         plt.tight_layout()
         figure.savefig(output_file, bbox_inches="tight")
         plt.close(figure)
