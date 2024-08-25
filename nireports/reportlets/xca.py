@@ -367,9 +367,10 @@ def compcor_variance_plot(
             ax[m].spines[side].set_visible(False)
 
     if output_file is not None:
-        figure = plt.gcf()
-        figure.savefig(output_file, bbox_inches="tight")
-        plt.close(figure)
-        figure = None
+        if fig is None:
+            fig = plt.gcf()
+        fig.savefig(output_file, bbox_inches="tight")
+        fig.clf()
+        fig = None
         return output_file
     return ax

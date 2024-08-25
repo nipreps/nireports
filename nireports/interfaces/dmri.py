@@ -93,5 +93,7 @@ class DWIHeatmap(SimpleInterface):
         )
 
         out_figure.savefig(self._results["out_file"], format="svg", dpi=300)
+        out_figure.clf()
+        out_figure = None
 
         return runtime

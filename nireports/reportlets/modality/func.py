@@ -89,22 +89,30 @@ class fMRIPlot:
             for sp_file in spikes_files:
                 self.spikes.append((np.loadtxt(sp_file), None, False))
 
-    def plot(self, figure=None):
+    def plot(self, figure=None, out_file=None, fontsize=24):
         """Main plotter"""
-        import seaborn as sns
 
-        sns.set_style("whitegrid")
-        sns.set_context("paper", font_scale=0.8)
-
-        if figure is None:
-            figure = plt.gcf()
+        plt.rcParams.update({"font.size": 22})
 
         nconfounds = len(self.confounds)
         nspikes = len(self.spikes)
         nrows = 1 + nconfounds + nspikes
 
+        # Calculate height ratios in figure points
+        height_ratios = [0.8] * (nconfounds + nspikes) + [10]
+
+        if figure is None:
+            figure = plt.figure(figsize=(19.2, sum(height_ratios)))
+
         # Create grid
-        grid = GridSpec(nrows, 1, wspace=0.0, hspace=0.05, height_ratios=[1] * (nrows - 1) + [5])
+        grid = GridSpec(
+            nrows,
+            1,
+            figure=figure,
+            wspace=0.0,
+            hspace=0.05,
+            height_ratios=height_ratios,
+        )
 
         grid_id = 0
         for tsz, name, iszs in self.spikes:
@@ -130,4 +138,11 @@ class fMRIPlot:
             drop_trs=self.nskip,
             cmap="paired" if self.paired_carpet else None,
         )
+
+        if out_file is not None:
+            figure.savefig(out_file, bbox_inches="tight")
+            plt.close(figure)
+            figure = None
+            return out_file
+
         return figure

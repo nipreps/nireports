@@ -87,6 +87,7 @@ def bids_sessions(tmpdir_factory):
         file_path = svg_dir / bids_path
         file_path.ensure()
         f.savefig(str(file_path))
+        f.clf()
 
     # create anatomical data
     anat_opts = [
@@ -110,6 +111,7 @@ def bids_sessions(tmpdir_factory):
         file_path = svg_dir / bids_path
         file_path.ensure()
         f.savefig(str(file_path))
+        f.clf()
 
     return svg_dir.dirname
 

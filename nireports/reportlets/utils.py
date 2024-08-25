@@ -153,6 +153,7 @@ def svg2str(display_object, dpi=300):
     display_object.frame_axes.figure.savefig(
         image_buf, dpi=dpi, format="svg", facecolor="k", edgecolor="k"
     )
+    display_object.frame_axes.figure.clf()
     image_buf.seek(0)
     return image_buf.getvalue()
 
