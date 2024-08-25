@@ -114,19 +114,6 @@ class fMRIPlot:
             height_ratios=height_ratios,
         )
 
-        # Remove axes visualization for the whole grid
-        for ax in grid.subplots():
-            ax.spines[:].set_visible(False)
-            ax.spines[:].set_color("none")
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-
-        for ax in figure.axes:
-            ax.spines[:].set_visible(False)
-            ax.spines[:].set_color("none")
-            ax.get_xaxis().set_visible(False)
-            ax.get_yaxis().set_visible(False)
-
         grid_id = 0
         for tsz, name, iszs in self.spikes:
             spikesplot(tsz, title=name, outer_gs=grid[grid_id], tr=self.tr, zscored=iszs)

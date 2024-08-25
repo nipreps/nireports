@@ -325,14 +325,19 @@ def plot_carpet(
     # If subplot is not defined
     if subplot is None:
         figure, allaxes = plt.subplots(figsize=(19.2, 10))
-        allaxes.spines[:].set_visible(False)
-        allaxes.spines[:].set_color("none")
-        allaxes.get_xaxis().set_visible(False)
-        allaxes.get_yaxis().set_visible(False)
         subplot = allaxes.get_subplotspec()
-        fontsize = fontsize or 24
     else:
-        figure = plt.gcf()
+        subplotax = plt.subplot(subplot)
+        figure = subplotax.get_figure()
+
+    # Remove spines and ticks in all figure's axes
+    for ax in figure.axes:
+        ax.spines[:].set_visible(False)
+        ax.spines[:].set_color("none")
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
+
+    fontsize = fontsize or 24
 
     # Length before decimation
     n_trs = data.shape[-1] - drop_trs
