@@ -230,6 +230,7 @@ def plot_carpet(
     sort_rows="ward",
     drop_trs=0,
     legend=True,
+    fontsize=None,
 ):
     """
     Plot an image representation of voxel intensities across time.
@@ -323,7 +324,15 @@ def plot_carpet(
 
     # If subplot is not defined
     if subplot is None:
-        subplot = GridSpec(1, 1)[0]
+        figure, allaxes = plt.subplots(figsize=(19.2, 10))
+        allaxes.spines[:].set_visible(False)
+        allaxes.spines[:].set_color('none')
+        allaxes.get_xaxis().set_visible(False)
+        allaxes.get_yaxis().set_visible(False)
+        subplot = allaxes.get_subplotspec()
+        fontsize = fontsize or 24
+    else:
+        figure = plt.gcf()
 
     # Length before decimation
     n_trs = data.shape[-1] - drop_trs
@@ -428,11 +437,22 @@ def plot_carpet(
             fancybox=False,
             ncol=min(len(segments.keys()), 5),
             frameon=False,
-            prop={"size": 8},
+            prop={"size": fontsize} if fontsize else {},
         )
 
+    if fontsize is not None:
+        ax.xaxis.label.set_fontsize(
+            max(8, fontsize * 0.75)
+        )
+        # Change font size according to figure size
+        for item in (
+            [ax.title, ax.yaxis.label]
+            + ax.get_xticklabels()
+            + ax.get_yticklabels()
+        ):
+            item.set_fontsize(fontsize)
+
     if output_file is not None:
-        figure = plt.gcf()
         figure.savefig(output_file, bbox_inches="tight")
         plt.close(figure)
         figure = None
@@ -551,7 +571,7 @@ def spikesplot(
         va="center",
         ha="left",
         color="gray",
-        size=4,
+        size=plt.rcParams['font.size'] * 0.5,
         bbox={
             "boxstyle": "round",
             "fc": "w",
@@ -644,7 +664,7 @@ def confoundplot(
 
     # Set 10 frame markers in X axis
     interval = max((ntsteps // 10, ntsteps // 5, 1))
-    xticks = list(range(0, ntsteps)[::interval])
+    xticks = list(np.arange(0, ntsteps)[::interval])
     ax_ts.set_xticks(xticks)
 
     if not hide_x:
@@ -657,20 +677,21 @@ def confoundplot(
     else:
         ax_ts.set_xticklabels([])
 
+    fontsize = plt.rcParams['font.size']
     if name is not None:
         if units is not None:
             name += f" [{units}]"
 
         ax_ts.annotate(
             name,
-            xy=(0.0, 0.7),
+            xy=(0.0, 0.2),
             xytext=(0, 0),
             xycoords="axes fraction",
             textcoords="offset points",
-            va="center",
+            va="top",
             ha="left",
             color=color,
-            size=8,
+            size=fontsize * 0.45,
             bbox={
                 "boxstyle": "round",
                 "fc": "w",
@@ -734,14 +755,14 @@ def confoundplot(
     )
     ax_ts.annotate(
         stats_label,
-        xy=(0.98, 0.7),
+        xy=(0.98, 0.1),
         xycoords="axes fraction",
         xytext=(0, 0),
         textcoords="offset points",
-        va="center",
+        va="top",
         ha="right",
         color=color,
-        size=4,
+        size=fontsize * 0.5,
         bbox={
             "boxstyle": "round",
             "fc": "w",
@@ -762,7 +783,7 @@ def confoundplot(
         va="center",
         ha="right",
         color="lightgray",
-        size=3,
+        size=fontsize * 0.4,
     )
 
     if cutoff is None:
@@ -779,7 +800,7 @@ def confoundplot(
             va="center",
             ha="right",
             color="dimgray",
-            size=3,
+            size=fontsize * 0.4,
         )
 
     ax_ts.plot(tseries, color=color, linewidth=0.8)

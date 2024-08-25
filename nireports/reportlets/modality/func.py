@@ -89,15 +89,20 @@ class fMRIPlot:
             for sp_file in spikes_files:
                 self.spikes.append((np.loadtxt(sp_file), None, False))
 
-    def plot(self, figure=None, out_file=None):
+    def plot(self, figure=None, out_file=None, fontsize=24):
         """Main plotter"""
 
-        if figure is None:
-            figure = plt.figure(figsize=(19.2, 32))
+        plt.rcParams.update({'font.size': 22})
 
         nconfounds = len(self.confounds)
         nspikes = len(self.spikes)
         nrows = 1 + nconfounds + nspikes
+
+        # Calculate height ratios in figure points
+        height_ratios = [0.8] * (nconfounds + nspikes) + [10]
+
+        if figure is None:
+            figure = plt.figure(figsize=(19.2, sum(height_ratios)))
 
         # Create grid
         grid = GridSpec(
@@ -106,7 +111,7 @@ class fMRIPlot:
             figure=figure,
             wspace=0.0,
             hspace=0.05,
-            height_ratios=[1] * (nrows - 1) + [5],
+            height_ratios=height_ratios,
         )
 
         grid_id = 0
