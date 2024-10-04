@@ -26,8 +26,10 @@ import os
 from shutil import copy
 
 import nibabel as nb
+import nipype.pipeline.engine as pe
 import numpy as np
 import pytest
+from templateflow.api import get as get_template
 
 from nireports.interfaces.fmri import FMRISummary
 from nireports.interfaces.nuisance import (
@@ -35,6 +37,7 @@ from nireports.interfaces.nuisance import (
     ConfoundsCorrelationPlot,
     RaincloudPlot,
 )
+from nireports.interfaces.reporting.masks import SimpleShowMaskRPT
 from nireports.tests.utils import _generate_raincloud_random_data
 
 
@@ -139,3 +142,31 @@ def test_FMRISummary(testdata_path, tmp_path, outdir):
         from shutil import copy
 
         copy(result.outputs.out_file, outdir / "fmriplot_nipype.svg")
+
+
+def test_SimpleShowMaskRPT(tmp_path, outdir):
+    msk_rpt = pe.Node(
+        SimpleShowMaskRPT(
+            generate_report=True,
+            background_file=str(
+                get_template("OASIS30ANTs", resolution=1, desc=None, suffix="T1w")
+            ),
+            mask_file=str(
+                get_template(
+                    "OASIS30ANTs",
+                    resolution=1,
+                    desc="BrainCerebellumRegistration",
+                    suffix="mask",
+                )
+            ),
+        ),
+        name="mask_rpt",
+        base_dir=str(tmp_path),
+    )
+
+    result = msk_rpt.run()
+
+    if outdir is not None:
+        from shutil import copy
+
+        copy(result.outputs.out_report, outdir / "simpleshowmask.svg")
