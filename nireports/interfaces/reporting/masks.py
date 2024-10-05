@@ -235,8 +235,9 @@ class ROIsPlot(nrb.ReportingInterface):
         seg_files = self.inputs.in_rois
         mask_file = None if not isdefined(self.inputs.in_mask) else self.inputs.in_mask
 
-        levels = self.inputs.levels or []
-        colors = self.inputs.colors or []
+        # Remove trait decoration and replace None with []
+        levels = list(self.inputs.levels or [])
+        colors = list(self.inputs.colors or [])
 
         if len(seg_files) == 1:  # in_rois is a segmentation
             nsegs = len(levels)
