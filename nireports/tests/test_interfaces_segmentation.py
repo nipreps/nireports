@@ -74,12 +74,8 @@ def test_ROIsPlot(tmp_path):
             )
         )
     )
-    lookup = np.zeros(5, dtype=int)
-    lookup[1] = 1
-    lookup[2] = 4
-    lookup[3] = 2
-    lookup[4] = 3
-    newdata = lookup[np.round(im.get_fdata()).astype(int)]
+    lookup = np.array([0, 1, 4, 2, 3], dtype=np.int16)
+    newdata = lookup[np.int16(im.dataobj)]
     hdr = im.header.copy()
     hdr.set_data_dtype("int16")
     hdr["scl_slope"] = 1
