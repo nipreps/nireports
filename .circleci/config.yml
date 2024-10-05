@@ -17,6 +17,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install uv
+          command: pip install uv
+
+      - run:
           name: Install package
           command: pip install .[test]
 
@@ -33,10 +37,10 @@ jobs:
             - /var/lib/apt
 
       - run:
-          name: Install texlive
+          name: Install texlive and git-annex
           command: |
             sudo apt-get update
-            sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super
+            sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super git-annex
 
       - save_cache:
          key: apt-v0
@@ -77,10 +81,10 @@ jobs:
             mkdir -p /tmp/data
             pushd /tmp/data
             if [[ ! -d ds000003 ]]; then
-              datalad install -r https://github.com/nipreps-data/ds000003.git
+              uvx --with=datalad-osf datalad install -r https://github.com/nipreps-data/ds000003.git
             fi
-            datalad update -r --merge -d ds000003/
-            datalad get -J 2 -r -d ds000003/ ds000003/*
+            uvx --with=datalad-osf datalad update -r --merge -d ds000003/
+            uvx --with=datalad-osf datalad get -J 2 -r -d ds000003/ ds000003/*
             popd
 
       - save_cache:
