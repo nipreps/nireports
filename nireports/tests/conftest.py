@@ -25,8 +25,35 @@
 import os
 
 import pytest
+from templateflow.api import get as get_template
+
+from nireports.tests.testing import data_env_canary
 
 
 @pytest.fixture(scope="session")
 def datadir():
     return os.path.abspath(os.path.join(os.path.dirname(__file__), "data") + os.path.sep)
+
+
+@pytest.fixture
+def reference():
+    return str(get_template("MNI152Lin", resolution=2, desc=None, suffix="T1w"))
+
+
+@pytest.fixture
+def reference_mask():
+    return str(get_template("MNI152Lin", resolution=2, desc="brain", suffix="mask"))
+
+
+@pytest.fixture
+def moving(test_data_home):
+    data_env_canary()
+    return str(test_data_home / "ds000003/sub-01/anat/sub-01_T1w.nii.gz")
+
+
+@pytest.fixture
+def nthreads():
+    from os import cpu_count, getenv
+
+    # Tests are linear, so don't worry about leaving space for a control thread
+    return min(int(getenv("CIRCLE_NPROCS", "8")), cpu_count())

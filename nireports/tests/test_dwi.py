@@ -38,15 +38,15 @@ from nireports.reportlets.nuisance import plot_carpet
 from nireports.tests.utils import _generate_raincloud_random_data
 
 
-def test_plot_dwi(tmp_path, testdata_path, outdir):
+def test_plot_dwi(tmp_path, test_data_package, outdir):
     """Check the plot of DWI data."""
 
     stem = "ds000114_sub-01_ses-test_desc-trunc_dwi"
-    dwi_img = nb.load(testdata_path / f"{stem}.nii.gz")
+    dwi_img = nb.load(test_data_package / f"{stem}.nii.gz")
     affine = dwi_img.affine
 
-    bvecs = np.loadtxt(testdata_path / f"{stem}.bvec").T
-    bvals = np.loadtxt(testdata_path / f"{stem}.bval")
+    bvecs = np.loadtxt(test_data_package / f"{stem}.bvec").T
+    bvals = np.loadtxt(test_data_package / f"{stem}.bval")
 
     gradients = np.hstack([bvecs, bvals[:, None]])
 
@@ -65,11 +65,11 @@ def test_plot_dwi(tmp_path, testdata_path, outdir):
     "dwi_btable",
     ["ds000114_singleshell", "hcph_multishell", "ds004737_dsi"],
 )
-def test_plot_gradients(tmp_path, testdata_path, dwi_btable, outdir):
+def test_plot_gradients(tmp_path, test_data_package, dwi_btable, outdir):
     """Check the plot of DWI gradients."""
 
-    bvecs = np.loadtxt(testdata_path / f"{dwi_btable}.bvec").T
-    bvals = np.loadtxt(testdata_path / f"{dwi_btable}.bval")
+    bvecs = np.loadtxt(test_data_package / f"{dwi_btable}.bvec").T
+    bvals = np.loadtxt(test_data_package / f"{dwi_btable}.bval")
 
     b0s_mask = bvals < 50
 
@@ -120,19 +120,19 @@ def test_plot_tissue_values(tmp_path):
     )
 
 
-def test_nii_to_carpetplot_data(tmp_path, testdata_path, outdir):
+def test_nii_to_carpetplot_data(tmp_path, test_data_package, outdir):
     """Check the nii to carpet plot data function"""
 
     testdata_name = "ds000114_sub-01_ses-test_desc-trunc_dwi"
 
-    nii = nb.load(testdata_path / f"{testdata_name}.nii.gz")
-    bvals = np.loadtxt(testdata_path / f"{testdata_name}.bval")
+    nii = nb.load(test_data_package / f"{testdata_name}.nii.gz")
+    bvals = np.loadtxt(test_data_package / f"{testdata_name}.bval")
 
     mask_data = np.round(82 * np.random.rand(nii.shape[0], nii.shape[1], nii.shape[2]))
 
     mask_nii = nb.Nifti1Image(mask_data, np.eye(4))
 
-    filepath = testdata_path / "aseg.auto_noCCseg.label_intensities.txt"
+    filepath = test_data_package / "aseg.auto_noCCseg.label_intensities.txt"
     keywords = ["Cerebral_White_Matter", "Cerebral_Cortex", "Ventricle"]
 
     segment_labels = get_segment_labels(filepath, keywords)
@@ -149,12 +149,12 @@ def test_nii_to_carpetplot_data(tmp_path, testdata_path, outdir):
     plot_carpet(data, segments, output_file=image_path)
 
 
-def test_get_segment_labels(tmp_path, testdata_path):
+def test_get_segment_labels(tmp_path, test_data_package):
     """Check the segment label function"""
 
     testdata_name = "aseg.auto_noCCseg.label_intensities.txt"
 
-    filepath = testdata_path / testdata_name
+    filepath = test_data_package / testdata_name
     keywords = ["Cerebral_White_Matter", "Cerebral_Cortex", "Ventricle"]
 
     segment_labels = get_segment_labels(filepath, keywords)

@@ -1,6 +1,62 @@
+import os
+from datetime import datetime as dt
+from functools import wraps
 from pathlib import Path
 
 import numpy as np
+import pytest
+from nipype.interfaces import afni, fsl
+from nipype.interfaces import freesurfer as fs
+
+from nireports.conftest import niprepsdev_path
+
+has_fsl = fsl.Info.version() is not None
+has_freesurfer = fs.Info.version() is not None
+has_afni = afni.Info.version() is not None
+
+test_output_dir = os.getenv("TEST_OUTPUT_DIR")
+test_workdir = os.getenv("TEST_WORK_DIR")
+
+data_dir = Path(niprepsdev_path) / "BIDS-examples-1-enh-ds054"
+
+
+def create_canary(predicate, message):
+    def canary():
+        if predicate:
+            pytest.skip(message)
+
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            canary()
+            return f(*args, **kwargs)
+
+        return wrapper
+
+    return canary, decorator
+
+
+data_env_canary, needs_data_env = create_canary(
+    not Path(niprepsdev_path).is_dir(),
+    "Test data must be made available in ~/.cache/stanford-crn or in a "
+    "directory referenced by the TEST_DATA_HOME environment variable.",
+)
+
+data_dir_canary, needs_data_dir = create_canary(
+    not Path(niprepsdev_path).is_dir(),
+    "Test data must be made available in ~/.cache/stanford-crn or in a "
+    "directory referenced by the TEST_DATA_HOME environment variable.",
+)
+
+
+def _run_interface_mock(objekt, runtime):
+    runtime.returncode = 0
+    runtime.endTime = dt.isoformat(dt.utcnow())
+
+    objekt._out_report = str(Path(objekt.inputs.out_report).absolute())
+    objekt._post_run_hook(runtime)
+    objekt._generate_report()
+    return runtime
 
 
 def _create_dtseries_cifti(timepoints, models):

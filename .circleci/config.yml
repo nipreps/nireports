@@ -17,8 +17,18 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install uv
+          command: pip install uv
+
+      - run:
           name: Install package
           command: pip install .[test]
+
+      - run:
+          name: Git config - pacify datalad
+          command: |
+            git config --global user.name 'NiPreps Bot'
+            git config --global user.email 'nipreps@gmail.com'
 
       - restore_cache:
           keys:
@@ -27,10 +37,10 @@ jobs:
             - /var/lib/apt
 
       - run:
-          name: Install texlive
+          name: Install texlive and git-annex
           command: |
             sudo apt-get update
-            sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super
+            sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super git-annex
 
       - save_cache:
          key: apt-v0
@@ -48,11 +58,46 @@ jobs:
           command: |
             python -c "from templateflow.api import get; get('Fischer344', desc=None, suffix='T2w')"
             python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
+            python -c "from templateflow.api import get; get('OASIS30ANTs', resolution=1, desc=None, suffix='T1w')"
+            python -c "from templateflow.api import get; get('OASIS30ANTs', resolution=1, desc='brain', suffix='mask')"
+            python -c "from templateflow.api import get; get('OASIS30ANTs', resolution=1, label='brain', suffix='probseg')"
+            python -c "from templateflow.api import get; get('OASIS30ANTs', resolution=1, desc='BrainCerebellumRegistration', suffix='mask')"
+            python -c "from templateflow.api import get; get('OASIS30ANTs', resolution=1, desc='4', suffix='dseg')"
+            python -c "from templateflow.api import get; get('fsLR', density='32k', hemi=['R', 'L'], suffix='inflated', extension='surf.gii')"
 
       - save_cache:
          key: tf-v0
          paths:
             - /tmp/templateflow
+
+      - restore_cache:
+          keys:
+            - data-v1-{{ .Branch }}-
+            - data-v1-master-
+            - data-v1-
+      - run:
+          name: Get test data from ds000003
+          command: |
+            mkdir -p /tmp/data
+            pushd /tmp/data
+            if [[ ! -d ds000003 ]]; then
+              uvx --with=datalad-osf datalad install -r https://github.com/nipreps-data/ds000003.git
+            fi
+            uvx --with=datalad-osf datalad update -r --merge -d ds000003/
+            uvx --with=datalad-osf datalad get -J 2 -r -d ds000003/ ds000003/*
+            popd
+
+      - save_cache:
+         key: data-v1-{{ .Branch }}-{{ epoch }}
+         paths:
+            - /tmp/data/ds000003
+
+      - run:
+          name: Store FreeSurfer license file
+          command: |
+            mkdir -p /tmp/fslicense
+            cd /tmp/fslicense
+            echo "cHJpbnRmICJrcnp5c3p0b2YuZ29yZ29sZXdza2lAZ21haWwuY29tXG41MTcyXG4gKkN2dW12RVYzelRmZ1xuRlM1Si8yYzFhZ2c0RVxuIiA+IGxpY2Vuc2UudHh0Cg==" | base64 -d | sh
 
       - run:
           name: Run unit tests

@@ -101,11 +101,11 @@ def test_RaincloudPlot(orient, density, tmp_path):
     _smoke_test_report(rc_rpt, f"raincloud_orient-{orient}_density-{density}.svg")
 
 
-def test_FMRISummary(testdata_path, tmp_path, outdir):
+def test_FMRISummary(test_data_package, tmp_path, outdir):
     """Exercise the FMRISummary interface."""
     rng = np.random.default_rng(2010)
 
-    in_func = testdata_path / "sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz"
+    in_func = test_data_package / "sub-ds205s03_task-functionallocalizer_run-01_bold_volreg.nii.gz"
     ntimepoints = nb.load(in_func).shape[-1]
 
     np.savetxt(
@@ -126,7 +126,7 @@ def test_FMRISummary(testdata_path, tmp_path, outdir):
     interface = FMRISummary(
         in_func=str(in_func),
         in_segm=str(
-            testdata_path / "sub-ds205s03_task-functionallocalizer_run-01_bold_parc.nii.gz"
+            test_data_package / "sub-ds205s03_task-functionallocalizer_run-01_bold_parc.nii.gz"
         ),
         fd=str(tmp_path / "fd.txt"),
         outliers=str(tmp_path / "outliers.txt"),
