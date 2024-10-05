@@ -36,6 +36,7 @@ from bids.layout.writing import build_path
 
 from nireports.assembler import data
 from nireports.assembler.report import Report
+from nireports.exceptions import NiReportsException
 
 summary_meta = {
     "Summary": {
@@ -139,6 +140,19 @@ def test_report2(bids_sessions):
         reportlets_dir=Path(bids_sessions) / "nireports",
         subject="01",
     )
+
+
+def test_missing_reportlet(test_report1, bids_sessions):
+    out_dir = tempfile.mkdtemp()
+    report = test_report1
+    settings = yaml.safe_load(data.load.readable("default.yml").read_text())
+    settings["root"] = str(Path(bids_sessions) / "nireports")
+    settings["out_dir"] = str(Path(out_dir) / "nireports")
+    settings["run_uuid"] = "fakeuuid"
+    settings["sections"][0]["reportlets"][0]["required"] = True
+    settings["sections"][0]["reportlets"][0]["bids"] = {"datatype": "fake"}
+    with pytest.raises(NiReportsException, match="No content found"):
+        report.index(settings)
 
 
 @pytest.mark.parametrize(
