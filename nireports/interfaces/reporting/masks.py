@@ -59,7 +59,7 @@ class BETRPT(nrb.SegmentationRC, fsl.BET):
         if self.generate_report:
             self.inputs.mask = True
 
-        return super(BETRPT, self)._run_interface(runtime)
+        return super()._run_interface(runtime)
 
     def _post_run_hook(self, runtime):
         """generates a report showing slices from each axis of an arbitrary
@@ -76,7 +76,7 @@ class BETRPT(nrb.SegmentationRC, fsl.BET):
             self._mask_file,
         )
 
-        return super(BETRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _BrainExtractionInputSpecRPT(
@@ -114,7 +114,7 @@ class BrainExtractionRPT(nrb.SegmentationRC, ants.segmentation.BrainExtraction):
             self._mask_file,
         )
 
-        return super(BrainExtractionRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _ACompCorInputSpecRPT(nrb._SVGReportCapableInputSpec, confounds.CompCorInputSpec):
@@ -148,7 +148,7 @@ class ACompCorRPT(nrb.SegmentationRC, confounds.ACompCor):
             self._mask_file,
         )
 
-        return super(ACompCorRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _TCompCorInputSpecRPT(nrb._SVGReportCapableInputSpec, confounds.TCompCorInputSpec):
@@ -184,7 +184,7 @@ class TCompCorRPT(nrb.SegmentationRC, confounds.TCompCor):
             self.aggregate_outputs(runtime=runtime).high_variance_masks,
         )
 
-        return super(TCompCorRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _SimpleShowMaskInputSpec(nrb._SVGReportCapableInputSpec):
@@ -201,7 +201,7 @@ class SimpleShowMaskRPT(nrb.SegmentationRC, nrb.ReportingInterface):
         self._seg_files = [self.inputs.mask_file]
         self._masked = True
 
-        return super(SimpleShowMaskRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _ROIsPlotInputSpecRPT(nrb._SVGReportCapableInputSpec):
