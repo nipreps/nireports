@@ -255,15 +255,11 @@ class Report:
 
         if bids_filters.get("subject"):
             subject_id = bids_filters["subject"]
-            bids_filters["subject"] = (
-                subject_id[4:] if subject_id.startswith("sub-") else subject_id
-            )
+            bids_filters["subject"] = subject_id.removeprefix("sub-")
 
         if bids_filters.get("session"):
             session_id = bids_filters["session"]
-            bids_filters["session"] = (
-                session_id[4:] if session_id.startswith("ses-") else session_id
-            )
+            bids_filters["session"] = session_id.removeprefix("ses-")
 
         if bids_filters and out_filename == "report.html":
             out_filename = build_path(bids_filters, OUTPUT_NAME_PATTERN)
