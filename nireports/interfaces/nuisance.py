@@ -109,7 +109,7 @@ class _ConfoundsCorrelationPlotInputSpec(BaseInterfaceInputSpec):
     ignore_initial_volumes = traits.Int(
         0,
         usedefault=True,
-        desc="Number of non-steady-state volumes at the beginning of the scan " "to ignore.",
+        desc="Number of non-steady-state volumes at the beginning of the scan to ignore.",
     )
 
 
