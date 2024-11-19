@@ -30,6 +30,7 @@ permissions:
 env:
   # Force tox and pytest to use color
   FORCE_COLOR: true
+  TEMPLATEFLOW_HOME: /tmp/templateflow
 
 jobs:
   build:
@@ -45,41 +46,38 @@ jobs:
       - uses: hynek/build-and-inspect-python-package@v2
 
   test:
-    needs: [build]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         #os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
         os: ['ubuntu-latest']
-        python-version: [3.8, 3.9, '3.10', '3.11', '3.12']
-        architecture: ['x64', 'x86']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        dependencies: [latest, pre]
+        architecture: ['x64']
+        # architecture: ['x64', 'x86']
         package: ['.', 'dist/*.whl', 'dist/*.tar.gz']
+        include:
+          # Test minimum dependencies on oldest supported Python
+          - python-version: "3.9"
+            dependencies: min
         exclude:
+          # Do not test pre-releases for versions out of SPEC0
+          - python-version: "3.9"
+            dependencies: pre
+          - python-version: "3.10"
+            dependencies: pre
+          # If we reenable Windows/Mac tests, add the following exclusions:
           # 32-bit is a Windows-only consideration
-          - os: ubuntu-latest
-            architecture: x86
-          - os: macos-latest
-            architecture: x86
-          # Only run newest on Windows/Mac
-          - os: windows-latest
-            python-version: 3.8
-          - os: windows-latest
-            python-version: 3.9
-          - os: macos-latest
-            python-version: 3.8
-          - os: macos-latest
-            python-version: 3.9
-          # Skip 32-bit Windows with Python 3.10 (see #42)
-          - os: windows-latest
-            architecture: x86
-            python-version: 3.10
+          # Only run 2 newest Python on Windows/Mac
+          # Skip 32-bit Windows with Python 3.10+ (see #42)
 
     env:
-      PACKAGE: ${{ matrix.package }}
-      TEMPLATEFLOW_HOME: /tmp/templateflow
+      DEPENDS: ${{ matrix.dependencies }}
 
     steps:
       - uses: actions/checkout@v4
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v3
       - name: Fetch packages
         uses: actions/download-artifact@v4
         with:
@@ -104,13 +102,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super
 
-      - name: Install package
-        run: pip install $PACKAGE
-      - name: Verify installation
-        run: python -c "import nireports; print(nireports.__version__)"
-      - name: Install test dependencies
-        run: pip install .[test]
-
       - name: Restore cached templateflow
         id: tf-cache-restore
         uses: actions/cache/restore@v4
@@ -119,6 +110,7 @@ jobs:
           key: templateflow-v1
       - name: Fetch templates
         run: |
+          pip install templateflow
           python -c "from templateflow.api import get; get('Fischer344', desc=None, suffix='T2w')"
           python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
       - name: Save templateflow cache
@@ -128,12 +120,17 @@ jobs:
           path: /tmp/templateflow
           key: ${{ steps.tf-cache-restore.outputs.cache-primary-key }}
 
-      - name: Run tests
-        run: pytest --cov nireports nireports
-      - uses: codecov/codecov-action@v5
-        if: ${{ always() }}
+      - name: Install tox
+        run: |
+          uv tool install tox --with=tox-uv --with=tox-gh-actions
+      - name: Show tox config
+        run: tox c
+      - name: Run tox
+        run: tox -v --exit-and-dump-after 1200
+      - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+        if: ${{ always() }}
 
   publish:
     name: Publish released package to pypi.org
