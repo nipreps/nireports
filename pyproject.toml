@@ -187,3 +187,7 @@ exclude_lines = [
     'raise NotImplementedError',
     'warnings\.warn',
 ]
+
+[tool.codespell]
+skip = "*/data/*,*/docs/_build/*"
+ignore-words-list = "objekt"
