@@ -12,25 +12,26 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Image Recognition",
     "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 license = {file = "LICENSE"}
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "importlib_resources >= 5.12; python_version < '3.12'",
-    "matplotlib >= 3.4.2",
+    "matplotlib >= 3.5",
     "nibabel >= 3.0.1",
-    "nilearn >= 0.5.2",
-    "nipype",
-    "numpy",
-    "pandas",
-    "pybids",
-    "pyyaml",
-    "seaborn",
+    "nilearn >= 0.8",
+    "nipype >= 1.8.5",
+    "numpy >= 1.20",
+    "pandas >= 1.2",
+    "pybids >= 0.15.1",
+    "pyyaml >= 5.4",
+    "seaborn >= 0.13",
     "svgutils >= 0.3.4",
-    "templateflow",
+    "templateflow >= 23.1",
 ]
 dynamic = ["version"]
 
@@ -55,14 +56,13 @@ dev = [
 ]
 
 test = [
-    "coverage",
-    "matplotlib",
+    "coverage[toml] >=5.2.1",
     "packaging",
-    "pytest",
-    "pytest-cov",
+    "pytest >= 6",
+    "pytest-cov >= 2.11",
     "pytest-env",
-    "pytest-xdist",
-    "sphinx",
+    "pytest-xdist >= 2.5",
+    "sphinx >= 6",
 ]
 
 # Aliases
@@ -150,8 +150,22 @@ quote-style = "double"
 known-first-party=["nireports"]
 
 [tool.pytest.ini_options]
+minversion = "6"
+testpaths = ["nireports"]
+log_cli_level = "INFO"
+xfail_strict = true
 norecursedirs = [".git"]
-addopts = "-svx --doctest-modules -n auto"
+addopts = [
+  "-svx",
+  "-ra",
+  "--strict-config",
+  "--strict-markers",
+  "--doctest-modules",
+  # Config pytest-cov
+  "--cov=nireports",
+  "--cov-report=xml",
+  "--cov-config=pyproject.toml",
+]
 doctest_optionflags = "ALLOW_UNICODE NORMALIZE_WHITESPACE ELLIPSIS"
 env = "PYTHONHASHSEED=0"
 filterwarnings = ["ignore::DeprecationWarning"]
