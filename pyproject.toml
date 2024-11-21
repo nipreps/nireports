@@ -191,3 +191,8 @@ exclude_lines = [
 [tool.codespell]
 skip = "*/data/*,*/docs/_build/*"
 ignore-words-list = "objekt"
+
+[tool.check-wheel-contents]
+ignore = [
+  "W002",
+]
