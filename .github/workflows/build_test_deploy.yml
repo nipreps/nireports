@@ -102,21 +102,20 @@ jobs:
 
       - name: Restore cached templateflow
         id: tf-cache-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         with:
           path: /tmp/templateflow
-          key: templateflow-v1
-      - name: Fetch templates
+          key: templateflow-v2
+          # Fall back to and build on v1
+          # If the cache need to be cleared, remove this when bumping key version
+          restore-keys: |
+            templateflow-v1
+      - name: Pre-fetch templates
         run: |
           uv pip install templateflow
           python -c "from templateflow.api import get; get('Fischer344', desc=None, suffix='T2w')"
           python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
-      - name: Save templateflow cache
-        id: tf-cache-save
-        uses: actions/cache/save@v4
-        with:
-          path: /tmp/templateflow
-          key: ${{ steps.tf-cache-restore.outputs.cache-primary-key }}
+        if: steps.tf-restore-cache.outputs.cache-hit != 'true'
 
       - name: Install tox
         run: |
