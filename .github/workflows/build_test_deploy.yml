@@ -108,7 +108,7 @@ jobs:
           key: templateflow-v1
       - name: Fetch templates
         run: |
-          pip install templateflow
+          uv pip install templateflow
           python -c "from templateflow.api import get; get('Fischer344', desc=None, suffix='T2w')"
           python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
       - name: Save templateflow cache
