@@ -44,6 +44,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: hynek/build-and-inspect-python-package@v2
+        with:
+          attest-build-provenance-github: true
 
   test:
     runs-on: ${{ matrix.os }}
@@ -58,13 +60,16 @@ jobs:
         package: ['.', 'dist/*.whl', 'dist/*.tar.gz']
         include:
           # Test minimum dependencies on oldest supported Python
-          - python-version: "3.9"
+          - os: ubuntu-latest
+            python-version: "3.9"
             dependencies: min
         exclude:
           # Do not test pre-releases for versions out of SPEC0
-          - python-version: "3.9"
+          - os: ubuntu-latest
+            python-version: "3.9"
             dependencies: pre
-          - python-version: "3.10"
+          - os: ubuntu-latest
+            python-version: "3.10"
             dependencies: pre
           # If we reenable Windows/Mac tests, add the following exclusions:
           # 32-bit is a Windows-only consideration
