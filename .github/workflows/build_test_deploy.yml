@@ -112,7 +112,7 @@ jobs:
             templateflow-v1
       - name: Pre-fetch templates
         run: |
-          uv pip install templateflow
+          uv pip install --system templateflow
           python -c "from templateflow.api import get; get('Fischer344', desc=None, suffix='T2w')"
           python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
         if: steps.tf-restore-cache.outputs.cache-hit != 'true'
