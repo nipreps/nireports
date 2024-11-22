@@ -28,9 +28,9 @@ import re
 from pathlib import Path
 from uuid import uuid4
 
+import acres
 from nipype.utils.filemanip import copyfile
 
-from nireports.assembler import data
 from nireports.assembler.misc import dict2html, read_crashfile
 
 IMG_SNIPPET = """\
@@ -408,7 +408,7 @@ class Reportlet:
                         )
                         text = f"""<pre>{text}</pre>
 <h3>Bibliography</h3>
-<pre>{data.Loader(bibfile[0]).readable(bibfile[1]).read_text()}</pre>
+<pre>{acres.Loader(bibfile[0]).readable(bibfile[1]).read_text()}</pre>
 """
                         tab_title = "LaTeX"
 
