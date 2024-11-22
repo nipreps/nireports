@@ -20,6 +20,7 @@ classifiers = [
 license = "Apache-2.0"
 requires-python = ">=3.9"
 dependencies = [
+    "acres",
     "importlib_resources >= 5.12; python_version < '3.12'",
     "matplotlib >= 3.5",
     "nibabel >= 3.0.1",

@@ -29,6 +29,7 @@ from collections import defaultdict
 from itertools import compress
 from pathlib import Path
 
+import acres
 import jinja2
 import yaml
 from bids.layout import BIDSLayout, BIDSLayoutIndexer, add_config_paths
@@ -327,7 +328,7 @@ class Report:
         # Override plugins specified in the bootstrap with arg
         if plugins is not None or (plugins := settings.get("plugins", [])):
             settings["plugins"] = [
-                yaml.safe_load(data.Loader(plugin["module"]).readable(plugin["path"]).read_text())
+                yaml.safe_load(acres.Loader(plugin["module"]).readable(plugin["path"]).read_text())
                 for plugin in plugins
             ]
 
