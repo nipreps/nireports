@@ -24,72 +24,63 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  # Force tox and pytest to use color
+  FORCE_COLOR: true
+  TEMPLATEFLOW_HOME: /tmp/templateflow
+
 jobs:
   build:
-    if: |
-      github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-      || ! contains(github.event.head_commit.message, '[skip ci]')
-    runs-on: 'ubuntu-latest'
+    name: Build & verify package
+    runs-on: ubuntu-latest
+    permissions:
+      attestations: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: hynek/build-and-inspect-python-package@v2
         with:
-          python-version: '3.x'
-      - name: Install build dependencies
-        run: pip install --upgrade pip build twine
-      - name: Build sdist and wheel
-        run: python -m build -s -w
-      - name: Check distributions
-        run: twine check dist/*
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist/
+          attest-build-provenance-github: ${{ github.event_name != 'pull_request' }}
 
   test:
-    needs: [build]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         #os: ['ubuntu-latest', 'windows-latest', 'macos-latest']
         os: ['ubuntu-latest']
-        python-version: [3.8, 3.9, '3.10', '3.11', '3.12']
-        architecture: ['x64', 'x86']
-        package: ['.', 'dist/*.whl', 'dist/*.tar.gz']
-        exclude:
-          # 32-bit is a Windows-only consideration
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        dependencies: [latest] # , pre]
+        architecture: ['x64']
+        include:
+          # Test minimum dependencies on oldest supported Python
           - os: ubuntu-latest
-            architecture: x86
-          - os: macos-latest
-            architecture: x86
-          # Only run newest on Windows/Mac
-          - os: windows-latest
-            python-version: 3.8
-          - os: windows-latest
-            python-version: 3.9
-          - os: macos-latest
-            python-version: 3.8
-          - os: macos-latest
-            python-version: 3.9
-          # Skip 32-bit Windows with Python 3.10 (see #42)
-          - os: windows-latest
-            architecture: x86
-            python-version: 3.10
+            python-version: "3.9"
+            dependencies: min
+        exclude:
+          # Do not test pre-releases for versions out of SPEC0
+          - os: ubuntu-latest
+            python-version: "3.9"
+            dependencies: pre
+          - os: ubuntu-latest
+            python-version: "3.10"
+            dependencies: pre
+          # If we reenable Windows/Mac tests, add the following exclusions:
+          # 32-bit is a Windows-only consideration
+          # Only run 2 newest Python on Windows/Mac
+          # Skip 32-bit Windows with Python 3.10+ (see #42)
 
     env:
-      PACKAGE: ${{ matrix.package }}
-      TEMPLATEFLOW_HOME: /tmp/templateflow
+      DEPENDS: ${{ matrix.dependencies }}
 
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch packages
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v3
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -109,49 +100,53 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super
 
-      - name: Install package
-        run: pip install $PACKAGE
-      - name: Verify installation
-        run: python -c "import nireports; print(nireports.__version__)"
-      - name: Install test dependencies
-        run: pip install .[test]
-
       - name: Restore cached templateflow
         id: tf-cache-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache@v4
         with:
           path: /tmp/templateflow
-          key: templateflow-v1
-      - name: Fetch templates
+          key: templateflow-v2
+          # Fall back to and build on v1
+          # If the cache need to be cleared, remove this when bumping key version
+          restore-keys: |
+            templateflow-v1
+      - name: Pre-fetch templates
         run: |
+          uv pip install --system templateflow
           python -c "from templateflow.api import get; get('Fischer344', desc=None, suffix='T2w')"
           python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
-      - name: Save templateflow cache
-        id: tf-cache-save
-        uses: actions/cache/save@v4
-        with:
-          path: /tmp/templateflow
-          key: ${{ steps.tf-cache-restore.outputs.cache-primary-key }}
+        if: steps.tf-restore-cache.outputs.cache-hit != 'true'
 
-      - name: Run tests
-        run: pytest --cov nireports nireports
-      - uses: codecov/codecov-action@v5
-        if: ${{ always() }}
+      - name: Install tox
+        run: |
+          uv tool install tox --with=tox-uv --with=tox-gh-actions
+      - name: Show tox config
+        run: tox c
+      - name: Run tox
+        run: tox -v --exit-and-dump-after 1200
+      - uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+        if: ${{ always() }}
 
-  deploy:
+  publish:
+    name: Publish released package to pypi.org
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-    needs: [test]
     runs-on: ubuntu-latest
+    needs: [build, test]
+    permissions:
+      attestations: write
+      id-token: write
+
     steps:
-      - name: Fetch packages
+      - name: Download packages built by build-and-inspect-python-package
         uses: actions/download-artifact@v4
         with:
-          name: dist
-          path: dist/
-      - name: Upload to PyPI
+          name: Packages
+          path: dist
+
+      - name: Upload package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        # Remove once OIDC is set up
         with:
-          user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
