@@ -1,3 +1,16 @@
+24.0.3 (November 18, 2024)
+==========================
+Bug-fix release in the 24.0.x series.
+
+Loosens constraints on report generation to permit GIFs.
+Technically a feature, but the impact on existing code is null.
+
+CHANGES
+-------
+
+* ENH: Allow GIFs in reports by @tsalo in https://github.com/nipreps/nireports/pull/128
+
+
 24.0.2 (August 26, 2024)
 ========================
 Hotfix release with one bugfix.
