@@ -491,7 +491,7 @@ class Report:
         # remove the all None member if it exists
         none_member = (None,) * len(orderings)
         if none_member in all_value_combos:
-            all_value_combos.remove(tuple(None for k in orderings))
+            all_value_combos.remove(none_member)
         # see what values exist for each entity
         unique_values = [
             {value[idx] for value in all_value_combos} for idx in range(len(orderings))
