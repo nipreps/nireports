@@ -255,15 +255,11 @@ class Report:
 
         if bids_filters.get("subject"):
             subject_id = bids_filters["subject"]
-            bids_filters["subject"] = (
-                subject_id[4:] if subject_id.startswith("sub-") else subject_id
-            )
+            bids_filters["subject"] = subject_id.removeprefix("sub-")
 
         if bids_filters.get("session"):
             session_id = bids_filters["session"]
-            bids_filters["session"] = (
-                session_id[4:] if session_id.startswith("ses-") else session_id
-            )
+            bids_filters["session"] = session_id.removeprefix("ses-")
 
         if bids_filters and out_filename == "report.html":
             out_filename = build_path(bids_filters, OUTPUT_NAME_PATTERN)
@@ -493,9 +489,9 @@ class Report:
             tuple(bids_file.get_entities().get(k, None) for k in orderings) for bids_file in hits
         }
         # remove the all None member if it exists
-        none_member = tuple([None for k in orderings])
+        none_member = (None,) * len(orderings)
         if none_member in all_value_combos:
-            all_value_combos.remove(tuple([None for k in orderings]))
+            all_value_combos.remove(none_member)
         # see what values exist for each entity
         unique_values = [
             {value[idx] for value in all_value_combos} for idx in range(len(orderings))

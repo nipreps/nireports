@@ -67,7 +67,7 @@ class ApplyTOPUPRPT(nrb.RegistrationRC, fsl.ApplyTOPUP):
             self._moving_image,
         )
 
-        return super(ApplyTOPUPRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _FUGUEInputSpecRPT(nrb._SVGReportCapableInputSpec, fsl.preprocess.FUGUEInputSpec):
@@ -94,7 +94,7 @@ class FUGUERPT(nrb.RegistrationRC, fsl.FUGUE):
             self._moving_image,
         )
 
-        return super(FUGUERPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _FLIRTInputSpecRPT(nrb._SVGReportCapableInputSpec, fsl.preprocess.FLIRTInputSpec):
@@ -119,7 +119,7 @@ class FLIRTRPT(nrb.RegistrationRC, fsl.FLIRT):
             self._moving_image,
         )
 
-        return super(FLIRTRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _ApplyXFMInputSpecRPT(nrb._SVGReportCapableInputSpec, fsl.preprocess.ApplyXFMInputSpec):
@@ -183,7 +183,7 @@ class BBRegisterRPT(nrb.RegistrationRC, fs.BBRegister):
             self._moving_image,
         )
 
-        return super(BBRegisterRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _MRICoregInputSpecRPT(nrb._SVGReportCapableInputSpec, fs.registration.MRICoregInputSpec):
@@ -230,7 +230,7 @@ class MRICoregRPT(nrb.RegistrationRC, fs.MRICoreg):
             self._moving_image,
         )
 
-        return super(MRICoregRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _SimpleBeforeAfterInputSpecRPT(nrb._SVGReportCapableInputSpec):
@@ -259,7 +259,7 @@ class SimpleBeforeAfterRPT(nrb.RegistrationRC, nrb.ReportingInterface):
             self._moving_image,
         )
 
-        return super(SimpleBeforeAfterRPT, self)._post_run_hook(runtime)
+        return super()._post_run_hook(runtime)
 
 
 class _ResampleBeforeAfterInputSpecRPT(_SimpleBeforeAfterInputSpecRPT):
@@ -291,7 +291,7 @@ class ResampleBeforeAfterRPT(SimpleBeforeAfterRPT):
             self._moving_image,
         )
 
-        runtime = super(ResampleBeforeAfterRPT, self)._post_run_hook(runtime)
+        runtime = super()._post_run_hook(runtime)
         _LOGGER.info("Successfully created report (%s)", self._out_report)
         os.unlink(fname)
 

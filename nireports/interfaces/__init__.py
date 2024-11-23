@@ -33,9 +33,9 @@ from nireports.interfaces.nuisance import (
 __all__ = (
     "CompCorVariancePlot",
     "ConfoundsCorrelationPlot",
-    "RaincloudPlot",
     "FMRISummary",
     "PlotContours",
     "PlotMosaic",
     "PlotSpikes",
+    "RaincloudPlot",
 )

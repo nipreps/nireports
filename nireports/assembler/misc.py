@@ -144,7 +144,7 @@ def dict2html(indict, table_id):
     if not rows:
         return None
 
-    width = max([len(row) for row in rows])
+    width = max(len(row) for row in rows)
 
     result_str = '<table id="%s" class="table table-sm table-striped">\n' % table_id
     td = "<td{1}>{0}</td>".format
