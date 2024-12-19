@@ -30,6 +30,7 @@ from nipype.interfaces import freesurfer as fs
 from nipype.interfaces import fsl
 from nipype.interfaces.base import (
     File,
+    TraitedSpec,
     isdefined,
     traits,
 )
@@ -131,10 +132,9 @@ class ApplyXFMRPT(FLIRTRPT, fsl.ApplyXFM):
     output_spec = _FLIRTOutputSpecRPT
 
 
+_BBRegisterInputSpec: type[TraitedSpec] = fs.preprocess.BBRegisterInputSpec6
 if LooseVersion("0.0.0") < fs.Info.looseversion() < LooseVersion("6.0.0"):
     _BBRegisterInputSpec = fs.preprocess.BBRegisterInputSpec
-else:
-    _BBRegisterInputSpec = fs.preprocess.BBRegisterInputSpec6
 
 
 class _BBRegisterInputSpecRPT(nrb._SVGReportCapableInputSpec, _BBRegisterInputSpec):
