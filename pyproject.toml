@@ -214,7 +214,6 @@ module = [
   "nilearn.*",
   "templateflow.*",
   "bids.*",
-  "svgutils",
   "svgutils.*",
   "pylab",
   "mpl_toolkits.*",
