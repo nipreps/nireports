@@ -11,4 +11,4 @@
 
 from acres import Loader
 
-load = Loader(__package__)
+load = Loader(__spec__.name)
