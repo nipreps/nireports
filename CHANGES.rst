@@ -1,3 +1,18 @@
+24.1.0 (December 18, 2024)
+==========================
+New feature release in the 24.1.x series.
+
+This release includes a migration of most if not all reporting
+interfaces from NiWorkflows.
+This release also supports Python 3.13 and Numpy 2.
+
+* ENH: Finalize migration of reporting interfaces (#71)
+* ENH: Allow figures in session folder (#138)
+* RF: Replace nireports.data.Loader with acres.Loader (#142)
+* STY: Apply new ruff rules (#139)
+* MAINT: Add tox.ini, test minimum dependencies (#141)
+
+
 24.0.3 (November 18, 2024)
 ==========================
 Bug-fix release in the 24.0.x series.
