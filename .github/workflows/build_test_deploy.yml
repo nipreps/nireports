@@ -150,3 +150,28 @@ jobs:
         # Remove once OIDC is set up
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+  checks:
+    runs-on: 'ubuntu-latest'
+    continue-on-error: true
+    strategy:
+      matrix:
+        check: ['style', 'spellcheck', 'typecheck']
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v4
+      # Can remove this once there is a traits release that supports 3.13
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Install tox
+        run: uv tool install tox --with=tox-uv
+      - name: Show tox config
+        run: tox c
+      - name: Show tox config (this call)
+        run: tox c -e ${{ matrix.check }}
+      - name: Run check
+        run: tox -e ${{ matrix.check }}
