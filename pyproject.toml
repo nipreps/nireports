@@ -66,6 +66,14 @@ test = [
     "pytest-xdist >= 2.5",
     "sphinx >= 6",
 ]
+types = [
+    "pandas-stubs",
+    "scipy-stubs",
+    "types-jinja2",
+    "types-pyyaml",
+    "pytest",
+    "microsoft-python-type-stubs @ git+https://github.com/microsoft/python-type-stubs.git",
+]
 
 # Aliases
 docs = ["nireports[doc]"]
@@ -198,3 +206,19 @@ ignore-words-list = "objekt"
 ignore = [
   "W002",
 ]
+
+[[tool.mypy.overrides]]
+module = [
+  "nipype.*",
+  "seaborn",
+  "nilearn.*",
+  "templateflow.*",
+  "bids.*",
+  "svgutils",
+  "svgutils.*",
+  "pylab",
+  "mpl_toolkits.*",
+  "nitransforms.*",
+  "IPython.*",
+]
+ignore_missing_imports = true
