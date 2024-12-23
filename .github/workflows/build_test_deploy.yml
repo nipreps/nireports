@@ -80,7 +80,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -161,7 +161,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v5
       # Can remove this once there is a traits release that supports 3.13
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
