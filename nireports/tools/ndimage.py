@@ -27,21 +27,32 @@
 # niworkflows/utils/images.py
 """Tooling to manipulate n-dimensional images."""
 
+import os
+import typing as ty
+
 import nibabel as nb
 import numpy as np
+import numpy.typing as npt
+from nibabel.spatialimages import SpatialImage
+
+ImgT = ty.TypeVar("ImgT", bound=nb.filebasedimages.FileBasedImage)
+SpatImgT = ty.TypeVar("SpatImgT", bound=SpatialImage)
+Mat = npt.NDArray[np.float64]
 
 
-def rotation2canonical(img):
+def rotation2canonical(img: SpatialImage) -> Mat | None:
     """Calculate the rotation w.r.t. cardinal axes of input image."""
     img = nb.as_closest_canonical(img)
+    # XXX: SpatialImage.affine needs to be typed
+    affine: Mat = img.affine
     newaff = np.diag(img.header.get_zooms()[:3])
-    r = newaff @ np.linalg.pinv(img.affine[:3, :3])
+    r = newaff @ np.linalg.pinv(affine[:3, :3])
     if np.allclose(r, np.eye(3)):
         return None
     return r
 
 
-def rotate_affine(img, rot=None):
+def rotate_affine(img: SpatImgT, rot: Mat | None = None) -> SpatImgT:
     """Rewrite the affine of a spatial image."""
     if rot is None:
         return img
@@ -52,11 +63,21 @@ def rotate_affine(img, rot=None):
     return img.__class__(img.dataobj, affine, img.header)
 
 
-def _get_values_inside_a_mask(main_file, mask_file):
-    main_nii = nb.load(main_file)
+def load_api(path: str | os.PathLike[str], api: type[ImgT]) -> ImgT:
+    img = nb.load(path)
+    if not isinstance(img, api):
+        raise TypeError(f"File {path} does not implement {api} interface")
+    return img
+
+
+def _get_values_inside_a_mask(
+    main_file: str | os.PathLike[str],
+    mask_file: str | os.PathLike[str],
+) -> npt.NDArray[np.float64]:
+    main_nii = load_api(main_file, SpatialImage)
     main_data = main_nii.get_fdata()
     nan_mask = np.logical_not(np.isnan(main_data))
-    mask = nb.load(mask_file).get_fdata() > 0
+    mask = load_api(mask_file, SpatialImage).get_fdata() > 0
 
     data = main_data[np.logical_and(nan_mask, mask)]
     return data
