@@ -40,7 +40,7 @@ SpatImgT = ty.TypeVar("SpatImgT", bound=SpatialImage)
 Mat = npt.NDArray[np.float64]
 
 
-def rotation2canonical(img: SpatialImage) -> Mat | None:
+def rotation2canonical(img: SpatialImage) -> ty.Union[Mat, None]:
     """Calculate the rotation w.r.t. cardinal axes of input image."""
     img = nb.as_closest_canonical(img)
     # XXX: SpatialImage.affine needs to be typed
@@ -52,7 +52,7 @@ def rotation2canonical(img: SpatialImage) -> Mat | None:
     return r
 
 
-def rotate_affine(img: SpatImgT, rot: Mat | None = None) -> SpatImgT:
+def rotate_affine(img: SpatImgT, rot: ty.Union[Mat, None] = None) -> SpatImgT:
     """Rewrite the affine of a spatial image."""
     if rot is None:
         return img
@@ -63,7 +63,7 @@ def rotate_affine(img: SpatImgT, rot: Mat | None = None) -> SpatImgT:
     return img.__class__(img.dataobj, affine, img.header)
 
 
-def load_api(path: str | os.PathLike[str], api: type[ImgT]) -> ImgT:
+def load_api(path: ty.Union[str, os.PathLike[str]], api: type[ImgT]) -> ImgT:
     img = nb.load(path)
     if not isinstance(img, api):
         raise TypeError(f"File {path} does not implement {api} interface")
@@ -71,8 +71,8 @@ def load_api(path: str | os.PathLike[str], api: type[ImgT]) -> ImgT:
 
 
 def _get_values_inside_a_mask(
-    main_file: str | os.PathLike[str],
-    mask_file: str | os.PathLike[str],
+    main_file: ty.Union[str, os.PathLike[str]],
+    mask_file: ty.Union[str, os.PathLike[str]],
 ) -> npt.NDArray[np.float64]:
     main_nii = load_api(main_file, SpatialImage)
     main_data = main_nii.get_fdata()

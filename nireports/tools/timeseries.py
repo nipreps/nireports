@@ -27,6 +27,7 @@
 # niworkflows/utils/timeseries.py
 """Extracting signals from NIfTI and CIFTI2 files."""
 
+import typing as ty
 from collections.abc import Sequence
 
 import nibabel as nb
@@ -36,7 +37,7 @@ import numpy.typing as npt
 from .ndimage import load_api
 
 
-def get_tr(img: nb.Nifti1Image | nb.Cifti2Image) -> float:
+def get_tr(img: ty.Union[nb.Nifti1Image, nb.Cifti2Image]) -> float:
     """
     Attempt to extract repetition time from NIfTI/CIFTI header.
 
@@ -62,7 +63,7 @@ def get_tr(img: nb.Nifti1Image | nb.Cifti2Image) -> float:
 
 
 def cifti_timeseries(
-    dataset: str | nb.Cifti2Image,
+    dataset: ty.Union[str, nb.Cifti2Image],
 ) -> tuple[npt.NDArray[np.float32], dict[str, list[int]]]:
     """Extract timeseries from CIFTI2 dataset."""
     dataset = load_api(dataset, nb.Cifti2Image) if isinstance(dataset, str) else dataset
@@ -86,12 +87,12 @@ def cifti_timeseries(
 
 
 def nifti_timeseries(
-    dataset: str | nb.Nifti1Image,
-    segmentation: str | nb.Nifti1Image | None = None,
+    dataset: ty.Union[str, nb.Nifti1Image],
+    segmentation: ty.Union[str, nb.Nifti1Image, None] = None,
     labels: Sequence[str] = ("Ctx GM", "dGM", "WM+CSF", "Cb", "Crown"),
     remap_rois: bool = False,
-    lut: npt.NDArray[np.uint8] | None = None,
-) -> tuple[npt.NDArray[np.float32], dict[str, list[int]] | None]:
+    lut: ty.Union[npt.NDArray[np.uint8], None] = None,
+) -> tuple[npt.NDArray[np.float32], ty.Union[dict[str, list[int]], None]]:
     """Extract timeseries from NIfTI1/2 datasets."""
     dataset = load_api(dataset, nb.Nifti1Image) if isinstance(dataset, str) else dataset
     data: npt.NDArray[np.float32] = dataset.get_fdata(dtype="float32").reshape(
