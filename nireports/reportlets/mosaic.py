@@ -665,7 +665,7 @@ def plot_mosaic(
 
             ax = fig.add_subplot(panel_axs[ii, jj])
             if overlay_mask:
-                panel_axs[ii, jj].set_rasterized(True)
+                ax.set_rasterized(True)
 
             plot_slice(
                 view_data[:, :, z_val],
@@ -691,7 +691,7 @@ def plot_mosaic(
                     vmin=0,
                     vmax=1,
                     cmap=msk_cmap,
-                    ax=panel_axs[ii, jj],
+                    ax=ax,
                     spacing=view_spacing[0],
                 )
 
