@@ -38,6 +38,7 @@ import nibabel as nb
 import numpy as np
 import numpy.typing as npt
 from matplotlib.gridspec import GridSpec
+from nibabel.spatialimages import SpatialImage
 from nilearn import image as nlimage
 from nilearn.plotting import plot_anat
 from svgutils.transform import SVGFigure, fromstring
@@ -55,10 +56,10 @@ from nireports.tools.ndimage import load_api, rotate_affine, rotation2canonical
 
 
 def plot_segs(
-    image_nii: ty.Union[str, nb.Nifti1Image],
-    seg_niis: list[ty.Union[str, nb.Nifti1Image]],
+    image_nii: ty.Union[str, SpatialImage],
+    seg_niis: list[ty.Union[str, SpatialImage]],
     out_file: str,
-    bbox_nii: ty.Union[str, nb.Nifti1Image, None] = None,
+    bbox_nii: ty.Union[str, SpatialImage, None] = None,
     masked: bool = False,
     compress: ty.Union[bool, L["auto"]] = "auto",
     **plot_params,
@@ -77,7 +78,7 @@ def plot_segs(
     image_nii = _3d_in_file(image_nii)
     canonical_r = rotation2canonical(image_nii)
     image_nii = rotate_affine(image_nii, rot=canonical_r)
-    seg_imgs: list[nb.Nifti1Image] = [
+    seg_imgs: list[SpatialImage] = [
         rotate_affine(_3d_in_file(f), rot=canonical_r) for f in seg_niis
     ]
     data = image_nii.get_fdata()
@@ -89,7 +90,7 @@ def plot_segs(
     )
 
     if masked:
-        bbox_nii: nb.Nifti1Image = nlimage.threshold_img(bbox_nii, 1e-3)  # type: ignore[no-redef]
+        bbox_nii: SpatialImage = nlimage.threshold_img(bbox_nii, 1e-3)  # type: ignore[no-redef]
 
     cuts = cuts_from_bbox(bbox_nii, cuts=7)
     out_files = []
@@ -105,14 +106,14 @@ def plot_segs(
 
 
 def plot_registration(
-    anat_nii: nb.spatialimages.SpatialImage,
+    anat_nii: SpatialImage,
     div_id: str,
     plot_params: ty.Union[dict[str, ty.Any], None] = None,
     order: tuple[L["x", "y", "z"], L["x", "y", "z"], L["x", "y", "z"]] = ("z", "x", "y"),
     cuts: ty.Union[dict[str, list[float]], None] = None,
     estimate_brightness: bool = False,
     label: ty.Union[str, None] = None,
-    contour: ty.Union[nb.spatialimages.SpatialImage, None] = None,
+    contour: ty.Union[SpatialImage, None] = None,
     compress: ty.Union[bool, L["auto"]] = "auto",
     dismiss_affine: bool = False,
 ) -> list[SVGFigure]:
@@ -185,8 +186,8 @@ def plot_registration(
 
 
 def _plot_anat_with_contours(
-    image: nb.Nifti1Image,
-    segs: ty.Union[list[nb.Nifti1Image], None] = None,
+    image: SpatialImage,
+    segs: ty.Union[list[SpatialImage], None] = None,
     compress: ty.Union[bool, L["auto"]] = "auto",
     **plot_params,
 ) -> str:
@@ -234,12 +235,12 @@ def plot_segmentation(anat_file: str, segmentation: str, out_file: str, **kwargs
     vmax = kwargs.get("vmax")
     vmin = kwargs.get("vmin")
 
-    anat_ras = nb.as_closest_canonical(load_api(anat_file, nb.spatialimages.SpatialImage))
+    anat_ras = nb.as_closest_canonical(load_api(anat_file, SpatialImage))
     anat_ras_plumb = anat_ras.__class__(
         anat_ras.dataobj, _dicom_real_to_card(anat_ras.affine), anat_ras.header
     )
 
-    seg_ras = nb.as_closest_canonical(load_api(segmentation, nb.spatialimages.SpatialImage))
+    seg_ras = nb.as_closest_canonical(load_api(segmentation, SpatialImage))
     seg_ras_plumb = seg_ras.__class__(
         seg_ras.dataobj, _dicom_real_to_card(seg_ras.affine), seg_ras.header
     )
@@ -431,8 +432,8 @@ def plot_spikes(
     """Plot a mosaic enhancing EM spikes."""
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-    nii = nb.as_closest_canonical(load_api(in_file, nb.spatialimages.SpatialImage))
-    fft = load_api(in_file, nb.spatialimages.SpatialImage).get_fdata()
+    nii = nb.as_closest_canonical(load_api(in_file, SpatialImage))
+    fft = load_api(in_file, SpatialImage).get_fdata()
 
     data = nii.get_fdata()
     zooms = nii.header.get_zooms()[:2]
