@@ -37,6 +37,7 @@ import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
 import numpy.typing as npt
+from matplotlib.colors import ListedColormap
 from matplotlib.gridspec import GridSpec
 from nilearn import image as nlimage
 from nilearn.plotting import plot_anat
@@ -52,6 +53,39 @@ from nireports.reportlets.utils import (
     robust_set_limits,
 )
 from nireports.tools.ndimage import load_api, rotate_affine, rotation2canonical
+
+
+def _create_listed_colormap_with_alpha(cmap_name: str, max_alpha: float = 0.75) -> ListedColormap:
+    """Create a listed colormap with custom alpha (transparency) values.
+
+    Creates a new colormap with ``N+3`` elements by adjusting the alpha channel
+    (transparency) of a given base colormap with ``N`` elements. The alpha
+    values are distributed linearly between ``0`` and ``alpha_max`` across the
+    values of the range of the new colormap.
+
+    Parameters
+    ----------
+    cmap_name : str
+        Name of the base colormap from Matplotlib.
+    max_alpha : float, optional
+        Maximum alpha value (transparency) to apply to the colormap.
+
+    Returns
+    -------
+    obj:`matplotlib.colors.ListedColormap`
+        A listed colormap instance based on the provided ``cmap_name``, with
+        the adjusted alpha values.
+    """
+
+    base_cmap = mpl.colormaps[cmap_name]
+    num_colors = base_cmap.N
+
+    # Replace the alpha values
+    alphas = np.linspace(0, max_alpha, num_colors + 3)
+    colors = base_cmap(np.arange(num_colors))
+    colors[:, -1] = alphas
+
+    return ListedColormap(colors, name="Reds_with_alpha")
 
 
 def plot_segs(
@@ -679,13 +713,7 @@ def plot_mosaic(
             )
 
             if overlay_mask:
-                msk_cmap = mpl.colormaps["Reds"]
-                # Overriding the alpha channel requires accessing the private _lut
-                # which in turn needs to be initialized.
-                # XXX: Figure out how to create an equivalent cmap with public APIs
-                msk_cmap._init()  # type: ignore[attr-defined]
-                alphas = np.linspace(0, 0.75, msk_cmap.N + 3)
-                msk_cmap._lut[:, -1] = alphas  # type: ignore[attr-defined]
+                msk_cmap = _create_listed_colormap_with_alpha("Reds")
                 plot_slice(
                     view_overlay_data[:, :, z_val],
                     vmin=0,
