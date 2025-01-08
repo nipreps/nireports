@@ -57,7 +57,6 @@ from nireports.tools.ndimage import load_api, rotate_affine, rotation2canonical
 def plot_segs(
     image_nii: ty.Union[str, nb.Nifti1Image],
     seg_niis: list[ty.Union[str, nb.Nifti1Image]],
-    out_file: str,
     bbox_nii: ty.Union[str, nb.Nifti1Image, None] = None,
     masked: bool = False,
     compress: ty.Union[bool, L["auto"]] = "auto",

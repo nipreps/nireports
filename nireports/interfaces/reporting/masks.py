@@ -273,7 +273,6 @@ class ROIsPlot(nrb.ReportingInterface):
                 bbox_nii=mask_file,
                 levels=levels,
                 colors=colors,
-                out_file=self.inputs.out_report,
                 masked=self.inputs.masked,
                 compress=self.inputs.compress_report,
             ),
