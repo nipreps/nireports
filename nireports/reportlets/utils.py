@@ -44,6 +44,7 @@ import matplotlib as mpl
 import nibabel as nb
 import numpy as np
 import numpy.typing as npt
+from nibabel.spatialimages import SpatialImage
 from svgutils.transform import SVGFigure
 
 from ..tools.ndimage import load_api
@@ -269,7 +270,7 @@ def _bbox(img_data: npt.NDArray[G], bbox_data: npt.NDArray) -> npt.NDArray[G]:
     return img_data[ystart:ystop, xstart:xstop, zstart:zstop]
 
 
-def cuts_from_bbox(mask_nii: nb.Nifti1Image, cuts: int = 3) -> dict[str, list[float]]:
+def cuts_from_bbox(mask_nii: SpatialImage, cuts: int = 3) -> dict[str, list[float]]:
     """Find equi-spaced cuts for presenting images."""
     mask_data = np.asanyarray(mask_nii.dataobj) > 0.0
 
@@ -316,8 +317,8 @@ def cuts_from_bbox(mask_nii: nb.Nifti1Image, cuts: int = 3) -> dict[str, list[fl
 
 
 def _3d_in_file(
-    in_file: ty.Union[nb.Nifti1Image, str, os.PathLike, list[ty.Union[str, os.PathLike]]],
-) -> nb.Nifti1Image:
+    in_file: ty.Union[SpatialImage, str, os.PathLike, list[ty.Union[str, os.PathLike]]],
+) -> SpatialImage:
     """if self.inputs.in_file is 3d, return it.
     if 4d, pick an arbitrary volume and return that.
 
@@ -329,8 +330,8 @@ def _3d_in_file(
     if isinstance(in_file, list):
         in_file = in_file[0]
 
-    if not isinstance(in_file, nb.Nifti1Image):
-        in_file = load_api(in_file, nb.Nifti1Image)
+    if not isinstance(in_file, SpatialImage):
+        in_file = load_api(in_file, SpatialImage)
 
     if len(in_file.shape) == 3:
         return in_file
