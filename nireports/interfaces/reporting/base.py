@@ -149,7 +149,6 @@ class SegmentationRC(reporting.ReportCapableInterface):
                 image_nii=self._anat_file,
                 seg_niis=self._seg_files,
                 bbox_nii=self._mask_file,
-                out_file=self.inputs.out_report,
                 masked=self._masked,
                 compress=self.inputs.compress_report,
             ),
