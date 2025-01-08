@@ -25,7 +25,10 @@
 """Base components to generate mosaic-like reportlets."""
 
 import math
+import os
+import typing as ty
 from os import path as op
+from typing import Literal as L
 from uuid import uuid4
 from warnings import warn
 
@@ -33,10 +36,11 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
+import numpy.typing as npt
 from matplotlib.gridspec import GridSpec
 from nilearn import image as nlimage
 from nilearn.plotting import plot_anat
-from svgutils.transform import fromstring
+from svgutils.transform import SVGFigure, fromstring
 
 from nireports.reportlets.utils import (
     _3d_in_file,
@@ -47,19 +51,18 @@ from nireports.reportlets.utils import (
     get_parula,
     robust_set_limits,
 )
-from nireports.tools.ndimage import rotate_affine, rotation2canonical
+from nireports.tools.ndimage import load_api, rotate_affine, rotation2canonical
 
 
 def plot_segs(
-    image_nii,
-    seg_niis,
-    out_file,
-    bbox_nii=None,
-    masked=False,
-    colors=None,
-    compress="auto",
+    image_nii: ty.Union[str, nb.Nifti1Image],
+    seg_niis: list[ty.Union[str, nb.Nifti1Image]],
+    out_file: str,
+    bbox_nii: ty.Union[str, nb.Nifti1Image, None] = None,
+    masked: bool = False,
+    compress: ty.Union[bool, L["auto"]] = "auto",
     **plot_params,
-):
+) -> list[SVGFigure]:
     """
     Generate a static mosaic with ROIs represented by their delimiting contour.
 
@@ -74,7 +77,9 @@ def plot_segs(
     image_nii = _3d_in_file(image_nii)
     canonical_r = rotation2canonical(image_nii)
     image_nii = rotate_affine(image_nii, rot=canonical_r)
-    seg_niis = [rotate_affine(_3d_in_file(f), rot=canonical_r) for f in seg_niis]
+    seg_imgs: list[nb.Nifti1Image] = [
+        rotate_affine(_3d_in_file(f), rot=canonical_r) for f in seg_niis
+    ]
     data = image_nii.get_fdata()
 
     plot_params = robust_set_limits(data, plot_params)
@@ -84,15 +89,14 @@ def plot_segs(
     )
 
     if masked:
-        bbox_nii = nlimage.threshold_img(bbox_nii, 1e-3)
+        bbox_nii: nb.Nifti1Image = nlimage.threshold_img(bbox_nii, 1e-3)  # type: ignore[no-redef]
 
     cuts = cuts_from_bbox(bbox_nii, cuts=7)
-    plot_params["colors"] = colors or plot_params.get("colors", None)
     out_files = []
     for d in plot_params.pop("dimensions", ("z", "x", "y")):
         plot_params["display_mode"] = d
         plot_params["cut_coords"] = cuts[d]
-        svg = _plot_anat_with_contours(image_nii, segs=seg_niis, compress=compress, **plot_params)
+        svg = _plot_anat_with_contours(image_nii, segs=seg_imgs, compress=compress, **plot_params)
         # Find and replace the figure_1 id.
         svg = svg.replace("figure_1", f"segmentation-{d}-{uuid4()}", 1)
         out_files.append(fromstring(svg))
@@ -101,17 +105,17 @@ def plot_segs(
 
 
 def plot_registration(
-    anat_nii,
-    div_id,
-    plot_params=None,
-    order=("z", "x", "y"),
-    cuts=None,
-    estimate_brightness=False,
-    label=None,
-    contour=None,
-    compress="auto",
-    dismiss_affine=False,
-):
+    anat_nii: nb.spatialimages.SpatialImage,
+    div_id: str,
+    plot_params: ty.Union[dict[str, ty.Any], None] = None,
+    order: tuple[L["x", "y", "z"], L["x", "y", "z"], L["x", "y", "z"]] = ("z", "x", "y"),
+    cuts: ty.Union[dict[str, list[float]], None] = None,
+    estimate_brightness: bool = False,
+    label: ty.Union[str, None] = None,
+    contour: ty.Union[nb.spatialimages.SpatialImage, None] = None,
+    compress: ty.Union[bool, L["auto"]] = "auto",
+    dismiss_affine: bool = False,
+) -> list[SVGFigure]:
     """
     Plots the foreground and background views
     Default order is: axial, coronal, sagittal
@@ -134,14 +138,14 @@ def plot_registration(
     if contour:
         contour = nb.Nifti1Image.from_image(contour)
 
-    ribbon = contour is not None and np.array_equal(
-        np.unique(contour.get_fdata()), [0, 2, 3, 41, 42]
-    )
+    ribbon = False
+    if contour is not None:
+        ribbon = np.array_equal(np.unique(contour.get_fdata()), [0, 2, 3, 41, 42])
 
-    if ribbon:
-        contour_data = contour.get_fdata() % 39
-        white = nlimage.new_img_like(contour, contour_data == 2)
-        pial = nlimage.new_img_like(contour, contour_data >= 2)
+        if ribbon:
+            contour_data = contour.get_fdata() % 39
+            white = nlimage.new_img_like(contour, contour_data == 2)
+            pial = nlimage.new_img_like(contour, contour_data >= 2)
 
     if dismiss_affine:
         canonical_r = rotation2canonical(anat_nii)
@@ -180,8 +184,15 @@ def plot_registration(
     return out_files
 
 
-def _plot_anat_with_contours(image, segs=None, compress="auto", **plot_params):
-    nsegs = len(segs or [])
+def _plot_anat_with_contours(
+    image: nb.Nifti1Image,
+    segs: ty.Union[list[nb.Nifti1Image], None] = None,
+    compress: ty.Union[bool, L["auto"]] = "auto",
+    **plot_params,
+) -> str:
+    if segs is None:
+        segs = []
+    nsegs = len(segs)
     plot_params = plot_params or {}
     # plot_params' values can be None, however they MUST NOT
     # be None for colors and levels from this point on.
@@ -215,7 +226,7 @@ def _plot_anat_with_contours(image, segs=None, compress="auto", **plot_params):
     return svg
 
 
-def plot_segmentation(anat_file, segmentation, out_file, **kwargs):
+def plot_segmentation(anat_file: str, segmentation: str, out_file: str, **kwargs) -> str:
     """Plot a segmentation (from MRIQC)."""
     from nilearn.plotting import plot_anat
     from nitransforms.io.afni import _dicom_real_to_card
@@ -223,12 +234,12 @@ def plot_segmentation(anat_file, segmentation, out_file, **kwargs):
     vmax = kwargs.get("vmax")
     vmin = kwargs.get("vmin")
 
-    anat_ras = nb.as_closest_canonical(nb.load(anat_file))
+    anat_ras = nb.as_closest_canonical(load_api(anat_file, nb.spatialimages.SpatialImage))
     anat_ras_plumb = anat_ras.__class__(
         anat_ras.dataobj, _dicom_real_to_card(anat_ras.affine), anat_ras.header
     )
 
-    seg_ras = nb.as_closest_canonical(nb.load(segmentation))
+    seg_ras = nb.as_closest_canonical(load_api(segmentation, nb.spatialimages.SpatialImage))
     seg_ras_plumb = seg_ras.__class__(
         seg_ras.dataobj, _dicom_real_to_card(seg_ras.affine), seg_ras.header
     )
@@ -260,16 +271,16 @@ def plot_segmentation(anat_file, segmentation, out_file, **kwargs):
 
 
 def plot_slice(
-    dslice,
-    spacing=None,
-    cmap="Greys_r",
-    label=None,
-    ax=None,
-    vmax=None,
-    vmin=None,
-    annotate=None,
-):
-    if isinstance(cmap, (str, bytes)):
+    dslice: npt.NDArray,
+    spacing: ty.Union[tuple[float, float], None] = None,
+    cmap: ty.Union[str, mpl.colors.Colormap] = "Greys_r",
+    label: ty.Union[str, None] = None,
+    ax: ty.Union[mpl.axes.Axes, None] = None,
+    vmax: ty.Union[float, None] = None,
+    vmin: ty.Union[float, None] = None,
+    annotate: ty.Union[tuple[str, str], None] = None,
+) -> mpl.axes.Axes:
+    if isinstance(cmap, str):
         cmap = mpl.colormaps[cmap]
 
     est_vmin, est_vmax = _get_limits(dslice)
@@ -282,7 +293,7 @@ def plot_slice(
         ax = plt.gca()
 
     if spacing is None:
-        spacing = [1.0, 1.0]
+        spacing = (1.0, 1.0)
 
     # Always swap axes because imshow defines the image as (M, N)
     # where M are rows (i.e., Y axis) and N are columns (X axis)
@@ -294,7 +305,7 @@ def plot_slice(
         vmin=vmin,
         vmax=vmax,
         cmap=cmap,
-        extent=[0, dslice.shape[1] * spacing[1], 0, dslice.shape[0] * spacing[0]],
+        extent=(0, dslice.shape[1] * spacing[1], 0, dslice.shape[0] * spacing[0]),
         interpolation="none",
         origin="lower",
     )
@@ -347,16 +358,16 @@ def plot_slice(
 
 
 def plot_slice_tern(
-    dslice,
-    prev=None,
-    post=None,
-    spacing=None,
-    cmap="Greys_r",
-    label=None,
-    ax=None,
-    vmax=None,
-    vmin=None,
-):
+    dslice: npt.NDArray,
+    prev: ty.Union[npt.NDArray, None] = None,
+    post: ty.Union[npt.NDArray, None] = None,
+    spacing: ty.Union[tuple[float, float], None] = None,
+    cmap: ty.Union[str, mpl.colors.Colormap] = "Greys_r",
+    label: ty.Union[str, None] = None,
+    ax: ty.Union[mpl.axes.Axes, None] = None,
+    vmax: ty.Union[float, None] = None,
+    vmin: ty.Union[float, None] = None,
+) -> None:
     if isinstance(cmap, (str, bytes)):
         cmap = mpl.colormaps[cmap]
 
@@ -370,9 +381,9 @@ def plot_slice_tern(
         ax = plt.gca()
 
     if spacing is None:
-        spacing = [1.0, 1.0]
+        spacing = (1.0, 1.0)
     else:
-        spacing = [spacing[1], spacing[0]]
+        spacing = (spacing[1], spacing[0])
 
     phys_sp = np.array(spacing) * dslice.shape
 
@@ -389,7 +400,7 @@ def plot_slice_tern(
         cmap=cmap,
         interpolation="nearest",
         origin="lower",
-        extent=[0, phys_sp[1] * 3, 0, phys_sp[0]],
+        extent=(0, phys_sp[1] * 3, 0, phys_sp[0]),
     )
     ax.set_xticklabels([])
     ax.set_yticklabels([])
@@ -410,18 +421,18 @@ def plot_slice_tern(
 
 
 def plot_spikes(
-    in_file,
-    in_fft,
-    spikes_list,
-    cols=3,
-    labelfmt="t={0:.3f}s (z={1:d})",
-    out_file=None,
-):
+    in_file: str,
+    in_fft: str,
+    spikes_list: list[tuple[int, int]],
+    cols: int = 3,
+    labelfmt: str = "t={0:.3f}s (z={1:d})",
+    out_file: ty.Union[str, os.PathLike[str], None] = None,
+) -> ty.Union[str, os.PathLike[str]]:
     """Plot a mosaic enhancing EM spikes."""
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-    nii = nb.as_closest_canonical(nb.load(in_file))
-    fft = nb.load(in_fft).get_fdata()
+    nii = nb.as_closest_canonical(load_api(in_file, nb.spatialimages.SpatialImage))
+    fft = load_api(in_file, nb.spatialimages.SpatialImage).get_fdata()
 
     data = nii.get_fdata()
     zooms = nii.header.get_zooms()[:2]
@@ -502,7 +513,7 @@ def plot_mosaic(
     fig=None,
     maxrows=16,
     views=("axial", "sagittal", None),
-):
+) -> str:
     """Plot a mosaic of 2D cuts."""
 
     VIEW_AXES_ORDER = {
@@ -556,7 +567,7 @@ def plot_mosaic(
 
     view_x = {"axial": 0, "coronal": 0, "sagittal": 1}
     view_y = {"axial": 1, "coronal": 2, "sagittal": 2}
-    axannotation = {"axial": "RL", "coronal": "RL", "sagittal": "AP"}
+    axannotation = {"axial": ("R", "L"), "coronal": ("R", "L"), "sagittal": ("A", "P")}
 
     nrows = min((shape[-1] + 1) // ncols, maxrows)
 
@@ -588,7 +599,7 @@ def plot_mosaic(
     main_mosaic_idx = main_mosaic_idx.reshape(nrows, ncols)
 
     fig_height = []
-    panel_width = []
+    panel_width: list[float] = []
     ncols = [ncols]
     view_spacing = []
     for ii, vv in enumerate(views):
@@ -654,7 +665,7 @@ def plot_mosaic(
 
             ax = fig.add_subplot(panel_axs[ii, jj])
             if overlay_mask:
-                panel_axs[ii, jj].set_rasterized(True)
+                ax.set_rasterized(True)
 
             plot_slice(
                 view_data[:, :, z_val],
@@ -669,15 +680,18 @@ def plot_mosaic(
 
             if overlay_mask:
                 msk_cmap = mpl.colormaps["Reds"]
-                msk_cmap._init()
+                # Overriding the alpha channel requires accessing the private _lut
+                # which in turn needs to be initialized.
+                # XXX: Figure out how to create an equivalent cmap with public APIs
+                msk_cmap._init()  # type: ignore[attr-defined]
                 alphas = np.linspace(0, 0.75, msk_cmap.N + 3)
-                msk_cmap._lut[:, -1] = alphas
+                msk_cmap._lut[:, -1] = alphas  # type: ignore[attr-defined]
                 plot_slice(
                     view_overlay_data[:, :, z_val],
                     vmin=0,
                     vmax=1,
                     cmap=msk_cmap,
-                    ax=panel_axs[ii, jj],
+                    ax=ax,
                     spacing=view_spacing[0],
                 )
 
