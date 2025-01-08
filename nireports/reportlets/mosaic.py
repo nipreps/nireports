@@ -30,6 +30,7 @@ import typing as ty
 import warnings
 from os import path as op
 from typing import Literal as L
+from typing import Sequence
 from uuid import uuid4
 
 import matplotlib as mpl
@@ -38,6 +39,7 @@ import nibabel as nb
 import nilearn
 import numpy as np
 import numpy.typing as npt
+from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.gridspec import GridSpec
 from nibabel.spatialimages import SpatialImage
 from nilearn import image as nlimage
@@ -55,6 +57,70 @@ from nireports.reportlets.utils import (
     robust_set_limits,
 )
 from nireports.tools.ndimage import load_api, rotate_affine, rotation2canonical
+
+
+def _create_lscmap_with_alpha(
+    cmap_name: str, cmap_name_alpha: ty.Union[str, None] = None, max_alpha: float = 0.75
+) -> LinearSegmentedColormap:
+    """Create a linear segmented colormap with custom alpha (transparency) values.
+
+    Creates a new colormap with ``N+3`` elements by adjusting the alpha channel
+    (transparency) of a given base colormap with ``N`` elements. The alpha
+    values are distributed linearly between ``0`` and ``alpha_max`` across the
+    values of the range of the new colormap.
+
+    Parameters
+    ----------
+    cmap_name : str
+        Name of the base colormap from Matplotlib.
+    cmap_name_alpha : str, optional
+        Name for the new colormap. If ``None``, append "Alpha" to the base colormap name.
+    max_alpha : float, optional
+        Maximum alpha value (transparency) to apply to the colormap.
+
+    Returns
+    -------
+    obj:`matplotlib.colors.LinearSegmentedColormap`
+        A linear segmented colormap instance based on the provided ``cmap_name``, with
+        the adjusted alpha values.
+    """
+
+    _cmap_name_alpha = cmap_name_alpha if cmap_name_alpha is not None else cmap_name + "Alpha"
+
+    reds_data_mpl = mpl._cm.datad[cmap_name]  # type: ignore[attr-defined]
+
+    seq_pt_count = len(reds_data_mpl)
+
+    pts = np.linspace(0, 1, seq_pt_count)
+    red = np.vstack(
+        [[pts[i], reds_data_mpl[i][0], reds_data_mpl[i][0]] for i in range(seq_pt_count)]
+    )
+    green = np.vstack(
+        [[pts[i], reds_data_mpl[i][1], reds_data_mpl[i][1]] for i in range(seq_pt_count)]
+    )
+    blue = np.vstack(
+        [[pts[i], reds_data_mpl[i][2], reds_data_mpl[i][2]] for i in range(seq_pt_count)]
+    )
+
+    n = mpl.colormaps[cmap_name].N
+    _alpha = np.linspace(0, max_alpha, n + 3)
+    _alpha_interp = np.interp(pts, np.linspace(0, 1, len(_alpha)), _alpha)
+
+    alpha = np.vstack([[pts[i], _alpha_interp[i], _alpha_interp[i]] for i in range(seq_pt_count)])
+
+    # Convert NumPy arrays to lists of tuples and add type hints to make type checking happy
+    cdict: dict[L["red", "green", "blue", "alpha"], Sequence[tuple[float, ...]]] = {
+        "red": [tuple(val) for val in red],
+        "green": [tuple(val) for val in green],
+        "blue": [tuple(val) for val in blue],
+        "alpha": [tuple(val) for val in alpha],
+    }
+
+    lscmap = LinearSegmentedColormap(_cmap_name_alpha, cdict)
+
+    lscmap._init()  # type: ignore[attr-defined]
+
+    return lscmap
 
 
 def plot_segs(
@@ -688,13 +754,7 @@ def plot_mosaic(
             )
 
             if overlay_mask:
-                msk_cmap = mpl.colormaps["Reds"]
-                # Overriding the alpha channel requires accessing the private _lut
-                # which in turn needs to be initialized.
-                # XXX: Figure out how to create an equivalent cmap with public APIs
-                msk_cmap._init()  # type: ignore[attr-defined]
-                alphas = np.linspace(0, 0.75, msk_cmap.N + 3)
-                msk_cmap._lut[:, -1] = alphas  # type: ignore[attr-defined]
+                msk_cmap = _create_lscmap_with_alpha("Reds")
                 plot_slice(
                     view_overlay_data[:, :, z_val],
                     vmin=0,

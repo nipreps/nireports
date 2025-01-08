@@ -28,6 +28,7 @@ import warnings
 from itertools import permutations
 from pathlib import Path
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
@@ -38,7 +39,7 @@ from templateflow.api import get
 import nireports._vendored.svgutils.transform as svgt
 from nireports.reportlets import compression_missing_msg, have_compression
 from nireports.reportlets.modality.func import fMRIPlot
-from nireports.reportlets.mosaic import plot_mosaic, plot_segs
+from nireports.reportlets.mosaic import _create_lscmap_with_alpha, plot_mosaic, plot_segs
 from nireports.reportlets.nuisance import plot_carpet, plot_dist, plot_fd, plot_raincloud
 from nireports.reportlets.surface import cifti_surfaces_plot
 from nireports.reportlets.utils import _3d_in_file
@@ -376,6 +377,32 @@ def test_mriqc_plot_mosaic(tmp_path, test_data_package, outdir, views, plot_sagi
         )
 
 
+@pytest.mark.parametrize("views", _views)
+@pytest.mark.parametrize("plot_sagittal", (True, False))
+def test_mriqc_plot_mosaic_1(tmp_path, test_data_package, outdir, views, plot_sagittal):
+    """Exercise the generation of mosaics."""
+
+    fname = f"mosaic_{'_'.join(v or 'none' for v in views)}_{plot_sagittal:d}.svg"
+
+    if views[0] is None or ((views[1] is None) and (views[2] is not None)):
+        context = pytest.raises(RuntimeError)
+    elif plot_sagittal and views[1] is None and views[0] != "sagittal":
+        context = pytest.warns(UserWarning, match=r".*plot_sagittal.*should not be used")
+    else:
+        context = contextlib.nullcontext()
+
+    with context:
+        plot_mosaic(
+            get("MNI152NLin2009aAsym", resolution=1, suffix="T1w"),
+            plot_sagittal=plot_sagittal,
+            views=views,
+            out_file=(outdir / fname) if outdir is not None else None,
+            title=f"A mosaic plotting example: views={views}, plot_sagittal={plot_sagittal}",
+            maxrows=5,
+            overlay_mask=get("MNI152NLin2009aAsym", resolution=1, label="WM", suffix="probseg"),
+        )
+
+
 def test_mriqc_plot_mosaic_2(tmp_path, test_data_package, outdir):
     """Exercise the generation of mosaics."""
     plot_mosaic(
@@ -548,4 +575,35 @@ def test_plot_dist(request, tmp_path, outdir):
     assert fig is not None
     if outdir is not None:
         fig.savefig(outdir / "test_plot_dist.svg")
+    plt.close(fig)
+
+
+def test_create_cmap(outdir):
+    cmap_name = "Reds"
+
+    max_alpha = 0.75
+    ls_cmap = _create_lscmap_with_alpha(cmap_name, max_alpha=max_alpha)
+
+    orig_cmap = mpl.colormaps[cmap_name]
+    orig_cmap._init()
+
+    assert ls_cmap._lut.shape == orig_cmap._lut.shape
+    assert np.allclose(ls_cmap._lut[0, -1], 0.0)
+    assert np.allclose(ls_cmap._lut[ls_cmap.N - 1, -1], max_alpha)
+    assert np.all(0.0 <= ls_cmap._lut[:, -1]) and np.all(ls_cmap._lut[:, -1] <= max_alpha)
+    # Check that all values (excluding the bad/over/under) are monotonically increasing
+    assert np.all(np.diff(ls_cmap._lut[: ls_cmap.N - 1, -1]) >= 0)
+    assert [
+        key1 == key2
+        for key1, key2 in zip(orig_cmap._segmentdata.keys(), ls_cmap._segmentdata.keys())
+    ]
+    assert [
+        np.allclose(val1, val2)
+        for val1, val2 in zip(orig_cmap._segmentdata.values(), ls_cmap._segmentdata.values())
+    ]
+
+    fig, ax = plt.subplots(1, 1, figsize=(12, 10), constrained_layout=True)
+    _ = plt.colorbar(plt.cm.ScalarMappable(cmap=ls_cmap), cax=ax, orientation="horizontal")
+    if outdir:
+        fig.savefig(outdir / f"{ls_cmap.name}.svg")
     plt.close(fig)
