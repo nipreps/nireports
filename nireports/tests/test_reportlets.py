@@ -27,6 +27,7 @@ import os
 from itertools import permutations
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
 import pandas as pd
@@ -126,6 +127,8 @@ def test_carpetplot(tr, sorting, outdir):
         else None,
         sort_rows=sorting,
     )
+
+    plt.close()
 
 
 @pytest.mark.parametrize(
