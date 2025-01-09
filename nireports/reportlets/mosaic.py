@@ -35,12 +35,14 @@ from uuid import uuid4
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import nibabel as nb
+import nilearn
 import numpy as np
 import numpy.typing as npt
 from matplotlib.gridspec import GridSpec
 from nibabel.spatialimages import SpatialImage
 from nilearn import image as nlimage
 from nilearn.plotting import plot_anat
+from packaging.version import Version
 from svgutils.transform import SVGFigure, fromstring
 
 from nireports.reportlets.utils import (
@@ -89,7 +91,10 @@ def plot_segs(
     )
 
     if masked:
-        bbox_nii: SpatialImage = nlimage.threshold_img(bbox_nii, 1e-3)  # type: ignore[no-redef]
+        if Version(nilearn.__version__) >= Version("0.11"):
+            bbox_nii: SpatialImage = nlimage.threshold_img(bbox_nii, 1e-3, copy_header=True)  # type: ignore[no-redef]
+        else:
+            bbox_nii: SpatialImage = nlimage.threshold_img(bbox_nii, 1e-3)  # type: ignore[no-redef]
 
     cuts = cuts_from_bbox(bbox_nii, cuts=7)
     out_files = []
