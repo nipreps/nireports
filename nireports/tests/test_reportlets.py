@@ -579,6 +579,11 @@ def test_plot_dist(request, tmp_path, outdir):
 
 
 def test_create_cmap(outdir):
+    # FIXME
+    # To be removed: added only to test warnings being treated as errors
+    x = np.array([0.0])
+    _ = np.log(x)
+
     cmap_name = "Reds"
 
     max_alpha = 0.75
