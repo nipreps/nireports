@@ -27,10 +27,10 @@
 import math
 import os
 import typing as ty
+import warnings
 from os import path as op
 from typing import Literal as L
 from uuid import uuid4
-from warnings import warn
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -547,7 +547,9 @@ def plot_mosaic(
         out_file = "mosaic.svg"
 
     if plot_sagittal and views[1] is None and views[0] != "sagittal":
-        warn("Argument ``plot_sagittal`` for plot_mosaic() should not be used.", stacklevel=2)
+        warnings.warn(
+            "Argument ``plot_sagittal`` for plot_mosaic() should not be used.", stacklevel=2
+        )
         views = (views[0], "sagittal", None)
 
     # Create mask for bounding box
