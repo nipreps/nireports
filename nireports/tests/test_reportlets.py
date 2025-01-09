@@ -22,8 +22,8 @@
 #
 """Test reportlets module."""
 
+import contextlib
 import os
-from functools import partial
 from itertools import permutations
 from pathlib import Path
 
@@ -343,21 +343,22 @@ def test_mriqc_plot_mosaic(tmp_path, test_data_package, outdir, views, plot_sagi
 
     fname = f"mosaic_{'_'.join(v or 'none' for v in views)}_{plot_sagittal:d}.svg"
 
-    testfunc = partial(
-        plot_mosaic,
-        get("MNI152NLin6Asym", resolution=2, desc="LR", suffix="T1w"),
-        plot_sagittal=plot_sagittal,
-        views=views,
-        out_file=(outdir / fname) if outdir is not None else None,
-        title=f"A mosaic plotting example: views={views}, plot_sagittal={plot_sagittal}",
-        maxrows=5,
-    )
-
     if views[0] is None or ((views[1] is None) and (views[2] is not None)):
-        with pytest.raises(RuntimeError):
-            testfunc()
+        context = pytest.raises(RuntimeError)
+    elif plot_sagittal and views[1] is None and views[0] != "sagittal":
+        context = pytest.warns(UserWarning, match=r".*plot_sagittal.*should not be used")
     else:
-        testfunc()
+        context = contextlib.nullcontext()
+
+    with context:
+        plot_mosaic(
+            get("MNI152NLin6Asym", resolution=2, desc="LR", suffix="T1w"),
+            plot_sagittal=plot_sagittal,
+            views=views,
+            out_file=(outdir / fname) if outdir is not None else None,
+            title=f"A mosaic plotting example: views={views}, plot_sagittal={plot_sagittal}",
+            maxrows=5,
+        )
 
 
 def test_mriqc_plot_mosaic_2(tmp_path, test_data_package, outdir):
