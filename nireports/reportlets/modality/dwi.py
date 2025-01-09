@@ -80,7 +80,7 @@ def plot_dwi(dataobj, affine, gradient=None, **kwargs):
             if gradient is None
             else f"""\
 $b$={gradient[3].astype(int)}, \
-$\\vec{{b}}$ = ({', '.join(str(v) for v in gradient[:3])})"""
+$\\vec{{b}}$ = ({", ".join(str(v) for v in gradient[:3])})"""
         ),
         **kwargs,
     )

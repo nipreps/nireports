@@ -285,7 +285,7 @@ class Report:
         }
         meta_repl.update({kk: vv for kk, vv in metadata.items() if isinstance(vv, str)})
         meta_repl.update(bids_filters)
-        expr = re.compile(f'{{({"|".join(meta_repl.keys())})}}')
+        expr = re.compile(f"{{({'|'.join(meta_repl.keys())})}}")
 
         for line in bootstrap_file.read_text().splitlines(keepends=False):
             if expr.search(line):
