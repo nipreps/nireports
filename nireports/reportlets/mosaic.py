@@ -553,7 +553,9 @@ def plot_mosaic(
 
     if plot_sagittal and views[1] is None and views[0] != "sagittal":
         warnings.warn(
-            "Argument ``plot_sagittal`` for plot_mosaic() should not be used.", stacklevel=2
+            "Argument ``plot_sagittal`` for plot_mosaic() should not be used.",
+            category=UserWarning,
+            stacklevel=2,
         )
         views = (views[0], "sagittal", None)
 
