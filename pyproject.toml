@@ -175,6 +175,19 @@ addopts = [
   "--cov=nireports",
   "--cov-report=xml",
   "--cov-config=pyproject.toml",
+  # Warnings filters apply most recent first
+  # Note that when adding modules
+  # Default: Error on warnings
+  "-Werror",
+  # traits 6.4.3 still uses sre_parse
+  "-Wignore::DeprecationWarning:traits.observation._generated_parser",
+  # svgutils.compose regular expressions have unescaped backslashes
+  "-Wignore::SyntaxWarning:svgutils.compose",
+  # PendingDeprecations will produce too many false positives
+  # Frequently impossible to address without breaking compatibility with
+  # older versions of the dependency, e.g., seaborn which needs to support
+  # a wide range of matplotlib versions
+  "-Wonce::PendingDeprecationWarning",
 ]
 doctest_optionflags = "ALLOW_UNICODE NORMALIZE_WHITESPACE ELLIPSIS"
 env = "PYTHONHASHSEED=0"
