@@ -35,6 +35,7 @@ import pandas as pd
 import pytest
 from templateflow.api import get
 
+from nireports.reportlets import compression_missing_msg, have_compression
 from nireports.reportlets.modality.func import fMRIPlot
 from nireports.reportlets.mosaic import plot_mosaic
 from nireports.reportlets.nuisance import plot_carpet, plot_raincloud
@@ -181,6 +182,7 @@ def test_fmriplot(input_files, test_data_package, outdir):
         fig.clf()
 
 
+@pytest.mark.skipif(not have_compression, reason=compression_missing_msg)
 def test_plot_melodic_components(tmp_path, outdir):
     """Test plotting melodic components"""
 

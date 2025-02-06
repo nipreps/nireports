@@ -23,18 +23,16 @@
 """Utilities tests"""
 
 import os
-from shutil import which
 
 import pytest
 from nipype.pipeline import engine as pe
 from templateflow.api import get as get_template
 
 from nireports.interfaces.reporting.masks import SimpleShowMaskRPT
+from nireports.reportlets import compression_missing_msg, have_compression
 
 
-@pytest.mark.skipif(
-    which("svgo") is None or which("cwebp") is None, reason="svgo or cwebp missing"
-)
+@pytest.mark.skipif(not have_compression, reason=compression_missing_msg)
 def test_compression(tmp_path):
     """the BET report capable test"""
 
