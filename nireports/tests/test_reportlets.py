@@ -182,7 +182,6 @@ def test_fmriplot(input_files, test_data_package, outdir):
 
 def test_plot_melodic_components(tmp_path, outdir):
     """Test plotting melodic components"""
-    import numpy as np
 
     if outdir is None:
         outdir = Path(str(tmp_path))
