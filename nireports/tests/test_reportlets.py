@@ -311,6 +311,8 @@ def test_cifti_carpetplot(tmp_path, test_data_package, outdir):
         cmap="paired",
     )
 
+    plt.close()
+
 
 def test_nifti_carpetplot(tmp_path, test_data_package, outdir):
     """Exercise extraction of timeseries from CIFTI2."""
