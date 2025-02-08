@@ -24,6 +24,7 @@
 
 import contextlib
 import os
+import warnings
 from itertools import permutations
 from pathlib import Path
 
@@ -239,14 +240,20 @@ def test_plot_melodic_components(tmp_path, outdir):
         out_file=all_noise,
     )
     # run command with no noise components
-    plot_melodic_components(
-        str(melodic_dir),
-        in_fname,
-        tr=2.0,
-        report_mask=report_fname,
-        noise_components_file=nocomps_file,
-        out_file=no_noise,
-    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="loadtxt: input contained no data",
+            category=UserWarning,
+        )
+        plot_melodic_components(
+            str(melodic_dir),
+            in_fname,
+            tr=2.0,
+            report_mask=report_fname,
+            noise_components_file=nocomps_file,
+            out_file=no_noise,
+        )
 
     # run command without noise components file
     plot_melodic_components(
