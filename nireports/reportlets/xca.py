@@ -24,13 +24,15 @@
 # another NiPreps project licensed under the Apache-2.0 terms, and has been changed since.
 """Plotting results of component decompositions (xCA -- P/I-CA)."""
 
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
 import pandas as pd
 from nilearn.plotting.cm import cold_white_hot
 
-from nireports.reportlets.utils import transform_to_2d
+from nireports.reportlets.utils import svg_compress, transform_to_2d
 
 DINA4_LANDSCAPE = (11.69, 8.27)
 
@@ -236,6 +238,10 @@ def plot_melodic_components(
         pad_inches=0.01,
     )
     fig.clf()
+
+    if compress:
+        image_svg = svg_compress(Path(out_file).read_text(), compress=compress)
+        Path(out_file).write_text(image_svg)
 
 
 def compcor_variance_plot(

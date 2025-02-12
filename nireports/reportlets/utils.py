@@ -35,7 +35,6 @@ import typing as ty
 import warnings
 from io import StringIO
 from pathlib import Path
-from shutil import which
 from tempfile import TemporaryDirectory
 from typing import Literal as L
 from uuid import uuid4
@@ -46,6 +45,8 @@ import numpy as np
 import numpy.typing as npt
 from nibabel.spatialimages import SpatialImage
 from svgutils.transform import SVGFigure
+
+from nireports.reportlets import compression_missing_msg, have_compression
 
 from ..tools.ndimage import load_api
 
@@ -95,11 +96,10 @@ def _get_limits(
 def svg_compress(image: str, compress: ty.Union[bool, L["auto"]] = "auto") -> str:
     """Generate a blob SVG from a matplotlib figure, may perform compression."""
     # Check availability of svgo and cwebp
-    has_compress = all((which("svgo"), which("cwebp")))
-    if compress is True and not has_compress:
-        raise RuntimeError("Compression is required, but svgo or cwebp are not installed")
+    if compress is True and not have_compression:
+        raise RuntimeError(f"Compression is required, but {compression_missing_msg}")
     else:
-        compress = (compress is True or compress == "auto") and has_compress
+        compress = (compress is True or compress == "auto") and have_compression
 
     # Compress the SVG file using SVGO
     if compress:
