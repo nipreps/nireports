@@ -43,6 +43,8 @@ DEFAULT_DPI = 300
 DINA4_LANDSCAPE = (11.69, 8.27)
 DINA4_PORTRAIT = (8.27, 11.69)
 
+sns_orient_map = {"v": "x", "h": "y"}
+
 
 def plot_fd(fd_file, fd_radius, mean_fd_dist=None, figsize=DINA4_LANDSCAPE):
     fd_power = _calc_fd(fd_file, fd_radius)
@@ -939,7 +941,7 @@ def _plot_density(x, y, df, group_name, palette, orient):
         palette=palette,
         density_norm="width",
         inner=None,
-        orient=orient,
+        orient=sns_orient_map[orient],
     )
 
     # Cut half of the violins
@@ -975,7 +977,7 @@ def _plot_nans(df, x, y, color, orient, ax):
         y=y,
         data=df_nans,
         color=color,
-        orient=orient,
+        orient=sns_orient_map[orient],
         ax=ax,
     )
 
@@ -1012,7 +1014,7 @@ def _plot_out_of_range(
         y=arithm(limit_value, limit_offset),
         data=df_overflow,
         color=limit_color,
-        orient=orient,
+        orient=sns_orient_map[orient],
         ax=ax,
     )
 
@@ -1128,7 +1130,7 @@ def plot_raincloud(
         showfliers=True,
         whiskerprops={"linewidth": 2, "zorder": 10},
         saturation=1,
-        orient=orient,
+        orient=sns_orient_map[orient],
         ax=ax,
     )
 
@@ -1145,7 +1147,7 @@ def plot_raincloud(
         size=3,
         jitter=0.1,
         zorder=0,
-        orient=orient,
+        orient=sns_orient_map[orient],
         ax=ax,
     )
 
