@@ -130,7 +130,7 @@ def test_carpetplot(tr, sorting, outdir):
         sort_rows=sorting,
     )
 
-    plt.close()
+    plt.close("all")
 
 
 @pytest.mark.parametrize(
@@ -320,7 +320,7 @@ def test_cifti_carpetplot(tmp_path, test_data_package, outdir):
         cmap="paired",
     )
 
-    plt.close()
+    plt.close("all")
 
 
 def test_nifti_carpetplot(tmp_path, test_data_package, outdir):
@@ -342,6 +342,8 @@ def test_nifti_carpetplot(tmp_path, test_data_package, outdir):
         output_file=outdir / "carpetplot_nifti.svg" if outdir is not None else None,
         drop_trs=0,
     )
+
+    plt.close("all")
 
 
 _views = list(permutations(("axial", "sagittal", "coronal", None), 3)) + [
