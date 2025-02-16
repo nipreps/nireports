@@ -24,6 +24,7 @@
 
 import os
 
+import matplotlib.pyplot as plt
 import pytest
 from templateflow.api import get as get_template
 
@@ -57,3 +58,10 @@ def nthreads():
 
     # Tests are linear, so don't worry about leaving space for a control thread
     return min(int(getenv("CIRCLE_NPROCS", "8")), cpu_count())
+
+
+@pytest.fixture(autouse=True)
+def close_mpl_figures():
+    """Automatically close all Matplotlib figures after each test."""
+    yield
+    plt.close("all")
