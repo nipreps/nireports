@@ -50,7 +50,7 @@ def plot_fd(fd_file, fd_radius, mean_fd_dist=None, figsize=DINA4_LANDSCAPE):
     fig = plt.Figure(figsize=figsize)
     FigureCanvas(fig)
 
-    if mean_fd_dist:
+    if mean_fd_dist is not None:
         grid = GridSpec(2, 4)
     else:
         grid = GridSpec(1, 2, width_ratios=[3, 1])
@@ -64,15 +64,17 @@ def plot_fd(fd_file, fd_radius, mean_fd_dist=None, figsize=DINA4_LANDSCAPE):
     ylim = ax.get_ylim()
 
     ax = fig.add_subplot(grid[0, -1])
-    sns.distplot(fd_power, vertical=True, ax=ax)
+    sns.histplot(y=fd_power, kde=True, stat="density", kde_kws={"cut": 3}, edgecolor=None, ax=ax)
     ax.set_ylim(ylim)
 
-    if mean_fd_dist:
+    if mean_fd_dist is not None:
         ax = fig.add_subplot(grid[1, :])
-        sns.distplot(mean_fd_dist, ax=ax)
+        sns.histplot(
+            mean_fd_dist, kde=True, stat="density", kde_kws={"cut": 3}, edgecolor=None, ax=ax
+        )
         ax.set_xlabel("Mean Frame Displacement (over all subjects) [mm]")
         mean_fd = fd_power.mean()
-        label = rf"$\overline{{\text{{FD}}}}$ = {mean_fd:g}"
+        label = f"$\\overline{{\\mathrm{{FD}}}}$ = {mean_fd:g}"
         plot_vline(mean_fd, label, ax=ax)
 
     return fig
@@ -93,11 +95,18 @@ def plot_dist(
 
     gsp = GridSpec(2, 1)
     ax = fig.add_subplot(gsp[0, 0])
-    sns.distplot(data.astype(np.double), kde=False, bins=100, ax=ax)
+    sns.histplot(data.astype(np.double), kde=False, bins=100, edgecolor=None, ax=ax)
     ax.set_xlabel(xlabel)
 
     ax = fig.add_subplot(gsp[1, 0])
-    sns.distplot(np.array(distribution).astype(np.double), ax=ax)
+    sns.histplot(
+        np.array(distribution, dtype="f8"),
+        kde=True,
+        stat="density",
+        kde_kws={"cut": 3},
+        edgecolor=None,
+        ax=ax,
+    )
     cur_val = np.median(data)
     label = f"{cur_val:g}"
     plot_vline(cur_val, label, ax=ax)
