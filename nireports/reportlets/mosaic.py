@@ -43,8 +43,8 @@ from nibabel.spatialimages import SpatialImage
 from nilearn import image as nlimage
 from nilearn.plotting import plot_anat
 from packaging.version import Version
-from svgutils.transform import SVGFigure, fromstring
 
+from nireports._vendored.svgutils.transform import SVGFigure, fromstring
 from nireports.reportlets.utils import (
     _3d_in_file,
     _bbox,
@@ -496,7 +496,7 @@ def plot_spikes(
         fname, ext = op.splitext(op.basename(in_file))
         if ext == ".gz":
             fname, _ = op.splitext(fname)
-        out_file = op.abspath("%s.svg" % fname)
+        out_file = op.abspath(f"{fname}.svg")
 
     fig.savefig(out_file, format="svg", dpi=300, bbox_inches="tight")
     return out_file

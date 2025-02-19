@@ -588,7 +588,7 @@ def get_segment_labels(filepath, keywords, delimiter=" ", index_position=0, labe
     """
     segment_labels = {}
 
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         labels = f.read()
 
     labels_s = [label.split(delimiter) for label in labels.split("\n") if label != ""]

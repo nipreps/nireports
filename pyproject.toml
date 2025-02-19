@@ -32,8 +32,8 @@ dependencies = [
     "pybids >= 0.15.1",
     "pyyaml >= 5.4",
     "seaborn >= 0.13",
-    "svgutils >= 0.3.4",
     "templateflow >= 23.1",
+    "lxml >= 4.6",  # required by vendored svgutils
 ]
 dynamic = ["version"]
 
@@ -214,7 +214,6 @@ module = [
   "nilearn.*",
   "templateflow.*",
   "bids.*",
-  "svgutils.*",
   "pylab",
   "mpl_toolkits.*",
   "nitransforms.*",

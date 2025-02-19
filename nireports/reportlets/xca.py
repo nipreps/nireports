@@ -348,14 +348,14 @@ def compcor_variance_plot(
             ax[m].text(
                 0,
                 100 * thr,
-                "{:.0f}".format(100 * thr),
+                f"{100 * thr:.0f}",
                 fontsize="x-small",
                 bbox=bbox_txt,
             )
             ax[m].text(
                 varexp[thr][0],
                 25,
-                "{} components explain\n{:.0f}% of variance".format(varexp[thr][0], 100 * thr),
+                f"{varexp[thr][0]} components explain\n{100 * thr:.0f}% of variance",
                 rotation=90,
                 horizontalalignment="center",
                 fontsize="xx-small",
