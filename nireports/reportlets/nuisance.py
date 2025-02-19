@@ -69,7 +69,7 @@ def plot_fd(fd_file, fd_radius, mean_fd_dist=None, figsize=DINA4_LANDSCAPE):
 
     if mean_fd_dist:
         ax = fig.add_subplot(grid[1, :])
-        sns.distplot(mean_fd_dist, ax=ax)
+        sns.histplot(mean_fd_dist, kde=True, stat="density", kde_kws={"cut": 3}, ax=ax)
         ax.set_xlabel("Mean Frame Displacement (over all subjects) [mm]")
         mean_fd = fd_power.mean()
         label = rf"$\overline{{\text{{FD}}}}$ = {mean_fd:g}"
@@ -93,11 +93,13 @@ def plot_dist(
 
     gsp = GridSpec(2, 1)
     ax = fig.add_subplot(gsp[0, 0])
-    sns.distplot(data.astype(np.double), kde=False, bins=100, ax=ax)
+    sns.displot(data.astype(np.double), kde=False, bins=100, ax=ax)
     ax.set_xlabel(xlabel)
 
     ax = fig.add_subplot(gsp[1, 0])
-    sns.distplot(np.array(distribution).astype(np.double), ax=ax)
+    sns.histplot(
+        np.array(distribution, dtype="f8"), kde=True, stat="density", kde_kws={"cut": 3}, ax=ax
+    )
     cur_val = np.median(data)
     label = f"{cur_val:g}"
     plot_vline(cur_val, label, ax=ax)
