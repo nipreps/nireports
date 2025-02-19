@@ -17,7 +17,7 @@ XLINK = "{%s}" % XLINK_NAMESPACE
 NSMAP = {None: SVG_NAMESPACE, "xlink": XLINK_NAMESPACE}
 
 
-class FigureElement(object):
+class FigureElement:
     """Base class representing single figure element"""
 
     def __init__(self, xml_element, defs=None):
@@ -223,7 +223,7 @@ class GroupElement(FigureElement):
         self.root = new_group
 
 
-class SVGFigure(object):
+class SVGFigure:
     """SVG Figure.
 
     It setups standalone SVG tree. It corresponds to SVG ``<svg>`` tag.

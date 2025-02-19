@@ -41,10 +41,10 @@ class Unit:
         return u
 
     def __str__(self):
-        return "{}{}".format(self.value, self.unit)
+        return f"{self.value}{self.unit}"
 
     def __repr__(self):
-        return "Unit({})".format(str(self))
+        return f"Unit({self})"
 
     def __mul__(self, number):
         u = Unit("0cm")
