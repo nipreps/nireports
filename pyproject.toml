@@ -33,6 +33,7 @@ dependencies = [
     "pyyaml >= 5.4",
     "seaborn >= 0.13",
     "templateflow >= 23.1",
+    "lxml >= 4.6",  # required by vendored svgutils
 ]
 dynamic = ["version"]
 
