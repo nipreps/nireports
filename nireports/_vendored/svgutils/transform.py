@@ -200,7 +200,7 @@ class LineElement(FigureElement):
 
     def __init__(self, points, width=1, color="black"):
         linedata = "M{} {} ".format(*points[0])
-        linedata += " ".join(map(lambda x: "L{} {}".format(*x), points[1:]))
+        linedata += " ".join("L{} {}".format(*x) for x in points[1:])
         line = etree.Element(
             SVG + "path", {"d": linedata, "stroke-width": str(width), "stroke": color}
         )
@@ -416,8 +416,8 @@ def from_mpl(fig, savefig_kw=None):
 
     try:
         fig.savefig(fid, format="svg", **savefig_kw)
-    except ValueError:
-        raise (ValueError, "No matplotlib SVG backend")
+    except ValueError as e:
+        raise ValueError("No matplotlib SVG backend") from e
     fid.seek(0)
     fig = fromstring(fid.read())
 

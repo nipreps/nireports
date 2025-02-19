@@ -63,11 +63,11 @@ class ColumnLayout(BaseTemplate):
         if self.row_height is None:
             self.row_height = transform_list[0]["height"]
 
-        for i in range(rows):
+        for _ in range(rows):
             element = GroupElement([element])
             element.moveto(0, self.row_height)
 
-        for i in range(cols):
+        for _ in range(cols):
             element = GroupElement([element])
             element.moveto(self.col_width, 0)
 
