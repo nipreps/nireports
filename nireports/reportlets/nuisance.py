@@ -522,7 +522,7 @@ def spikesplot(
             ax.set_xlabel("time (frame #)")
         else:
             ax.set_xlabel("time (s)")
-            ax.set_xticklabels(["%.02f" % t for t in (tr * np.array(xticks)).tolist()])
+            ax.set_xticklabels([f"{t:.2f}" for t in (tr * np.array(xticks)).tolist()])
 
     # Handle Y axis
     ylabel = "slice-wise noise average on background"
@@ -754,7 +754,7 @@ def confoundplot(
     # Annotate percentile 95
     ax_ts.plot((0, ntsteps - 1), [p95] * 2, linewidth=0.1, color="lightgray")
     ax_ts.annotate(
-        "%.2f" % p95,
+        f"{p95:.2f}",
         xy=(0, p95),
         xytext=(-1, 0),
         textcoords="offset points",
@@ -771,7 +771,7 @@ def confoundplot(
         ax_ts.plot((0, ntsteps - 1), [thr] * 2, linewidth=0.2, color="dimgray")
 
         ax_ts.annotate(
-            "%.2f" % thr,
+            f"{thr:.2f}",
             xy=(0, thr),
             xytext=(-1, 0),
             textcoords="offset points",

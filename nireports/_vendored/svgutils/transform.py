@@ -12,8 +12,8 @@ from .common import Unit
 
 SVG_NAMESPACE = "http://www.w3.org/2000/svg"
 XLINK_NAMESPACE = "http://www.w3.org/1999/xlink"
-SVG = "{%s}" % SVG_NAMESPACE
-XLINK = "{%s}" % XLINK_NAMESPACE
+SVG = f"{{{SVG_NAMESPACE}}}"
+XLINK = f"{{{XLINK_NAMESPACE}}}"
 NSMAP = {None: SVG_NAMESPACE, "xlink": XLINK_NAMESPACE}
 
 
@@ -253,7 +253,7 @@ class SVGFigure:
             value = Unit(value)
         self._width = value.value
         self.root.set("width", str(value))
-        self.root.set("viewBox", "0 0 %s %s" % (self._width, self._height))
+        self.root.set("viewBox", f"0 0 {self._width} {self._height}")
 
     @property
     def height(self):
@@ -266,7 +266,7 @@ class SVGFigure:
             value = Unit(value)
         self._height = value.value
         self.root.set("height", str(value))
-        self.root.set("viewBox", "0 0 %s %s" % (self._width, self._height))
+        self.root.set("viewBox", f"0 0 {self._width} {self._height}")
 
     def append(self, element):
         """Append new element to the SVG figure"""

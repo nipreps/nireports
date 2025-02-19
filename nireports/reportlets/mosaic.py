@@ -496,7 +496,7 @@ def plot_spikes(
         fname, ext = op.splitext(op.basename(in_file))
         if ext == ".gz":
             fname, _ = op.splitext(fname)
-        out_file = op.abspath("%s.svg" % fname)
+        out_file = op.abspath(f"{fname}.svg")
 
     fig.savefig(out_file, format="svg", dpi=300, bbox_inches="tight")
     return out_file
