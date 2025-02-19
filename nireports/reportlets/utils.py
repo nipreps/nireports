@@ -179,7 +179,7 @@ def svg2str(display_object: DisplayObject, dpi: int = 300) -> str:
     return image_buf.getvalue()
 
 
-def combine_svg(svg_list: list[svgt.SVGFigure], axis="vertical") -> svgt.SVGFigure:
+def combine_svg(svg_list: list[str], axis="vertical") -> svgt.SVGFigure:
     """
     Composes the input svgs into one standalone svg
     """
