@@ -69,7 +69,7 @@ jobs:
           - os: ubuntu-latest
             python-version: "3.10"
             dependencies: pre
-          # If we reenable Windows/Mac tests, add the following exclusions:
+          # If we re-enable Windows/Mac tests, add the following exclusions:
           # 32-bit is a Windows-only consideration
           # Only run 2 newest Python on Windows/Mac
           # Skip 32-bit Windows with Python 3.10+ (see #42)
