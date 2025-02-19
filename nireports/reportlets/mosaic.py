@@ -43,8 +43,8 @@ from nibabel.spatialimages import SpatialImage
 from nilearn import image as nlimage
 from nilearn.plotting import plot_anat
 from packaging.version import Version
-from svgutils.transform import SVGFigure, fromstring
 
+from nireports._vendored.svgutils.transform import SVGFigure, fromstring
 from nireports.reportlets.utils import (
     _3d_in_file,
     _bbox,

@@ -44,8 +44,8 @@ import nibabel as nb
 import numpy as np
 import numpy.typing as npt
 from nibabel.spatialimages import SpatialImage
-from svgutils.transform import SVGFigure
 
+import nireports._vendored.svgutils.transform as svgt
 from nireports.reportlets import compression_missing_msg, have_compression
 
 from ..tools.ndimage import load_api
@@ -179,12 +179,11 @@ def svg2str(display_object: DisplayObject, dpi: int = 300) -> str:
     return image_buf.getvalue()
 
 
-def combine_svg(svg_list: list[SVGFigure], axis="vertical") -> SVGFigure:
+def combine_svg(svg_list: list[svgt.SVGFigure], axis="vertical") -> svgt.SVGFigure:
     """
     Composes the input svgs into one standalone svg
     """
     import numpy as np
-    import svgutils.transform as svgt
 
     # Read all svg files and get roots
     svgs = [svgt.fromstring(f.encode("utf-8")) for f in svg_list]
@@ -340,8 +339,8 @@ def _3d_in_file(
 
 
 def compose_view(
-    bg_svgs: list[SVGFigure],
-    fg_svgs: list[SVGFigure],
+    bg_svgs: list[svgt.SVGFigure],
+    fg_svgs: list[svgt.SVGFigure],
     ref: int = 0,
     out_file: ty.Union[str, os.PathLike[str]] = "report.svg",
 ) -> str:
@@ -370,12 +369,11 @@ def compose_view(
 
 
 def _compose_view(
-    bg_svgs: list[SVGFigure],
-    fg_svgs: list[SVGFigure],
+    bg_svgs: list[svgt.SVGFigure],
+    fg_svgs: list[svgt.SVGFigure],
     ref: int = 0,
 ) -> list[str]:
-    from svgutils.compose import Unit
-    from svgutils.transform import GroupElement
+    from nireports._vendored.svgutils.compose import Unit
 
     if fg_svgs is None:
         fg_svgs = []
@@ -397,7 +395,7 @@ def _compose_view(
 
     # Compose the views panel: total size is the width of
     # any element (used the first here) and the sum of heights
-    fig = SVGFigure(Unit(f"{width}px"), Unit(f"{heights[:nsvgs].sum()}px"))
+    fig = svgt.SVGFigure(Unit(f"{width}px"), Unit(f"{heights[:nsvgs].sum()}px"))
 
     yoffset = 0
     for i, r in enumerate(roots):
@@ -410,8 +408,8 @@ def _compose_view(
     # Group background and foreground panels in two groups
     if fg_svgs:
         newroots = [
-            GroupElement(roots[:nsvgs], {"class": "background-svg"}),
-            GroupElement(roots[nsvgs:], {"class": "foreground-svg"}),
+            svgt.GroupElement(roots[:nsvgs], {"class": "background-svg"}),
+            svgt.GroupElement(roots[nsvgs:], {"class": "foreground-svg"}),
         ]
     else:
         newroots = roots
