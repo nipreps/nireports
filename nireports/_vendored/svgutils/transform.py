@@ -1,12 +1,8 @@
 import codecs
 from copy import deepcopy
+from io import StringIO
 
 from lxml import etree
-
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 from .common import Unit
 
