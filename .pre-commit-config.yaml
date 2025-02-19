@@ -13,7 +13,7 @@ exclude: |
     )$
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.2.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -27,8 +27,14 @@ repos:
       - id: check-vcs-permalinks
       - id: pretty-format-json
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.4
+    rev: v0.9.6
     hooks:
       - id: ruff
         args: [ --fix ]
       - id: ruff-format
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1
+    hooks:
+      - id: codespell
+        additional_dependencies:
+          - tomli
