@@ -178,7 +178,10 @@ addopts = [
 ]
 doctest_optionflags = "ALLOW_UNICODE NORMALIZE_WHITESPACE ELLIPSIS"
 env = "PYTHONHASHSEED=0"
-filterwarnings = ["ignore::DeprecationWarning"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore:.*bool will be deprecated in a future version.*:PendingDeprecationWarning",
+]
 junit_family = "xunit2"
 
 
