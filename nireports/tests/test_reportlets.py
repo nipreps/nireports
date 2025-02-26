@@ -180,8 +180,10 @@ def test_fmriplot(input_files, test_data_package, outdir):
 
 
 @pytest.mark.skipif(not have_compression, reason=compression_missing_msg)
-def test_plot_melodic_components(tmp_path, outdir):
+def test_plot_melodic_components(request, tmp_path, outdir):
     """Test plotting melodic components"""
+
+    rng = request.node.rng
 
     if outdir is None:
         outdir = Path(str(tmp_path))
@@ -194,19 +196,19 @@ def test_plot_melodic_components(tmp_path, outdir):
     melodic_dir = tmp_path / "melodic"
     melodic_dir.mkdir(exist_ok=True)
     # melodic_mix
-    mel_mix = np.random.randint(low=-5, high=5, size=[10, 2])
+    mel_mix = rng.integers(low=-5, high=5, size=[10, 2])
     mel_mix_file = str(melodic_dir / "melodic_mix")
     np.savetxt(mel_mix_file, mel_mix, fmt="%i")
     # melodic_FTmix
-    mel_ftmix = np.random.rand(2, 5)
+    mel_ftmix = rng.random((2, 5))
     mel_ftmix_file = str(melodic_dir / "melodic_FTmix")
     np.savetxt(mel_ftmix_file, mel_ftmix)
     # melodic_ICstats
-    mel_icstats = np.random.rand(2, 2)
+    mel_icstats = rng.random((2, 2))
     mel_icstats_file = str(melodic_dir / "melodic_ICstats")
     np.savetxt(mel_icstats_file, mel_icstats)
     # melodic_IC
-    mel_ic = np.random.rand(2, 2, 2, 2)
+    mel_ic = rng.random((2, 2, 2, 2))
     mel_ic_file = str(melodic_dir / "melodic_IC.nii.gz")
     mel_ic_img = nb.Nifti2Image(mel_ic, np.eye(4))
     mel_ic_img.to_filename(mel_ic_file)
@@ -221,7 +223,7 @@ def test_plot_melodic_components(tmp_path, outdir):
 
     # in_file
     in_fname = str(tmp_path / "in_file.nii.gz")
-    voxel_ts = np.random.rand(2, 2, 2, 10)
+    voxel_ts = rng.random((2, 2, 2, 10))
     in_file = nb.Nifti2Image(voxel_ts, np.eye(4))
     in_file.to_filename(in_fname)
     # report_mask
@@ -276,13 +278,15 @@ def test_compcor_variance_plot(tmp_path, test_data_package, outdir):
 
 
 @pytest.fixture
-def create_surface_dtseries():
+def create_surface_dtseries(request):
     """Create a dense timeseries CIFTI-2 file with only cortex structures"""
+
+    rng = request.node.rng
     out_file = _create_dtseries_cifti(
         timepoints=10,
         models=[
-            ("CIFTI_STRUCTURE_CORTEX_LEFT", np.random.rand(29696, 10)),
-            ("CIFTI_STRUCTURE_CORTEX_RIGHT", np.random.rand(29716, 10)),
+            ("CIFTI_STRUCTURE_CORTEX_LEFT", rng.random((29696, 10))),
+            ("CIFTI_STRUCTURE_CORTEX_RIGHT", rng.random((29716, 10))),
         ],
     )
     yield str(out_file)

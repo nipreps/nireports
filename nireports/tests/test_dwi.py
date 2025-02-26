@@ -120,7 +120,7 @@ def test_plot_tissue_values(tmp_path):
     )
 
 
-def test_nii_to_carpetplot_data(tmp_path, test_data_package, outdir):
+def test_nii_to_carpetplot_data(request, tmp_path, test_data_package, outdir):
     """Check the nii to carpet plot data function"""
 
     testdata_name = "ds000114_sub-01_ses-test_desc-trunc_dwi"
@@ -128,7 +128,10 @@ def test_nii_to_carpetplot_data(tmp_path, test_data_package, outdir):
     nii = nb.load(test_data_package / f"{testdata_name}.nii.gz")
     bvals = np.loadtxt(test_data_package / f"{testdata_name}.bval")
 
-    mask_data = np.round(82 * np.random.rand(nii.shape[0], nii.shape[1], nii.shape[2]))
+    rng = request.node.rng
+    mask_data = np.round(82 * rng.random((nii.shape[0], nii.shape[1], nii.shape[2]))).astype(
+        np.float32
+    )
 
     mask_nii = nb.Nifti1Image(mask_data, np.eye(4))
 

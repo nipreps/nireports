@@ -25,6 +25,7 @@
 import os
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pytest
 from templateflow.api import get as get_template
 
@@ -65,3 +66,9 @@ def close_mpl_figures():
     """Automatically close all Matplotlib figures after each test."""
     yield
     plt.close("all")
+
+
+@pytest.fixture(autouse=True)
+def random_number_generator(request):
+    """Automatically set a fixed-seed random number generator for all tests."""
+    request.node.rng = np.random.default_rng(1234)
