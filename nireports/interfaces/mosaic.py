@@ -88,7 +88,7 @@ class PlotContours(SimpleInterface):
             in_file_ref = Path(self.inputs.out_file)
 
         fname = in_file_ref.name.rstrip("".join(in_file_ref.suffixes))
-        out_file = (Path(runtime.cwd) / ("plot_%s_contours.svg" % fname)).resolve()
+        out_file = (Path(runtime.cwd) / (f"plot_{fname}_contours.svg")).resolve()
         self._results["out_file"] = str(out_file)
 
         vmax = None if not isdefined(self.inputs.vmax) else self.inputs.vmax

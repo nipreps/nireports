@@ -135,7 +135,7 @@ class ACompCorRPT(nrb.SegmentationRC, confounds.ACompCor):
         if len(self.inputs.mask_files) != 1:
             raise ValueError(
                 "ACompCorRPT only supports a single input mask. "
-                "A list %s was found." % self.inputs.mask_files
+                f"A list {self.inputs.mask_files} was found."
             )
         self._anat_file = self.inputs.realigned_file
         self._mask_file = self.inputs.mask_files[0]
@@ -171,7 +171,7 @@ class TCompCorRPT(nrb.SegmentationRC, confounds.TCompCor):
         if isinstance(high_variance_masks, list):
             raise ValueError(
                 "TCompCorRPT only supports a single output high variance mask. "
-                "A list %s was found." % high_variance_masks
+                f"A list {high_variance_masks} was found."
             )
         self._anat_file = self.inputs.realigned_file
         self._mask_file = high_variance_masks
