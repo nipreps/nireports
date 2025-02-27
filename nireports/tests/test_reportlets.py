@@ -28,6 +28,7 @@ import warnings
 from itertools import permutations
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
 import pandas as pd
@@ -38,7 +39,7 @@ import nireports._vendored.svgutils.transform as svgt
 from nireports.reportlets import compression_missing_msg, have_compression
 from nireports.reportlets.modality.func import fMRIPlot
 from nireports.reportlets.mosaic import plot_mosaic, plot_segs
-from nireports.reportlets.nuisance import plot_carpet, plot_raincloud
+from nireports.reportlets.nuisance import plot_carpet, plot_dist, plot_fd, plot_raincloud
 from nireports.reportlets.surface import cifti_surfaces_plot
 from nireports.reportlets.utils import _3d_in_file
 from nireports.reportlets.xca import compcor_variance_plot, plot_melodic_components
@@ -510,3 +511,41 @@ def test_plot_segs(request, outdir):
 
     if outdir is not None:
         [res.save(outdir / f"plot_seg_{idx:03d}.svg") for idx, res in enumerate(result)]
+
+
+def test_plot_fd(request, tmp_path, outdir):
+    rng = request.node.rng
+
+    fd_file = os.path.join(tmp_path, "fd.txt")
+    fd_radius = 50
+    mean_fd_dist = rng.random(100)
+
+    # Simulate FD file content
+    with open(fd_file, "w") as f:
+        for _ in range(100):
+            f.write(" ".join(map(str, rng.random(6))) + "\n")
+
+    fig = plot_fd(fd_file, fd_radius, mean_fd_dist=mean_fd_dist)
+    assert fig is not None
+    if outdir is not None:
+        fig.savefig(outdir / "test_plot_fd.svg")
+    plt.close(fig)
+
+
+def test_plot_dist(request, tmp_path, outdir):
+    rng = request.node.rng
+    distribution = rng.random(100)
+    xlabel = "Distribution"
+    xlabel2 = "Another Distribution"
+
+    fig = plot_dist(
+        get("MNI152NLin2009aAsym", resolution=1, suffix="T1w"),
+        get("MNI152NLin2009aAsym", resolution=1, desc="brain", suffix="mask"),
+        xlabel,
+        distribution=distribution,
+        xlabel2=xlabel2,
+    )
+    assert fig is not None
+    if outdir is not None:
+        fig.savefig(outdir / "test_plot_dist.svg")
+    plt.close(fig)
