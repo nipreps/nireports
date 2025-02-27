@@ -49,10 +49,10 @@ from nireports.tools.timeseries import nifti_timeseries as _nifti_timeseries
 
 @pytest.mark.parametrize("tr", (None, 0.7))
 @pytest.mark.parametrize("sorting", (None, "ward", "linkage"))
-def test_carpetplot(tr, sorting, outdir):
+def test_carpetplot(request, tr, sorting, outdir):
     """Write a carpetplot"""
 
-    rng = np.random.default_rng(2010)
+    rng = request.node.rng
     plot_carpet(
         rng.normal(100, 20, size=(18000, 1900)),
         title="carpetplot with title",
@@ -141,9 +141,9 @@ def test_carpetplot(tr, sorting, outdir):
         ),
     ],
 )
-def test_fmriplot(input_files, test_data_package, outdir):
+def test_fmriplot(request, input_files, test_data_package, outdir):
     """Exercise the fMRIPlot class."""
-    rng = np.random.default_rng(2010)
+    rng = request.node.rng
 
     in_file = os.path.join(test_data_package, input_files[0])
     seg_file = (
