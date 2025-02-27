@@ -34,11 +34,13 @@ import pandas as pd
 import pytest
 from templateflow.api import get
 
+import nireports._vendored.svgutils.transform as svgt
 from nireports.reportlets import compression_missing_msg, have_compression
 from nireports.reportlets.modality.func import fMRIPlot
-from nireports.reportlets.mosaic import plot_mosaic
+from nireports.reportlets.mosaic import plot_mosaic, plot_segs
 from nireports.reportlets.nuisance import plot_carpet, plot_raincloud
 from nireports.reportlets.surface import cifti_surfaces_plot
+from nireports.reportlets.utils import _3d_in_file
 from nireports.reportlets.xca import compcor_variance_plot, plot_melodic_components
 from nireports.tests.testing import _create_dtseries_cifti
 from nireports.tests.utils import _generate_raincloud_random_data
@@ -486,3 +488,25 @@ def test_plot_raincloud(orient, density, tmp_path):
         nans_value=nans_value,
         output_file=output_file,
     )
+
+
+def test_plot_segs(request, outdir):
+    rng = request.node.rng
+
+    image_data = rng.random((5, 5, 5))
+    seg_data = rng.random((5, 5, 5))
+
+    image_nii = _3d_in_file(nb.Nifti1Image(image_data, np.eye(4)))
+    seg_niis = [_3d_in_file(nb.Nifti1Image(seg_data, np.eye(4)))]
+
+    bbox_nii = None
+    masked = False
+    compress = "auto"
+
+    result = plot_segs(image_nii, seg_niis, bbox_nii=bbox_nii, masked=masked, compress=compress)
+    assert isinstance(result, list)
+    assert len(result) == 3
+    assert all(isinstance(svg, svgt.SVGFigure) for svg in result)
+
+    if outdir is not None:
+        [res.save(outdir / f"plot_seg_{idx:03d}.svg") for idx, res in enumerate(result)]
