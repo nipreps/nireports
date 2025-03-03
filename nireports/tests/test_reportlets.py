@@ -549,8 +549,7 @@ def test_plot_fd(request, tmp_path, outdir):
 
     # Simulate FD file content
     with open(fd_file, "w") as f:
-        for _ in range(100):
-            f.write(" ".join(map(str, rng.random(6))) + "\n")
+        f.writelines(" ".join(map(str, rng.random(6))) + "\n" for _ in range(100))
 
     fig = plot_fd(fd_file, fd_radius, mean_fd_dist=mean_fd_dist)
     assert fig is not None
