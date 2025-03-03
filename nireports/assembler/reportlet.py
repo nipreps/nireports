@@ -217,7 +217,7 @@ class Reportlet:
             bidsquery = _bidsquery
             self.name = config.get(
                 "name",
-                "_".join("%s-%s" % i for i in sorted(bidsquery.items())),
+                "_".join("{}-{}".format(*i) for i in sorted(bidsquery.items())),
             )
 
             # Query the BIDS layout of reportlets

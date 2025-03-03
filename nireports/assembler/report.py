@@ -385,7 +385,7 @@ class Report:
                         if c_value is not None
                     ]
                     # Set a common title for this particular combination c
-                    title = "Reports for: %s." % ", ".join(c_filt)
+                    title = "Reports for: {}.".format(", ".join(c_filt))
 
                     for cfg in subrep_cfg["reportlets"]:
                         cfg["bids"].update({entities[i]: c[i] for i in range(len(c))})
