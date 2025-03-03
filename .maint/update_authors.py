@@ -2,6 +2,7 @@
 """Update and sort the creators list of the zenodo record."""
 
 import json
+import operator
 import sys
 from pathlib import Path
 
@@ -57,7 +58,7 @@ def read_md_table(md_text):
 def sort_contributors(entries, git_lines, exclude=None, last=None):
     """Return a list of author dictionaries, ordered by contribution."""
     last = last or []
-    sorted_authors = sorted(entries, key=lambda i: i["name"])
+    sorted_authors = sorted(entries, key=operator.itemgetter("name"))
 
     first_last = [" ".join(val["name"].split(",")[::-1]).strip() for val in sorted_authors]
     first_last_excl = [" ".join(val["name"].split(",")[::-1]).strip() for val in exclude or []]
