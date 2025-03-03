@@ -147,7 +147,8 @@ def _calc_rows_columns(ratio, n_images):
 def _calc_fd(fd_file, fd_radius):
     from math import pi
 
-    lines = open(fd_file).readlines()
+    with open(fd_file) as f:
+        lines = f.readlines()
     rows = [[float(x) for x in line.split()] for line in lines]
     cols = np.array([list(col) for col in zip(*rows)])
 
