@@ -130,9 +130,7 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = [
-  "F",
-  "E",
+extend-select = [
   "C",
   "W",
   "B",
@@ -141,7 +139,6 @@ select = [
   "RUF",
 ]
 ignore = [
-  "E203",
   "B019",
   "SIM108",
   "C901",
