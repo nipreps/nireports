@@ -138,12 +138,15 @@ select = [
   "B",
   "I",
   "SIM",
+  "RUF",
 ]
 ignore = [
   "E203",
   "B019",
   "SIM108",
   "C901",
+  "RUF005",
+  "RUF012",
 ]
 
 [tool.ruff.lint.flake8-quotes]
