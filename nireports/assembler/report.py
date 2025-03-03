@@ -42,7 +42,7 @@ from nireports.assembler.reportlet import Reportlet
 try:
     add_config_paths(figures=data.load("nipreps.json"))
 except ValueError as e:
-    if "Configuration 'figures' already exists" != str(e):
+    if str(e) != "Configuration 'figures' already exists":
         raise
 
 PLURAL_SUFFIX = defaultdict("s".format, [("echo", "es")])
