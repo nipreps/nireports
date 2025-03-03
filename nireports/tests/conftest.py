@@ -23,6 +23,7 @@
 """py.test configuration file"""
 
 import os
+import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -72,3 +73,23 @@ def close_mpl_figures():
 def random_number_generator(request):
     """Automatically set a fixed-seed random number generator for all tests."""
     request.node.rng = np.random.default_rng(1234)
+
+
+def pytest_configure(config):
+    if sys.version_info < (3, 10):
+        config.addinivalue_line(
+            "filterwarnings",
+            "ignore:.*Fetchers from the nilearn.datasets module will be.*:FutureWarning",
+        )
+        config.addinivalue_line(
+            "filterwarnings",
+            'ignore:.*"is not" with a literal. Did you mean.*:SyntaxWarning',
+        )
+        config.addinivalue_line(
+            "filterwarnings",
+            "ignore:.*No contour levels were found within the data range.*:UserWarning",
+        )
+        config.addinivalue_line(
+            "filterwarnings",
+            "ignore:.*A value is trying to be set on a copy of a slice from a DataFrame.*:Warning",  # noqa:E501
+        )
