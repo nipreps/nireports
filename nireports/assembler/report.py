@@ -65,7 +65,7 @@ OUTPUT_NAME_PATTERN = [
 class SubReport:
     """SubReports are sections within a Report."""
 
-    __slots__ = {
+    __slots__ = {  # noqa: RUF023
         "name": "a unique subreport name",
         "title": "a header for the content included in the subreport",
         "reportlets": "the collection of reportlets in this subreport",
@@ -228,7 +228,7 @@ class Report:
 
     """
 
-    __slots__ = {
+    __slots__ = {  # noqa: RUF023
         "title": "the title that will be shown in the browser",
         "sections": "a header for the content included in the subreport",
         "out_filename": "output path where report will be stored",
