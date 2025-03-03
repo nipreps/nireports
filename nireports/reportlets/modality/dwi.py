@@ -151,7 +151,7 @@ def plot_heatmap(
         axs[i].tick_params(which="minor", bottom=False, left=False)
         axs[i].set_ylabel(f"$b$ = {bvals[i]}\n($n$ = {len(b_indices[i])})", fontsize=15)
 
-        marginal_H, edges = np.histogram(x, bins=bins[0], range=(0, int(imax)), density=True)
+        marginal_H, _edges = np.histogram(x, bins=bins[0], range=(0, int(imax)), density=True)
         axs[-1].bar(
             np.linspace(0, bins[0], num=bins[0], endpoint=False, dtype=int),
             marginal_H,
