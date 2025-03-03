@@ -590,7 +590,7 @@ def test_create_cmap(outdir):
     assert ls_cmap._lut.shape == orig_cmap._lut.shape
     assert np.allclose(ls_cmap._lut[0, -1], 0.0)
     assert np.allclose(ls_cmap._lut[ls_cmap.N - 1, -1], max_alpha)
-    assert np.all(0.0 <= ls_cmap._lut[:, -1]) and np.all(ls_cmap._lut[:, -1] <= max_alpha)
+    assert np.all(0.0 <= ls_cmap._lut[:, -1]) and np.all(ls_cmap._lut[:, -1] <= max_alpha)  # noqa: SIM300
     # Check that all values (excluding the bad/over/under) are monotonically increasing
     assert np.all(np.diff(ls_cmap._lut[: ls_cmap.N - 1, -1]) >= 0)
     assert [
