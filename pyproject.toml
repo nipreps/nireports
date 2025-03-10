@@ -139,6 +139,7 @@ select = [
   "B",
   "I",
   "SIM",
+  "FURB",
 ]
 ignore = [
   "E203",
