@@ -1,3 +1,42 @@
+25.0.0 (March 20, 2025)
+=======================
+New feature release in the 25.0.x series.
+
+This release vendors the unmaintained ``svgutils`` package to resolve
+warnings and eventual errors.
+This release also includes initial type annotations for the package,
+as well as a large number of fixes for warnings, to improve the user
+experience for downstream packages.
+
+* ENH: Fix `seaborn` and `matplotlib` orientation warning (#166)
+* ENH: Refactor mosaic plot custom colormap creation (#151)
+* ENH: Test the segmentation contour plot methods (#175)
+* ENH: Prefer using NumPy's random number generator (#176)
+* ENH: Prefer using NumPy's random number generator (#174)
+* ENH: Use a fixture to close `Matplotlib` figures in tests (#169)
+* ENH: Close all `Matplotlib` figures in relevant tests explicitly (#167)
+* ENH: Make use of the `compress` option in melodic plot function (#163)
+* ENH: Catch warning when loaded text file contains no data in test (#156)
+* ENH: Close figures in test explicitly (#165)
+* ENH: Remove duplicate local `NumPy` import in test function (#164)
+* ENH: Avoid divide by zero warnings when normalizing DWI data (#154)
+* ENH: Close figures in test explicitly (#155)
+* ENH: Fix mosaic plot `plot_sagittal` parameter warning (#160)
+* ENH: Copy NIfTI image header when creating from image (#158)
+* ENH: Remove unused parameter in segmentation mosaic plot function (#152)
+* ENH: Make type hinting compatible with Python 3.9 (#149)
+* RF: Vendor svgutils into nireports._vendored (#172)
+* TYP: Relax Nifti1Image to SpatialImage (#153)
+* TYP: Annotate reportlets.mosaic (#150)
+* TYP: Annotate tools and reportlets.utils (#147)
+* TYP: Configure and run mypy checks in CI (#146)
+* DOC: Consider warnings as errors in documentation CI build (#162)
+* MNT: Update deprecated `seaborn` function calls before they error (#171)
+* MNT: Update pre-commit config, add codespell (#173)
+* STY: Enforce ruff/flake8-simplify rules (SIM) (#181)
+* STY: Prefer importing `warnings` for the sake of consistency (#159)
+
+
 24.1.0 (December 18, 2024)
 ==========================
 New feature release in the 24.1.x series.
