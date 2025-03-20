@@ -114,17 +114,23 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/templateflow
-          key: templateflow-v2
-          # Fall back to and build on v1
+          key: templateflow-v3
+          # Fall back to and build on v2
           # If the cache need to be cleared, remove this when bumping key version
           restore-keys: |
-            templateflow-v1
+            templateflow-v2
       - name: Pre-fetch templates
         run: |
           uv pip install --system templateflow
-          python -c "from templateflow.api import get; get('Fischer344', desc=None, suffix='T2w')"
-          python -c "from templateflow.api import get; get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')"
-        if: steps.tf-restore-cache.outputs.cache-hit != 'true'
+          python <<END
+          from templateflow.api import get
+          get('Fischer344', desc=None, suffix='T2w')
+          get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')
+          get('MNI152NLin2009cAsym', resolution=1, desc='brain', suffix='mask')
+          get('MNI152NLin2009cAsym', resolution=1, suffix='T1w')
+          get('MNI152NLin2009cAsym', resolution=1, label='WM', suffix='probseg')
+          END
+        if: steps.tf-cache-restore.outputs.cache-hit != 'true'
 
       - name: Install tox
         run: |
