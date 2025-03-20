@@ -72,7 +72,7 @@ types = [
     "types-jinja2",
     "types-pyyaml",
     "pytest",
-    "microsoft-python-type-stubs @ git+https://github.com/microsoft/python-type-stubs.git",
+    "lxml-stubs",
 ]
 
 # Aliases
