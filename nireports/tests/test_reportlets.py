@@ -25,7 +25,7 @@
 import contextlib
 import os
 import warnings
-from itertools import permutations
+from itertools import permutations, starmap
 from pathlib import Path
 
 import matplotlib as mpl
@@ -549,8 +549,7 @@ def test_plot_fd(request, tmp_path, outdir):
 
     # Simulate FD file content
     with open(fd_file, "w") as f:
-        for _ in range(100):
-            f.write(" ".join(map(str, rng.random(6))) + "\n")
+        f.writelines(" ".join(map(str, rng.random(6))) + "\n" for _ in range(100))
 
     fig = plot_fd(fd_file, fd_radius, mean_fd_dist=mean_fd_dist)
     assert fig is not None
@@ -597,10 +596,9 @@ def test_create_cmap(outdir):
         key1 == key2
         for key1, key2 in zip(orig_cmap._segmentdata.keys(), ls_cmap._segmentdata.keys())
     ]
-    assert [
-        np.allclose(val1, val2)
-        for val1, val2 in zip(orig_cmap._segmentdata.values(), ls_cmap._segmentdata.values())
-    ]
+    assert list(
+        starmap(np.allclose, zip(orig_cmap._segmentdata.values(), ls_cmap._segmentdata.values()))
+    )
 
     fig, ax = plt.subplots(1, 1, figsize=(12, 10), constrained_layout=True)
     _ = plt.colorbar(plt.cm.ScalarMappable(cmap=ls_cmap), cax=ax, orientation="horizontal")
