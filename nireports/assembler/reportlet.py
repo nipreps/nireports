@@ -32,6 +32,7 @@ import acres
 from nipype.utils.filemanip import copyfile
 
 from nireports.assembler.misc import dict2html, read_crashfile
+from nireports.exceptions import RequiredReportletException
 
 IMG_SNIPPET = """\
 <div class="reportlet">
@@ -445,6 +446,9 @@ class Reportlet:
                 else:
                     boiler_tabs.append("</ul>")
                     self.components.append(("\n".join(boiler_tabs + boiler_body), desc_text))
+
+        if config.get("required", False) and self.is_empty():
+            raise RequiredReportletException(config)
 
     def is_empty(self):
         """Determine whether the reportlet has no components."""
