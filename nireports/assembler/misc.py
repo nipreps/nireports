@@ -156,7 +156,7 @@ def dict2html(indict, table_id):
             colstring = ""
             if (width - ncols) > 0 and i == ncols - 2:
                 colspan = (width - ncols) + 1
-                colstring = " colspan=%d" % colspan
+                colstring = f" colspan={colspan}"
             result_str += td(col, colstring)
         result_str += "</tr>\n"
     result_str += "</table>\n"

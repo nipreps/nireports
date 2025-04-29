@@ -28,9 +28,9 @@ import math
 import os
 import typing as ty
 import warnings
+from collections.abc import Sequence
 from os import path as op
 from typing import Literal as L
-from typing import Sequence
 from uuid import uuid4
 
 import matplotlib as mpl
