@@ -54,11 +54,14 @@ OUTPUT_NAME_PATTERN = [
     "{extension<.html|.svg>|.html}",
     "sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]"
     "[_dir-{direction}][_run-{run}][_space-{space}][_cohort-{cohort}][_desc-{desc}]"
-    "[_{suffix<T1w|T2w|T1rho|T1map|T2map|T2star|FLAIR|FLASH|PDmap|PD|PDT2|inplaneT[12]|"
+    "[_{suffix<T1w|T2w|T1rho|T1map|T2map|T2star|FLAIR|FLASH|PDmap|PD|PDT2|"
     "angio|dseg|mask|dwi|epiref|T2starw|MTw|TSE>}]{extension<.html|.svg>|.html}",
     # "sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]"
     # "[_run-{run}][_space-{space}][_cohort-{cohort}][_fmapid-{fmapid}][_desc-{desc}]_"
     # "{suffix<fieldmap>}{extension<.html|.svg>|.html}",
+    ("sub-{subject}[_ses-{session}][_acq-{acquisition}][_rec-{reconstruction}]"
+     "[_run-{run}][_space-{space}][_cohort-{cohort}][_desc-{desc}]_{suffix<pet>}"
+     "{extension<.html|.svg|.png>|.html}")
 ]
 
 
