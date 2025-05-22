@@ -44,6 +44,7 @@ class fMRIPlot:
         "spikes",
         "timeseries",
         "tr",
+        "detrend",
     )
 
     def __init__(
@@ -60,6 +61,7 @@ class fMRIPlot:
         nskip=0,
         sort_carpet=True,
         paired_carpet=False,
+        detrend=True,
     ):
         self.timeseries = timeseries
         self.segments = segments
@@ -67,7 +69,7 @@ class fMRIPlot:
         self.nskip = nskip
         self.sort_carpet = sort_carpet
         self.paired_carpet = paired_carpet
-
+        self.detrend = detrend
         if units is None:
             units = {}
         if vlines is None:
@@ -137,6 +139,7 @@ class fMRIPlot:
             sort_rows=self.sort_carpet,
             drop_trs=self.nskip,
             cmap="paired" if self.paired_carpet else None,
+            detrend=self.detrend,
         )
 
         if out_file is not None:
