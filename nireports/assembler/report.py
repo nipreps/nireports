@@ -61,7 +61,7 @@ OUTPUT_NAME_PATTERN = [
     # "{suffix<fieldmap>}{extension<.html|.svg>|.html}",
     "sub-{subject}[_ses-{session}][_acq-{acquisition}][_rec-{reconstruction}]"
     "[_run-{run}][_space-{space}][_cohort-{cohort}][_desc-{desc}]_{suffix<pet>}"
-    "{extension<.html|.svg|.png>|.html}")
+    "{extension<.html|.svg|.png>|.html}",
 ]
 
 
