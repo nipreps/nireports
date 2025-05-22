@@ -1,3 +1,13 @@
+25.1.0 (May 22, 2025)
+=====================
+New feature release in the 25.0.x series.
+
+This release drops support for Python 3.9.
+
+* ENH: Add detrend parameter to fMRIPlot (#190)
+* ENH: Add output_name_pattern for PET (#188)
+* MNT: Update templateflow cache, use OIDC PyPI uploads (#185)
+
 25.0.1 (March 20, 2025)
 =======================
 Hot fix in the 25.0.x series.
