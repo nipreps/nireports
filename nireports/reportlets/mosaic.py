@@ -317,7 +317,7 @@ def plot_segmentation(anat_file: str, segmentation: str, out_file: str, **kwargs
         seg_ras.dataobj, _dicom_real_to_card(seg_ras.affine), seg_ras.header
     )
 
-    if kwargs.get("saturate", False):
+    if kwargs.get("saturate"):
         vmax = np.percentile(anat_ras.get_fdata().reshape(-1), 70)
 
     if vmax is None and vmin is None:
