@@ -70,6 +70,7 @@ class fMRIPlot:
         self.sort_carpet = sort_carpet
         self.paired_carpet = paired_carpet
         self.detrend = detrend
+
         if units is None:
             units = {}
         if vlines is None:
