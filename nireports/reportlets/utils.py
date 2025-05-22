@@ -439,7 +439,7 @@ def _compose_view(
 @keyframes flickerAnimation%s { 0%% {opacity: 1;} 100%% { opacity: 0; }}
 .foreground-svg { animation: 1s ease-in-out 0s alternate none infinite paused flickerAnimation%s;}
 .foreground-svg:hover { animation-play-state: running;}
-</style>"""
+</style>"""  # noqa: UP031
             % tuple([uuid4()] * 2),
         )
 

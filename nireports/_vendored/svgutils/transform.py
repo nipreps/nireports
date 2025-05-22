@@ -36,8 +36,9 @@ class FigureElement:
             scale_y = scale_x
         self.root.set(
             "transform",
-            "translate(%s, %s) scale(%s %s) %s"
-            % (x, y, scale_x, scale_y, self.root.get("transform") or ""),
+            "translate({}, {}) scale({} {}) {}".format(
+                x, y, scale_x, scale_y, self.root.get("transform") or ""
+            ),
         )
 
     def rotate(self, angle, x=0, y=0):
@@ -53,7 +54,7 @@ class FigureElement:
         """
         self.root.set(
             "transform",
-            "%s rotate(%f %f %f)" % (self.root.get("transform") or "", angle, x, y),
+            "{} rotate({:f} {:f} {:f})".format(self.root.get("transform") or "", angle, x, y),
         )
 
     def skew(self, x=0, y=0):
@@ -82,7 +83,7 @@ class FigureElement:
         x : float
             x-axis skew angle in degrees
         """
-        self.root.set("transform", "%s skewX(%f)" % (self.root.get("transform") or "", x))
+        self.root.set("transform", "{} skewX({:f})".format(self.root.get("transform") or "", x))
         return self
 
     def skew_y(self, y):
@@ -93,7 +94,7 @@ class FigureElement:
         y : float
             y-axis skew angle in degrees
         """
-        self.root.set("transform", "%s skewY(%f)" % (self.root.get("transform") or "", y))
+        self.root.set("transform", "{} skewY({:f})".format(self.root.get("transform") or "", y))
         return self
 
     def scale(self, x=0, y=None):
