@@ -1,3 +1,9 @@
+25.0.1 (March 20, 2025)
+=======================
+Hot fix in the 25.0.x series.
+
+This release fixes an ``AttributeError`` caused by eagerly-evaluated type annotations.
+
 25.0.0 (March 20, 2025)
 =======================
 New feature release in the 25.0.x series.

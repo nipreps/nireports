@@ -24,6 +24,8 @@
 # NiPreps projects licensed under the Apache-2.0 terms.
 """Base components to generate mosaic-like reportlets."""
 
+from __future__ import annotations
+
 import math
 import os
 import typing as ty
