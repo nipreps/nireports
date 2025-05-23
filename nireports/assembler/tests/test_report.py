@@ -36,6 +36,7 @@ from bids.layout.writing import build_path
 
 from nireports.assembler import data
 from nireports.assembler.report import Report
+from nireports.assembler.tools import generate_reports
 
 summary_meta = {
     "Summary": {
@@ -329,3 +330,32 @@ def test_session(tmp_path, subject, session, out_html):
         session=session,
     )
     assert report.out_filename.name == out_html
+
+
+@pytest.mark.parametrize(
+    "subject_list, out_htmls",
+    [
+        (
+            [("01", None), ("02", "pre"), ("03", ["ses-post", "ses-pre"])],
+            ["sub-01.html", "sub-02_ses-pre.html", "sub-03.html"],
+        ),
+    ],
+)
+def test_generate_reports(tmp_path, subject_list, out_htmls):
+    reports = tmp_path / "reportlets"
+    p = Path(reports / "nireports")
+    for subject, session in subject_list:
+        sp = p / (subject if subject.startswith("sub-") else f"sub-{subject}")
+        if session and isinstance(session, str):
+            sp = sp / (session if session.startswith("ses-") else f"ses-{session}")
+        sp.mkdir(parents=True, exist_ok=True)
+
+    generate_reports(
+        subject_list,
+        str(Path(tmp_path) / "nireports"),
+        "uniqueid",
+        work_dir=tmp_path,
+    )
+
+    for out_html in out_htmls:
+        assert (tmp_path / "nireports" / out_html).exists()
