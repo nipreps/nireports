@@ -78,9 +78,9 @@ def generate_reports(
     if work_dir is not None:
         reportlets_dir = Path(work_dir) / "reportlets"
 
-    ses_id = None
     report_errors = []
     for subject in subject_list:
+        ses_id = None
         if isinstance(subject, tuple):
             sub_id, ses_id = subject
         else:
