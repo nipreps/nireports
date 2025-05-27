@@ -337,8 +337,8 @@ def test_session(tmp_path, subject, session, out_html):
     "subject_list, out_htmls",
     [
         (
-            [("01", None), ("02", "pre"), ("03", ["ses-post", "ses-pre"])],
-            ["sub-01.html", "sub-02_ses-pre.html", "sub-03.html"],
+            [("01", None), ("02", "pre"), ("03", ["ses-post", "ses-pre"]), ("04", ["ses-post"])],
+            ["sub-01.html", "sub-02_ses-pre.html", "sub-03.html", "sub-04_ses-post.html"],
         ),
     ],
 )

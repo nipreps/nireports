@@ -80,15 +80,17 @@ def generate_reports(
 
     report_errors = []
     for subject in subject_list:
-        ses_id = None
         if isinstance(subject, tuple):
             sub_id, ses_id = subject
         else:
-            sub_id = subject
+            sub_id, ses_id = subject, None
 
         # When multiple sessions are grouped, flatten and treat as no session
         if isinstance(ses_id, list):
-            ses_id = None
+            if len(ses_id) == 1:
+                ses_id = ses_id[0]
+            else:
+                ses_id = None
 
         report_errors.append(
             run_reports(
