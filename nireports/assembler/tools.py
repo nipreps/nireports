@@ -35,6 +35,7 @@ def run_reports(
     run_uuid,
     bootstrap_file=None,
     reportlets_dir=None,
+    session_label=None,
 ):
     """
     Run the reports.
@@ -61,6 +62,7 @@ def run_reports(
         bootstrap_file=bootstrap_file,
         reportlets_dir=reportlets_dir,
         subject=subject_label,
+        session=session_label,
     ).generate_report()
 
 
@@ -75,16 +77,31 @@ def generate_reports(
     reportlets_dir = None
     if work_dir is not None:
         reportlets_dir = Path(work_dir) / "reportlets"
-    report_errors = [
-        run_reports(
-            output_dir,
-            subject_label,
-            run_uuid,
-            bootstrap_file=bootstrap_file,
-            reportlets_dir=reportlets_dir,
+
+    report_errors = []
+    for subject in subject_list:
+        if isinstance(subject, tuple):
+            sub_id, ses_id = subject
+        else:
+            sub_id, ses_id = subject, None
+
+        # When multiple sessions are grouped, flatten and treat as no session
+        if isinstance(ses_id, list):
+            if len(ses_id) == 1:
+                ses_id = ses_id[0]
+            else:
+                ses_id = None
+
+        report_errors.append(
+            run_reports(
+                output_dir,
+                sub_id,
+                run_uuid,
+                bootstrap_file=bootstrap_file,
+                reportlets_dir=reportlets_dir,
+                session_label=ses_id,
+            )
         )
-        for subject_label in subject_list
-    ]
 
     errno = sum(report_errors)
     if errno:

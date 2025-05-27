@@ -33,9 +33,11 @@ import pytest
 import yaml
 from bids.layout import BIDSLayout
 from bids.layout.writing import build_path
+from bids.utils import listify
 
 from nireports.assembler import data
 from nireports.assembler.report import Report
+from nireports.assembler.tools import generate_reports
 
 summary_meta = {
     "Summary": {
@@ -329,3 +331,31 @@ def test_session(tmp_path, subject, session, out_html):
         session=session,
     )
     assert report.out_filename.name == out_html
+
+
+@pytest.mark.parametrize(
+    "subject_list, out_htmls",
+    [
+        (
+            [("01", None), ("02", "pre"), ("03", ["ses-post", "ses-pre"]), ("04", ["ses-post"])],
+            ["sub-01.html", "sub-02_ses-pre.html", "sub-03.html", "sub-04_ses-post.html"],
+        ),
+    ],
+)
+def test_generate_reports(tmp_path, subject_list, out_htmls):
+    reports = tmp_path / "reportlets"
+    for subject, sessions in subject_list:
+        sp = reports / "nireports" / f"sub-{subject}"
+        sp.mkdir(parents=True, exist_ok=True)
+        for session in listify(sessions or []):
+            Path.mkdir(sp / f"ses-{session}", exist_ok=True)
+
+    generate_reports(
+        subject_list,
+        tmp_path / "nireports",
+        "uniqueid",
+        work_dir=tmp_path,
+    )
+
+    for out_html in out_htmls:
+        assert Path.is_file(tmp_path / "nireports" / out_html)
