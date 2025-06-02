@@ -1,3 +1,11 @@
+25.2.0 (June 2, 2025)
+=====================
+Start of the 25.2.x series.
+
+This release supports handling sessions when generating reports.
+
+* ENH: Add session filtering to report generation (#193)
+
 25.1.0 (May 22, 2025)
 =====================
 New feature release in the 25.0.x series.
