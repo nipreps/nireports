@@ -56,13 +56,13 @@ dev = [
 ]
 
 test = [
-    "coverage[toml] >=5.2.1",
-    "packaging",
-    "pytest >= 6",
-    "pytest-cov >= 2.11",
-    "pytest-env",
-    "pytest-xdist >= 2.5",
-    "sphinx >= 6",
+    "coverage[toml] >=7.10",
+    "packaging >= 25.0",
+    "pytest >= 8.4",
+    "pytest-cov >= 6.2",
+    "pytest-env >= 1.1",
+    "pytest-xdist >= 3.7",
+    "sphinx >= 8.0",
 ]
 types = [
     "pandas-stubs",
