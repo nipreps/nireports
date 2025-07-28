@@ -37,6 +37,7 @@ class fMRIPlot:
 
     __slots__ = (
         "confounds",
+        "detrend",
         "nskip",
         "paired_carpet",
         "segments",
@@ -44,7 +45,6 @@ class fMRIPlot:
         "spikes",
         "timeseries",
         "tr",
-        "detrend",
     )
 
     def __init__(
