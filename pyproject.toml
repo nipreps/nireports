@@ -28,10 +28,10 @@ dependencies = [
     "numpy >= 1.20",
     "pandas >= 1.2",
     "pybids >= 0.15.1",
-    "pyyaml >= 5.4",
+    "pyyaml >= 6.0",
     "seaborn >= 0.13",
     "templateflow >= 23.1",
-    "lxml >= 4.6",  # required by vendored svgutils
+    "lxml >= 4.7",  # required by vendored svgutils
 ]
 dynamic = ["version"]
 
