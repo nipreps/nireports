@@ -124,7 +124,7 @@ def test_ROIsPlot2(tmp_path):
     for i in range(1, 5):
         seg = np.zeros_like(newdata, dtype="uint8")
         seg[(newdata > 0) & (newdata <= i)] = 1
-        out_file = str(tmp_path / (f"segments{i:0>2}.nii.gz"))
+        out_file = str(tmp_path / f"segments{i:02}.nii.gz")
         nb.Nifti1Image(seg, im.affine, hdr).to_filename(out_file)
         out_files.append(out_file)
     roi_rpt = ROIsPlot(
