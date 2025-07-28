@@ -21,17 +21,17 @@ license = "Apache-2.0"
 requires-python = ">=3.10"
 dependencies = [
     "acres >= 0.2",
-    "matplotlib >= 3.5",
-    "nibabel >= 3.0.1",
-    "nilearn >= 0.8",
+    "matplotlib >= 3.6",
+    "nibabel >= 5.0",
+    "nilearn >= 0.10.1",
     "nipype >= 1.8.5",
-    "numpy >= 1.20",
-    "pandas >= 1.2",
+    "numpy >= 1.24",
+    "pandas >= 1.5",
     "pybids >= 0.15.1",
-    "pyyaml >= 5.4",
+    "pyyaml >= 6.0",
     "seaborn >= 0.13",
     "templateflow >= 23.1",
-    "lxml >= 4.6",  # required by vendored svgutils
+    "lxml >= 4.7",  # required by vendored svgutils
 ]
 dynamic = ["version"]
 
@@ -56,13 +56,13 @@ dev = [
 ]
 
 test = [
-    "coverage[toml] >=5.2.1",
-    "packaging",
-    "pytest >= 6",
-    "pytest-cov >= 2.11",
-    "pytest-env",
-    "pytest-xdist >= 2.5",
-    "sphinx >= 6",
+    "coverage[toml] >=7.10",
+    "packaging >= 25.0",
+    "pytest >= 8.4",
+    "pytest-cov >= 6.2",
+    "pytest-env >= 1.1",
+    "pytest-xdist >= 3.7",
+    "sphinx >= 8.0",
 ]
 types = [
     "pandas-stubs",
