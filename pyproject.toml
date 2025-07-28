@@ -131,7 +131,7 @@ exclude = [
 
 [tool.ruff.lint]
 extend-select = [
-  "C",
+  "C4",
   "W",
   "B",
   "I",
