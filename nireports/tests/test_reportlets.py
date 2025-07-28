@@ -25,7 +25,7 @@
 import contextlib
 import os
 import warnings
-from itertools import permutations, starmap
+from itertools import permutations
 from pathlib import Path
 
 import matplotlib as mpl
@@ -596,9 +596,7 @@ def test_create_cmap(outdir):
         key1 == key2
         for key1, key2 in zip(orig_cmap._segmentdata.keys(), ls_cmap._segmentdata.keys())
     ]
-    assert list(
-        starmap(np.allclose, zip(orig_cmap._segmentdata.values(), ls_cmap._segmentdata.values()))
-    )
+    assert list(map(np.allclose, orig_cmap._segmentdata.values(), ls_cmap._segmentdata.values()))
 
     fig, ax = plt.subplots(1, 1, figsize=(12, 10), constrained_layout=True)
     _ = plt.colorbar(plt.cm.ScalarMappable(cmap=ls_cmap), cax=ax, orientation="horizontal")
