@@ -62,7 +62,7 @@ from nireports.tools.ndimage import load_api, rotate_affine, rotation2canonical
 
 
 def _create_lscmap_with_alpha(
-    cmap_name: str, cmap_name_alpha: ty.Union[str, None] = None, max_alpha: float = 0.75
+    cmap_name: str, cmap_name_alpha: str | None = None, max_alpha: float = 0.75
 ) -> LinearSegmentedColormap:
     """Create a linear segmented colormap with custom alpha (transparency) values.
 
@@ -126,11 +126,11 @@ def _create_lscmap_with_alpha(
 
 
 def plot_segs(
-    image_nii: ty.Union[str, SpatialImage],
-    seg_niis: list[ty.Union[str, SpatialImage]],
-    bbox_nii: ty.Union[str, SpatialImage, None] = None,
+    image_nii: str | SpatialImage,
+    seg_niis: list[str | SpatialImage],
+    bbox_nii: str | SpatialImage | None = None,
     masked: bool = False,
-    compress: ty.Union[bool, L["auto"]] = "auto",
+    compress: bool | L["auto"] = "auto",
     **plot_params,
 ) -> list[SVGFigure]:
     """
@@ -180,13 +180,13 @@ def plot_segs(
 def plot_registration(
     anat_nii: SpatialImage,
     div_id: str,
-    plot_params: ty.Union[dict[str, ty.Any], None] = None,
+    plot_params: dict[str, ty.Any] | None = None,
     order: tuple[L["x", "y", "z"], L["x", "y", "z"], L["x", "y", "z"]] = ("z", "x", "y"),
-    cuts: ty.Union[dict[str, list[float]], None] = None,
+    cuts: dict[str, list[float]] | None = None,
     estimate_brightness: bool = False,
-    label: ty.Union[str, None] = None,
-    contour: ty.Union[SpatialImage, None] = None,
-    compress: ty.Union[bool, L["auto"]] = "auto",
+    label: str | None = None,
+    contour: SpatialImage | None = None,
+    compress: bool | L["auto"] = "auto",
     dismiss_affine: bool = False,
 ) -> list[SVGFigure]:
     """
@@ -259,8 +259,8 @@ def plot_registration(
 
 def _plot_anat_with_contours(
     image: SpatialImage,
-    segs: ty.Union[list[SpatialImage], None] = None,
-    compress: ty.Union[bool, L["auto"]] = "auto",
+    segs: list[SpatialImage] | None = None,
+    compress: bool | L["auto"] = "auto",
     **plot_params,
 ) -> str:
     if segs is None:
@@ -345,13 +345,13 @@ def plot_segmentation(anat_file: str, segmentation: str, out_file: str, **kwargs
 
 def plot_slice(
     dslice: npt.NDArray,
-    spacing: ty.Union[tuple[float, float], None] = None,
-    cmap: ty.Union[str, mpl.colors.Colormap] = "Greys_r",
-    label: ty.Union[str, None] = None,
-    ax: ty.Union[mpl.axes.Axes, None] = None,
-    vmax: ty.Union[float, None] = None,
-    vmin: ty.Union[float, None] = None,
-    annotate: ty.Union[tuple[str, str], None] = None,
+    spacing: tuple[float, float] | None = None,
+    cmap: str | mpl.colors.Colormap = "Greys_r",
+    label: str | None = None,
+    ax: mpl.axes.Axes | None = None,
+    vmax: float | None = None,
+    vmin: float | None = None,
+    annotate: tuple[str, str] | None = None,
 ) -> mpl.axes.Axes:
     if isinstance(cmap, str):
         cmap = mpl.colormaps[cmap]
@@ -432,14 +432,14 @@ def plot_slice(
 
 def plot_slice_tern(
     dslice: npt.NDArray,
-    prev: ty.Union[npt.NDArray, None] = None,
-    post: ty.Union[npt.NDArray, None] = None,
-    spacing: ty.Union[tuple[float, float], None] = None,
-    cmap: ty.Union[str, mpl.colors.Colormap] = "Greys_r",
-    label: ty.Union[str, None] = None,
-    ax: ty.Union[mpl.axes.Axes, None] = None,
-    vmax: ty.Union[float, None] = None,
-    vmin: ty.Union[float, None] = None,
+    prev: npt.NDArray | None = None,
+    post: npt.NDArray | None = None,
+    spacing: tuple[float, float] | None = None,
+    cmap: str | mpl.colors.Colormap = "Greys_r",
+    label: str | None = None,
+    ax: mpl.axes.Axes | None = None,
+    vmax: float | None = None,
+    vmin: float | None = None,
 ) -> None:
     if isinstance(cmap, (str, bytes)):
         cmap = mpl.colormaps[cmap]
@@ -499,8 +499,8 @@ def plot_spikes(
     spikes_list: list[tuple[int, int]],
     cols: int = 3,
     labelfmt: str = "t={0:.3f}s (z={1:d})",
-    out_file: ty.Union[str, os.PathLike[str], None] = None,
-) -> ty.Union[str, os.PathLike[str]]:
+    out_file: str | os.PathLike[str] | None = None,
+) -> str | os.PathLike[str]:
     """Plot a mosaic enhancing EM spikes."""
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 

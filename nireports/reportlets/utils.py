@@ -73,7 +73,7 @@ def robust_set_limits(
 
 
 def _get_limits(
-    nifti_file: ty.Union[str, npt.NDArray],
+    nifti_file: str | npt.NDArray,
     only_plot_noise: bool = False,
 ) -> tuple[float, float]:
     if isinstance(nifti_file, str):
@@ -95,7 +95,7 @@ def _get_limits(
     return vmin, vmax
 
 
-def svg_compress(image: str, compress: ty.Union[bool, L["auto"]] = "auto") -> str:
+def svg_compress(image: str, compress: bool | L["auto"] = "auto") -> str:
     """Generate a blob SVG from a matplotlib figure, may perform compression."""
     # Check availability of svgo and cwebp
     if compress is True and not have_compression:
@@ -241,7 +241,7 @@ def combine_svg(svg_list: list[str], axis="vertical") -> svgt.SVGFigure:
 def extract_svg(
     display_object: DisplayObject,
     dpi: int = 300,
-    compress: ty.Union[bool, L["auto"]] = "auto",
+    compress: bool | L["auto"] = "auto",
 ) -> str:
     """Remove the preamble of the svg files generated with nilearn."""
     image_svg = svg2str(display_object, dpi)
@@ -318,7 +318,7 @@ def cuts_from_bbox(mask_nii: SpatialImage, cuts: int = 3) -> dict[str, list[floa
 
 
 def _3d_in_file(
-    in_file: ty.Union[SpatialImage, str, os.PathLike, list[ty.Union[str, os.PathLike]]],
+    in_file: SpatialImage | str | os.PathLike | list[str | os.PathLike],
 ) -> SpatialImage:
     """if self.inputs.in_file is 3d, return it.
     if 4d, pick an arbitrary volume and return that.
@@ -344,7 +344,7 @@ def compose_view(
     bg_svgs: list[svgt.SVGFigure],
     fg_svgs: list[svgt.SVGFigure],
     ref: int = 0,
-    out_file: ty.Union[str, os.PathLike[str]] = "report.svg",
+    out_file: str | os.PathLike[str] = "report.svg",
 ) -> str:
     """
     Compose svgs into one standalone svg with CSS flickering animation.
