@@ -420,7 +420,7 @@ def plot_carpet(
             ax.set_title(title)
 
     if nsegments == 1:
-        ax.set_ylabel(list(segments.keys())[0])
+        ax.set_ylabel(next(iter(segments)))
 
     if legend:
         from matplotlib.patches import Patch

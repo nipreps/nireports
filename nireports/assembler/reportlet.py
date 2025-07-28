@@ -388,7 +388,7 @@ class Reportlet:
                     tab_title = ""
                     if boiler_type == "html":
                         text = (
-                            re.compile("<body>(.*?)</body>", re.DOTALL | re.IGNORECASE)
+                            re.compile(r"<body>(.*?)</body>", re.DOTALL | re.IGNORECASE)
                             .findall((logs_path / "CITATION.html").read_text())[0]
                             .strip()
                         )
