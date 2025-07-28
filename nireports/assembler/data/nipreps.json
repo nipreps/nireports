@@ -173,6 +173,10 @@
       "pattern": "res-([a-zA-Z0-9]+)"
     },
     {
+      "name": "trc",
+      "pattern": "[_/\\\\]+trc-([a-zA-Z0-9]+)"
+    },
+    {
       "dtype": "int",
       "name": "cohort",
       "pattern": "[_/\\\\]+cohort-0*(\\d+)"
