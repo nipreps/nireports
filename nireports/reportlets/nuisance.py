@@ -1104,8 +1104,8 @@ def plot_raincloud(
 
     df = pd.read_csv(data_file, sep=r"[\t\s]+", engine="python")
 
-    df_clip = df.copy(deep=True)
-    df_clip[feature] = df[feature].clip(lower=lower_limit_value, upper=upper_limit_value)
+    df_clip = pd.DataFrame(df, copy=True)
+    df_clip[feature] = df_clip[feature].clip(lower=lower_limit_value, upper=upper_limit_value)
 
     figure = figure if figure is not None else plt.figure(figsize=(7, 5))
     gs = GridSpec(1, 1)
