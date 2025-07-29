@@ -592,11 +592,10 @@ def test_create_cmap(outdir):
     assert np.all(0.0 <= ls_cmap._lut[:, -1]) and np.all(ls_cmap._lut[:, -1] <= max_alpha)  # noqa: SIM300
     # Check that all values (excluding the bad/over/under) are monotonically increasing
     assert np.all(np.diff(ls_cmap._lut[: ls_cmap.N - 1, -1]) >= 0)
-    assert [
-        key1 == key2
-        for key1, key2 in zip(orig_cmap._segmentdata.keys(), ls_cmap._segmentdata.keys())
-    ]
-    assert list(map(np.allclose, orig_cmap._segmentdata.values(), ls_cmap._segmentdata.values()))
+    assert list(orig_cmap._segmentdata) == list(ls_cmap._segmentdata)
+    for key in orig_cmap._segmentdata:
+        if key != "alpha":
+            assert np.allclose(orig_cmap._segmentdata[key], ls_cmap._segmentdata[key])
 
     fig, ax = plt.subplots(1, 1, figsize=(12, 10), constrained_layout=True)
     _ = plt.colorbar(plt.cm.ScalarMappable(cmap=ls_cmap), cax=ax, orientation="horizontal")
