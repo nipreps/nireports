@@ -1,6 +1,7 @@
 import codecs
 from copy import deepcopy
 from io import StringIO
+from itertools import starmap
 
 from lxml import etree
 
@@ -197,7 +198,7 @@ class LineElement(FigureElement):
 
     def __init__(self, points, width=1, color="black"):
         linedata = "M{} {} ".format(*points[0])
-        linedata += " ".join("L{} {}".format(*x) for x in points[1:])
+        linedata += " ".join(starmap("L{} {}".format, points[1:]))
         line = etree.Element(
             SVG + "path", {"d": linedata, "stroke-width": str(width), "stroke": color}
         )

@@ -59,7 +59,7 @@ OUTPUT_NAME_PATTERN = [
     # "sub-{subject}[_ses-{session}][_acq-{acquisition}][_ce-{ceagent}][_rec-{reconstruction}]"
     # "[_run-{run}][_space-{space}][_cohort-{cohort}][_fmapid-{fmapid}][_desc-{desc}]_"
     # "{suffix<fieldmap>}{extension<.html|.svg>|.html}",
-    "sub-{subject}[_ses-{session}][_acq-{acquisition}][_rec-{reconstruction}]"
+    "sub-{subject}[_ses-{session}][_acq-{acquisition}][_trc-{trc}][_rec-{reconstruction}]"
     "[_run-{run}][_space-{space}][_cohort-{cohort}][_desc-{desc}]_{suffix<pet>}"
     "{extension<.html|.svg|.png>|.html}",
 ]
@@ -493,8 +493,7 @@ class Report:
         }
         # remove the all None member if it exists
         none_member = (None,) * len(orderings)
-        if none_member in all_value_combos:
-            all_value_combos.remove(none_member)
+        all_value_combos.discard(none_member)
         # see what values exist for each entity
         unique_values = [
             {value[idx] for value in all_value_combos} for idx in range(len(orderings))
