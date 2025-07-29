@@ -173,7 +173,7 @@
       "pattern": "res-([a-zA-Z0-9]+)"
     },
     {
-      "name": "trc",
+      "name": "tracer",
       "pattern": "[_/\\\\]+trc-([a-zA-Z0-9]+)"
     },
     {
