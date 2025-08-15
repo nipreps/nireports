@@ -129,7 +129,15 @@ class fMRIPlot:
 
         for i, (name, kwargs) in enumerate(self.confounds.items()):
             tseries = kwargs.pop("values")
-            confoundplot(tseries, grid[grid_id], tr=self.tr, color=palette[i], name=name, **kwargs)
+            confoundplot(
+                tseries,
+                grid[grid_id],
+                tr=self.tr,
+                color=palette[i],
+                name=name,
+                nskip=self.nskip,
+                **kwargs,
+            )
             grid_id += 1
 
         plot_carpet(

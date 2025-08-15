@@ -709,7 +709,9 @@ def confoundplot(
     ax_ts.set_yticks([])
     ax_ts.set_yticklabels([])
 
-    nonnan = tseries[~np.isnan(tseries)]
+    # Skip non-steady-state volumes for statistics and Y limits
+    valseries = tseries[nskip:]
+    nonnan = valseries[~np.isnan(valseries)]
     if nonnan.size > 0:
         # Calculate Y limits
         valrange = nonnan.max() - nonnan.min()
