@@ -72,3 +72,35 @@ def close_mpl_figures():
 def random_number_generator(request):
     """Automatically set a fixed-seed random number generator for all tests."""
     request.node.rng = np.random.default_rng(1234)
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--warnings-as-errors",
+        action="store_true",
+        help="Consider all uncaught warnings as errors.",
+    )
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_sessionfinish(session, exitstatus):
+    have_werrors = os.getenv("NIREPORTS_WERRORS", False)
+    have_werrors = session.config.getoption("--warnings-as-errors", False) or have_werrors
+    if have_werrors:
+        # Check if there were any warnings during the test session
+        reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+        if reporter.stats.get("warnings", None):
+            session.exitstatus = 2
+
+
+@pytest.hookimpl
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    have_werrors = os.getenv("NIREPORTS_WERRORS", False)
+    have_werrors = config.getoption("--warnings-as-errors", False) or have_werrors
+    have_warnings = terminalreporter.stats.get("warnings", None)
+    if have_warnings and have_werrors:
+        terminalreporter.ensure_newline()
+        terminalreporter.section("Werrors", sep="=", red=True, bold=True)
+        terminalreporter.line(
+            f"Warnings as errors: Activated.\n{len(have_warnings)} warnings were raised and treated as errors.\n"
+        )
