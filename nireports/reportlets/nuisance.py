@@ -349,11 +349,14 @@ def plot_carpet(
     fontsize = fontsize or 24
 
     # Length before decimation
-    n_trs = data.shape[-1] - drop_trs
+    n_trs = data.shape[-1]
 
     # Calculate time decimation factor
-    t_dec = max(int((1.8 * n_trs) // size[1]), 1)
-    data = data[:, drop_trs::t_dec]
+    t_step = max(n_trs // size[1], 1)
+    # Skip over dropped TRs if this doesn't reduce the number of time points
+    t_start = min(t_step - 1, drop_trs)
+    t_stop = size[1] * t_step + t_start
+    data = data[:, t_start:t_stop:t_step]
 
     # Define nested GridSpec
     gs = GridSpecFromSubplotSpec(
