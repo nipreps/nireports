@@ -300,7 +300,7 @@ def plot_carpet(
         data = clean(data.T, t_r=tr, filter=False).T
 
     # We want all subplots to have the same dynamic range
-    vminmax = (np.percentile(data, 2), np.percentile(data, 98))
+    vminmax = np.percentile(data[:, drop_trs:], [2, 98])
 
     # Decimate number of time-series before clustering
     n_dec = int((1.8 * data.shape[0]) // size[0])
