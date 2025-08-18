@@ -40,7 +40,7 @@ jobs:
       attestations: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - uses: hynek/build-and-inspect-python-package@v2
@@ -78,7 +78,7 @@ jobs:
       DEPENDS: ${{ matrix.dependencies }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v6
       - name: Set up Python ${{ matrix.python-version }}
@@ -171,7 +171,7 @@ jobs:
         check: ['style', 'spellcheck', 'typecheck']
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v6
       # Can remove this once there is a traits release that supports 3.13
