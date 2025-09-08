@@ -82,7 +82,7 @@ jobs:
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v6
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           architecture: ${{ matrix.architecture }}
@@ -100,7 +100,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: lts/*
       - name: Install webp and svgo
@@ -176,7 +176,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
       # Can remove this once there is a traits release that supports 3.13
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: 3.12
       - name: Install tox
