@@ -16,7 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
-license = "Apache-2.0"
+license = "Apache-2.0 AND MIT"
 license-files = ["LICENSE", "nireports/_vendored/LICENSES/LICENSE.svgutils.txt"]
 requires-python = ">=3.10"
 dependencies = [
