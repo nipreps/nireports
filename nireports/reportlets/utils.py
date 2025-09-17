@@ -49,8 +49,7 @@ from nibabel.spatialimages import SpatialImage
 
 import nireports._vendored.svgutils.transform as svgt
 from nireports.reportlets import compression_missing_msg, have_compression
-
-from ..tools.ndimage import load_api
+from nireports.tools.ndimage import load_api
 
 SVGNS = "http://www.w3.org/2000/svg"
 
