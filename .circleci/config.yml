@@ -16,13 +16,16 @@ jobs:
       - TEMPLATEFLOW_HOME: /tmp/templateflow
     steps:
       - checkout
-      - run:
-          name: Install uv
-          command: pip install uv
 
       - run:
           name: Install package
           command: pip install .[test]
+
+      - run:
+          name: Install git-annex and datalad
+          command: |
+            uv tool install git-annex
+            uv tool install --with=datalad-next --with-executables-from=datalad-osf datalad
 
       - run:
           name: Git config - pacify datalad
@@ -37,10 +40,10 @@ jobs:
             - /var/lib/apt
 
       - run:
-          name: Install texlive and git-annex
+          name: Install texlive
           command: |
             sudo apt-get update
-            sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super git-annex
+            sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super
 
       - save_cache:
          key: apt-v0
@@ -81,10 +84,10 @@ jobs:
             mkdir -p /tmp/data
             pushd /tmp/data
             if [[ ! -d ds000003 ]]; then
-              uvx --with=datalad-osf datalad install -r https://github.com/nipreps-data/ds000003.git
+              datalad install -r https://github.com/nipreps-data/ds000003.git
             fi
-            uvx --with=datalad-osf datalad update -r --merge -d ds000003/
-            uvx --with=datalad-osf datalad get -J 2 -r -d ds000003/ ds000003/*
+            datalad update -r --merge -d ds000003/
+            datalad get -J 2 -r -d ds000003/ ds000003/*
             popd
 
       - save_cache:
