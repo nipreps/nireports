@@ -1120,7 +1120,7 @@ def plot_raincloud(
     gs = GridSpec(1, 1)
     ax = plt.subplot(gs[0, 0])
 
-    sns.set(style="white", font_scale=2)
+    sns.set_theme(style="white", font_scale=2)
 
     x = feature
     y = group_name
