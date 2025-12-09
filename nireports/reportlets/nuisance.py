@@ -1058,8 +1058,6 @@ def plot_raincloud(
     ----------
     data_file : :obj:`str`
         File containing the data of interest.
-    figure : :obj:`matplotlib.pyplot.figure` or None
-        Existing figure on which to plot.
     group_name : :obj:`str`
         The group name of interest to be plot.
     feature : :obj:`str`
@@ -1088,17 +1086,28 @@ def plot_raincloud(
         Value to use for NaN values.
     nans_color : :obj:`str`, optional
         Color name to represent NaN values.
-    output_file : :obj:`str` or :obj:`None`
+    figure : :obj:`~matplotlib.figure.Figure`, optional
+        Existing figure on which to plot.
+    output_file : :obj:`str`, optional
         Path where the output figure should be saved. If this is not defined,
         then the plotting axes will be returned instead of the saved figure
         path.
 
     Returns
     -------
-    axes and gridspec
-        Plotting axes and gridspec. Returned only if ``output_file`` is ``None``.
     output_file : :obj:`str`
-        The file where the figure is saved.
+        The path where the figure has been written. Returned only when
+        ``output_file`` is provided.
+
+    (ax, gs) : :class:`tuple`
+        The :class:`~matplotlib.axes.Axes` and :class:`~matplotlib.gridspec.GridSpec`
+        associated with the plot, allowing further modification by the caller.
+        Returned when ``output_file`` is :obj:`None`.
+
+    Notes
+    -----
+    When ``output_file`` is provided, the figure is saved and closed. In that
+    case, the figure object will no longer be usable.
     """
 
     df = pd.read_csv(data_file, sep=r"[\t\s]+", engine="python")
@@ -1110,7 +1119,7 @@ def plot_raincloud(
     gs = GridSpec(1, 1)
     ax = plt.subplot(gs[0, 0])
 
-    sns.set(style="white", font_scale=2)
+    sns.set_theme(style="white", font_scale=2)
 
     x = feature
     y = group_name
