@@ -29,9 +29,6 @@ import pytest
 from dipy.data import read_stanford_hardi
 from dipy.segment.mask import median_otsu
 from matplotlib.figure import Figure
-from scipy.ndimage import affine_transform, binary_dilation
-from skimage.morphology import ball
-
 from nitransforms.analysis.utils import compute_percentage_change
 from nitransforms.reportlets.nuiscance import (
     ORIENTATIONS,
@@ -39,6 +36,8 @@ from nitransforms.reportlets.nuiscance import (
     plot_motion_overlay,
     plot_volumewise_motion,
 )
+from scipy.ndimage import affine_transform, binary_dilation
+from skimage.morphology import ball
 
 img, _ = read_stanford_hardi()
 img_data = img.get_fdata()
