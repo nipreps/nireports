@@ -300,7 +300,7 @@ def plot_carpet(
         data = clean(data.T, t_r=tr, filter=False).T
 
     # We want all subplots to have the same dynamic range
-    vminmax = (np.percentile(data, 2), np.percentile(data, 98))
+    vminmax = np.percentile(data[:, drop_trs:], [2, 98])
 
     # Decimate number of time-series before clustering
     n_dec = int((1.8 * data.shape[0]) // size[0])
@@ -349,11 +349,21 @@ def plot_carpet(
     fontsize = fontsize or 24
 
     # Length before decimation
-    n_trs = data.shape[-1] - drop_trs
+    n_trs = data.shape[-1]
 
     # Calculate time decimation factor
-    t_dec = max(int((1.8 * n_trs) // size[1]), 1)
-    data = data[:, drop_trs::t_dec]
+    t_step = max(n_trs // size[1], 1)
+    # Skip over dropped TRs if this doesn't reduce the number of time points
+    t_start = min(t_step - 1, drop_trs)
+    t_stop = size[1] * t_step + t_start
+    data = data[:, t_start:t_stop:t_step]
+
+    xticks = np.linspace(0, data.shape[-1] - 1, endpoint=True, num=7)
+    idx_ticks = t_step * xticks + t_start
+    if tr is not None:
+        xticklabels = [f"{t // 60:02d}:{t % 60:02d}" for t in np.rint(tr * idx_ticks).astype(int)]
+    else:
+        xticklabels = np.rint(idx_ticks).astype(int)
 
     # Define nested GridSpec
     gs = GridSpecFromSubplotSpec(
@@ -364,7 +374,7 @@ def plot_carpet(
         height_ratios=[len(v) for v in segments.values()],
     )
 
-    for i, (_, indices) in enumerate(segments.items()):
+    for i, indices in enumerate(segments.values()):
         # Carpet plot
         ax = plt.subplot(gs[i])
 
@@ -378,10 +388,9 @@ def plot_carpet(
         )
 
         # Toggle the spine objects
-        ax.spines["top"].set_color("none")
         ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_color("none")
         ax.spines["right"].set_visible(False)
+        ax.spines["bottom"].set_visible(False)
 
         # Make colored left axis
         ax.spines["left"].set_linewidth(3)
@@ -389,35 +398,23 @@ def plot_carpet(
         ax.spines["left"].set_capstyle("butt")
         ax.spines["left"].set_position(("outward", 2))
 
-        # Make all subplots have same xticks
-        xticks = np.linspace(0, data.shape[-1], endpoint=True, num=7)
-        ax.set_xticks(xticks)
         ax.set_yticks([])
         ax.grid(False)
 
-        if i == (nsegments - 1):
-            xlabel = "time-points (index)"
-            xticklabels = (xticks * n_trs / data.shape[-1]).astype("uint32") + drop_trs
-            if tr is not None:
-                xlabel = "time (mm:ss)"
-                xticklabels = [
-                    f"{int(t // 60):02d}:{(t % 60).round(0).astype(int):02d}"
-                    for t in (tr * xticklabels)
-                ]
-
-            ax.set_xlabel(xlabel)
-            ax.set_xticklabels(xticklabels)
-            ax.spines["bottom"].set_position(("outward", 5))
-            ax.spines["bottom"].set_color("k")
-            ax.spines["bottom"].set_linewidth(0.8)
-        else:
-            ax.set_xticklabels([])
+        # Make all subplots have same xticks
+        ax.set_xticks(xticks, labels=xticklabels)
+        # Remove ticks except for final axis
+        if i < nsegments - 1:
             ax.set_xticks([])
-            ax.spines["bottom"].set_color("none")
-            ax.spines["bottom"].set_visible(False)
 
         if title and i == 0:
             ax.set_title(title)
+
+    ax.set_xlabel("time (mm:ss)" if tr else "time-points (index)")
+    ax.spines["bottom"].set_position(("outward", 5))
+    ax.spines["bottom"].set_color("k")
+    ax.spines["bottom"].set_linewidth(0.8)
+    ax.spines["bottom"].set_visible(True)
 
     if nsegments == 1:
         ax.set_ylabel(next(iter(segments)))
@@ -709,7 +706,9 @@ def confoundplot(
     ax_ts.set_yticks([])
     ax_ts.set_yticklabels([])
 
-    nonnan = tseries[~np.isnan(tseries)]
+    # Skip non-steady-state volumes for statistics and Y limits
+    valseries = tseries[nskip:]
+    nonnan = valseries[~np.isnan(valseries)]
     if nonnan.size > 0:
         # Calculate Y limits
         valrange = nonnan.max() - nonnan.min()

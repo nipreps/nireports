@@ -1,3 +1,18 @@
+25.3.0 (September 10, 2025)
+===========================
+New feature release in the 25.3.x series.
+
+* FIX: Disable subplot colorbars in cifti_surfaces_plot (#197)
+* ENH: Keep dropped TRs in undecimated carpetplot (#207)
+* ENH: Exclude non-steady-state volumes from confoundplot bounds, stats (#206)
+* STY: Spell out tracer entity (#203)
+* TST: Check colormap equivalence, modulo alpha (#200)
+* MNT: Update and test minimum dependencies (#198)
+* MNT: Update ruff parameters (#177)
+* MNT: Update pre-commit ruff legacy alias (#196)
+* STY: Enforce ruff rules (RUF) (#180)
+
+
 25.2.0 (June 2, 2025)
 =====================
 Start of the 25.2.x series.
