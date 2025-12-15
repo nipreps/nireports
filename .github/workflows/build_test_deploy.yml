@@ -90,7 +90,7 @@ jobs:
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: /var/lib/apt
           key: apt-cache-v0
@@ -112,7 +112,7 @@ jobs:
 
       - name: Restore cached templateflow
         id: tf-cache-restore
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/templateflow
           key: templateflow-v3
@@ -156,7 +156,7 @@ jobs:
 
     steps:
       - name: Download packages built by build-and-inspect-python-package
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           name: Packages
           path: dist
