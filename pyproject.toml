@@ -132,19 +132,31 @@ exclude = [
 
 [tool.ruff.lint]
 extend-select = [
-  "C4",
-  "W",
-  "UP",
   "B",
-  "I",
+  "C4",
+  "ISC",
+  "ICN",
+  "LOG",
+  "PYI",
   "SIM",
+  "TID",
+  "FLY",
+  "I",
+  "PERF",
+  "W",
+  "PGH",
+  "PLC",
+  "PLE",
+  "PLW",
+  "UP",
   "FURB",
   "RUF",
 ]
 ignore = [
   "B019",
   "SIM108",
-  "C901",
+  "PLC0415",
+  "PLW2901",
   "RUF005",
   "RUF012",
 ]
