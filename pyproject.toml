@@ -166,7 +166,7 @@ known-first-party=["nireports"]
 [tool.pytest.ini_options]
 minversion = "6"
 testpaths = ["nireports"]
-log_cli_level = "INFO"
+log_level = "INFO"
 xfail_strict = true
 norecursedirs = [".git"]
 addopts = [
