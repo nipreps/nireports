@@ -136,6 +136,18 @@ $('#{{ config.components.extra.id }}-comments').bind('input propertychange', fun
     };
 });
 
+// allow override of webapi-url from URL parameter
+// defaults to one specified during report creation
+function get_api_url(){
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  web_api_url = urlParams.get('webapi-url');
+  if(web_api_url==null){
+    web_api_url = "{{ metadata.endpoint }}";
+  }
+  return web_api_url;
+}
+
 $( '#{{ config.components.actions[1].id }}' ).click( function() {
     var payload = read_form();
     var md5sum = "{{ metadata.md5sum }}";
@@ -151,7 +163,7 @@ $( '#{{ config.components.actions[1].id }}' ).click( function() {
     var ratingReq = new XMLHttpRequest();
     ratingReq.open("POST", "{{ metadata.endpoint }}");
     ratingReq.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    ratingReq.setRequestHeader("Authorization", authorization);
+    ratingReq.setRequestHeader("Authorization", get_api_url());
     ratingReq.onload = function () {
         status = ratingReq.status;
         $('#{{ config.components.actions[1].id }}').removeClass('btn-primary');
@@ -177,7 +189,7 @@ $( 'body' ).on( 'click', '#{{ config.components.artifacts.id }}-group input', fu
         $('#{{ config.components.actions[0].id }}').removeAttr('aria-disabled');
         $('#{{ config.components.actions[1].id }}').removeAttr('disabled');
     };
-    
+
     var payload = read_form();
 });
 
