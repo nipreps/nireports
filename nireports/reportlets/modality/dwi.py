@@ -488,14 +488,13 @@ def nii_to_carpetplot_data(
         if divide_by_b0:
             b0_data = nii_data[..., bvals == 0]
             bzero = np.mean(b0_data, -1)
-            out = nii_data.copy()
+            nii_data = nii_data.copy()
             np.divide(
                 nii_data,
                 bzero[..., None],
-                out=out,
+                out=nii_data,
                 where=bzero[..., None] != 0,
             )
-            nii_data = out
 
         if drop_b0:
             nii_data = nii_data[..., bvals > 0]
