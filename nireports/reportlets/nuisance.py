@@ -239,7 +239,7 @@ def plot_carpet(
     sort_rows="ward",
     drop_trs=0,
     legend=True,
-    fontsize=None,
+    fontsize=24,
 ):
     """
     Plot an image representation of voxel intensities across time.
@@ -278,7 +278,14 @@ def plot_carpet(
         :obj:`scipy.cluster.hierarchy.linkage`.
         Any other value that Python evaluates to ``True`` will use the
         default clustering, which is :obj:`sklearn.cluster.ward_tree`.
-
+    drop_trs: :obj:`int`, optional
+        Number of initial timepoints ("dummy scans"”" / non-steady-state volumes)
+        to ignore at the beginning of a timeseries when computing display
+        scaling and potentially other plot-derived stats.
+    legend : :obj:`bool`, optional
+        ``True`` to plot the legend.
+    fontsize : :obj:`int`, optional
+        Font size.
     """
     if segments is None:
         segments = {"whole brain (voxels)": list(range(data.shape[0]))}
@@ -345,8 +352,6 @@ def plot_carpet(
         ax.spines[:].set_color("none")
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
-
-    fontsize = fontsize or 24
 
     # Length before decimation
     n_trs = data.shape[-1]
