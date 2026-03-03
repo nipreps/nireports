@@ -279,7 +279,7 @@ def plot_carpet(
         Any other value that Python evaluates to ``True`` will use the
         default clustering, which is :obj:`sklearn.cluster.ward_tree`.
     drop_trs: :obj:`int`, optional
-        Number of initial timepoints ("dummy scans"”" / non–steady-state volumes)
+        Number of initial timepoints ("dummy scans"”" / non-steady-state volumes)
         to ignore at the beginning of a timeseries when computing display
         scaling and potentially other plot-derived stats.
     legend : :obj:`bool`, optional
