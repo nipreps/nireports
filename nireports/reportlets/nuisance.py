@@ -888,7 +888,10 @@ def confounds_correlation_plot(
     gs_descending = gs_descending[:max_dim]
     features = [p for p in corr.columns if p in gs_descending]
     corr = corr.loc[features, features]
-    np.fill_diagonal(corr.values, 0)
+
+    arr = corr.to_numpy(copy=True)  # writable copy
+    np.fill_diagonal(arr, 0.0)
+    corr = pd.DataFrame(arr, index=corr.index, columns=corr.columns)
 
     figure = figure if figure is not None else plt.figure(figsize=(15, 5))
     gs = GridSpec(1, 21)
