@@ -161,9 +161,9 @@ $( '#{{ config.components.actions[1].id }}' ).click( function() {
     // disable development releases
     var authorization = $(this).val();
     var ratingReq = new XMLHttpRequest();
-    ratingReq.open("POST", "{{ metadata.endpoint }}");
+    ratingReq.open("POST", get_api_url());
     ratingReq.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    ratingReq.setRequestHeader("Authorization", get_api_url());
+    ratingReq.setRequestHeader("Authorization", authorization);
     ratingReq.onload = function () {
         status = ratingReq.status;
         $('#{{ config.components.actions[1].id }}').removeClass('btn-primary');
