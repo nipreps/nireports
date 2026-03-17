@@ -198,7 +198,7 @@ def plot_registration(
 
     # Use default MNI cuts if none defined
     if cuts is None:
-        raise NotImplementedError  # TODO
+        cuts = cuts_from_bbox(anat_nii, cuts=3)
 
     # nilearn 0.10.0 uses Nifti-specific methods
     anat_nii = nb.Nifti1Image.from_image(anat_nii)
