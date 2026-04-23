@@ -90,7 +90,7 @@ jobs:
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v5.0.4
         with:
           path: /var/lib/apt
           key: apt-cache-v0
@@ -101,7 +101,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6.3.0
         with:
           node-version: lts/*
       - name: Install webp and svgo
@@ -112,7 +112,7 @@ jobs:
 
       - name: Restore cached templateflow
         id: tf-cache-restore
-        uses: actions/cache@v5
+        uses: actions/cache@v5.0.4
         with:
           path: /tmp/templateflow
           key: templateflow-v3
