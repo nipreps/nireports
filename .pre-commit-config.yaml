@@ -2,6 +2,9 @@
 #   pre-commit install
 # To update the pre-commit hooks run:
 #   pre-commit install-hooks
+ci:
+  autoupdate_schedule: quarterly
+  autoupdate_commit_message: 'chore: update pre-commit hooks'
 
 exclude: |
     (?x)^(
