@@ -22,14 +22,20 @@
 #
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from
 # other NiPreps projects licensed under the Apache-2.0 terms.
-"""Plotting distributions."""
+"""Plotting distributions and other magnitudes."""
+
+from __future__ import annotations
 
 import math
 import operator
 import os.path as op
+from base64 import b64encode
+from io import BytesIO
 
+import imageio.v3 as iio
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import nibabel as nb
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -37,11 +43,353 @@ from matplotlib.backends.backend_pdf import FigureCanvasPdf as FigureCanvas
 from matplotlib.colors import Normalize
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
+from nireports.reportlets.utils import compute_common_display_params, render_comparison_frames
 from nireports.tools.ndimage import _get_values_inside_a_mask
 
 DEFAULT_DPI = 300
 DINA4_LANDSCAPE = (11.69, 8.27)
 DINA4_PORTRAIT = (8.27, 11.69)
+
+
+def _compose_fd_panel_svg(
+    frame_height: int, width: int, n_frames: int, fd_values: np.ndarray, fd_height: int
+) -> list[str]:
+    """Build SVG elements for FD chart panel.
+
+    Parameters
+    ----------
+    frame_height : :obj:`int`
+        Height (pixels) of the upper image panel; used to position the FD chart
+        below it.
+    width : :obj:`int`
+        Total SVG width (pixels).
+    n_frames : :obj:`int`
+        Number of animation frames / FD samples represented on the x-axis.
+    fd_values : :obj:`~numpy.ndarray`
+        Framewise displacement values (mm), one per frame.
+    fd_height : :obj:`int`
+        Height (pixels) reserved for the FD panel.
+
+    Returns
+    -------
+    :obj:`list` of :obj:`str`
+        SVG markup fragments (group, axes, ticks, labels, points, lines, and
+        marker) that compose the FD chart.
+    """
+
+    fd_padding = 45
+    fd_chart_height = fd_height
+    fd_x_start = fd_padding
+    fd_x_end = width - fd_padding
+    fd_axis_y = frame_height + fd_chart_height - fd_padding
+    fd_axis_y_top = frame_height + fd_padding
+    fd_y_range = fd_axis_y - fd_axis_y_top
+    fd_max = float(np.nanmax(fd_values)) if np.any(fd_values) else 0.0
+    if fd_max <= 0:
+        fd_max = 1.0
+
+    x_scale = (fd_x_end - fd_x_start) / max(n_frames - 1, 1)
+    points: list[str] = []
+    point_elems: list[str] = []
+    line_elems: list[str] = []
+    fd_threshold = 3.0
+
+    for idx, value in enumerate(fd_values):
+        x_coord = fd_x_start + x_scale * idx
+        y_coord = fd_axis_y - (value / fd_max) * fd_y_range
+        points.append(f"{x_coord:.2f},{y_coord:.2f}")
+        point_elems.append(
+            f'<circle class="fd-point fd-point-{idx}" cx="{x_coord:.2f}" '
+            f'cy="{y_coord:.2f}" r="3" data-value="{value:.6f}" />'
+        )
+        if idx > 0:
+            prev_x, prev_y = map(float, points[idx - 1].split(","))
+            line_class = "fd-line-alert" if value >= fd_threshold else "fd-line-primary"
+            line_elems.append(
+                f'<line class="{line_class}" x1="{prev_x:.2f}" y1="{prev_y:.2f}" '
+                f'x2="{x_coord:.2f}" y2="{y_coord:.2f}" />'
+            )
+
+    fd_label_y = fd_axis_y_top + (fd_y_range / 2)
+    fd_label_offset = 35
+
+    tick_values = np.linspace(0, fd_max, num=3)
+    tick_length = 6
+    tick_elems: list[str] = []
+    label_elems: list[str] = []
+
+    for tick_value in tick_values:
+        y_coord = fd_axis_y - (tick_value / fd_max) * fd_y_range
+        tick_elems.append(
+            f'<line class="fd-axis" x1="{fd_x_start - tick_length}" '
+            f'x2="{fd_x_start}" y1="{y_coord:.2f}" y2="{y_coord:.2f}" />'
+        )
+        label_elems.append(
+            f'<text x="{fd_x_start - tick_length - 6}" y="{y_coord + 4:.2f}" '
+            'font-size="12" text-anchor="end">'
+            f"{tick_value:.1f}</text>"
+        )
+
+    # X-axis ticks show every other frame (plus the last) to avoid clutter
+    if n_frames <= 1:
+        x_tick_indices = np.array([0])
+    else:
+        tick_stride = 2
+        x_tick_indices = np.arange(0, n_frames, tick_stride)
+        if x_tick_indices[-1] != n_frames - 1:
+            x_tick_indices = np.append(x_tick_indices, n_frames - 1)
+
+    x_tick_length = 6
+    x_tick_elems: list[str] = []
+    x_label_elems: list[str] = []
+
+    for tick_idx in x_tick_indices:
+        x_coord = fd_x_start + x_scale * tick_idx
+        x_tick_elems.append(
+            f'<line class="fd-axis" x1="{x_coord:.2f}" x2="{x_coord:.2f}" '
+            f'y1="{fd_axis_y}" y2="{fd_axis_y + x_tick_length}" />'
+        )
+        x_label_elems.append(
+            f'<text x="{x_coord:.2f}" y="{fd_axis_y + x_tick_length + 14}" '
+            'font-size="12" text-anchor="middle">'
+            f"{tick_idx + 1}</text>"
+        )
+
+    return [
+        '<g class="fd-plot" aria-label="Framewise displacement">',
+        f'<line class="fd-axis" x1="{fd_x_start}" x2="{fd_x_end}" '
+        f'y1="{fd_axis_y}" y2="{fd_axis_y}" />',
+        f'<line class="fd-axis" x1="{fd_x_start}" x2="{fd_x_start}" '
+        f'y1="{fd_axis_y_top}" y2="{fd_axis_y}" />',
+        *tick_elems,
+        *label_elems,
+        *line_elems,
+        *point_elems,
+        *x_tick_elems,
+        *x_label_elems,
+        f'<circle id="fd-marker" r="6" cx="{fd_x_start}" cy="{fd_axis_y}" />',
+        f'<text id="fd-value" x="{fd_x_start}" '
+        f'y="{fd_axis_y_top - 12}" aria-live="polite"></text>',
+        f'<text x="{fd_x_start - fd_label_offset}" y="{fd_label_y:.2f}" '
+        'font-size="14" text-anchor="middle" transform='
+        f'"rotate(-90 {fd_x_start - fd_label_offset},{fd_label_y:.2f})">'
+        "FD (mm)</text>",
+        f'<text x="{(fd_x_start + fd_x_end) / 2:.2f}" '
+        f'y="{fd_axis_y + 35}" font-size="14" text-anchor="middle">'
+        "Frames</text>",
+        "</g>",
+    ]
+
+
+def _compose_motion_svg(
+    frames: list[np.ndarray], duration: float, fd_values: np.ndarray | None
+) -> str:
+    """Build the interactive SVG document from rendered frames.
+
+    Parameters
+    ----------
+    frames : :obj:`list` of :obj:`~numpy.ndarray`
+        Side-by-side frame images (original vs corrected), one array per
+        timepoint.
+    duration : :obj:`float`
+        Display duration (seconds) for each frame in the animation cycle.
+    fd_values : :obj:`~numpy.ndarray` or ``None``
+        Framewise displacement values aligned to frame index. When provided,
+        an FD chart panel is added under the image panel.
+
+    Returns
+    -------
+    :obj:`str`
+        Complete SVG document as a UTF-8 string, including embedded PNG frames,
+        CSS animation rules, and JavaScript hover playback logic.
+    """
+
+    if not frames:
+        raise ValueError("No frames were rendered; cannot build SVG.")
+
+    n_frames = len(frames)
+    width = int(frames[0].shape[1])
+    frame_height = int(frames[0].shape[0])
+    fd_height = 220 if fd_values is not None else 0
+    height = frame_height + fd_height
+    total_duration = duration * n_frames
+
+    svg_parts: list[str] = [
+        '<svg xmlns="http://www.w3.org/2000/svg" '
+        f'width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
+        "<style>",
+        (
+            ".frame {"
+            f" opacity: 0; animation: framefade {total_duration}s infinite;"
+            " animation-play-state: paused;"
+            "}"
+        ),
+        ".playing .frame {animation-play-state: running;}",
+        ".fd-line-primary {fill: none; stroke: #2c7be5; stroke-width: 2;}",
+        ".fd-line-alert {fill: none; stroke: #d7263d; stroke-width: 2;}",
+        ".fd-axis {stroke: #333; stroke-width: 1;}",
+        ".fd-point {fill: #2c7be5; stroke: white; stroke-width: 1;}",
+        "#fd-marker {fill: #d7263d; stroke: white; stroke-width: 2;}",
+        "#fd-value {font: 14px sans-serif; fill: #1a1a1a;}",
+        "@keyframes framefade {0%, 80% {opacity: 1;} 100% {opacity: 0;}}",
+    ]
+
+    for idx in range(n_frames):
+        delay = duration * idx
+        svg_parts.append(f".frame-{idx} {{animation-delay: {delay}s;}}")
+
+    svg_parts.append("</style>")
+
+    for idx, frame in enumerate(frames):
+        buffer = BytesIO()
+        iio.imwrite(buffer, frame, extension=".png")
+        data_uri = b64encode(buffer.getvalue()).decode("ascii")
+        svg_parts.append(
+            f'<image class="frame frame-{idx}" '
+            f'width="{width}" height="{frame_height}" x="0" y="0" '
+            f'href="data:image/png;base64,{data_uri}" />'
+        )
+
+    if fd_values is not None:
+        svg_parts.extend(
+            _compose_fd_panel_svg(frame_height, width, n_frames, fd_values, fd_height)
+        )
+
+    svg_parts.extend(
+        [
+            "<script>",
+            "(() => {",
+            "  const svg = document.currentScript.parentNode;",
+            "  const frames = svg.querySelectorAll('.frame');",
+            "  const fdPoints = Array.from(svg.querySelectorAll('.fd-point'));",
+            "  const fdMarker = svg.querySelector('#fd-marker');",
+            "  const fdValueLabel = svg.querySelector('#fd-value');",
+            f"  const cycleMs = {total_duration * 1000:.0f};",
+            f"  const frameDurationMs = {duration * 1000:.0f};",
+            "  let restartTimer = null;",
+            "  let playbackTimer = null;",
+            "  let currentFrame = 0;",
+            "  const setFdMarker = (index) => {",
+            "    if (!fdMarker || !fdPoints.length) return;",
+            "    const point = fdPoints[index % fdPoints.length];",
+            '    fdMarker.setAttribute("cx", point.getAttribute("cx"));',
+            '    fdMarker.setAttribute("cy", point.getAttribute("cy"));',
+            "    if (fdValueLabel) {",
+            '      const value = parseFloat(point.dataset.value || "0");',
+            "      fdValueLabel.textContent = `Frame ${index + 1}: ${value.toFixed(3)} mm`;",
+            "    }",
+            "  };",
+            "  const showFrame = (index) => {",
+            "    currentFrame = index % frames.length;",
+            "    setFdMarker(currentFrame);",
+            "  };",
+            "  const restart = () => {",
+            "    frames.forEach((frame) => {",
+            "      frame.style.animation = 'none';",
+            "      // Force reflow to restart the CSS animation",
+            "      void frame.getBoundingClientRect();",
+            "      frame.style.animation = '';",
+            "    });",
+            "    showFrame(0);",
+            "  };",
+            "  const start = () => {",
+            "    if (restartTimer) {",
+            "      clearInterval(restartTimer);",
+            "    }",
+            "    if (playbackTimer) {",
+            "      clearInterval(playbackTimer);",
+            "    }",
+            '    svg.classList.add("playing");',
+            "    restart();",
+            "    restartTimer = setInterval(restart, cycleMs);",
+            "    playbackTimer = setInterval(() => {",
+            "      showFrame(currentFrame + 1);",
+            "    }, frameDurationMs);",
+            "  };",
+            "  const stop = () => {",
+            '    svg.classList.remove("playing");',
+            "    if (restartTimer) {",
+            "      clearInterval(restartTimer);",
+            "      restartTimer = null;",
+            "    }",
+            "    if (playbackTimer) {",
+            "      clearInterval(playbackTimer);",
+            "      playbackTimer = null;",
+            "    }",
+            "    frames.forEach((frame) => {",
+            "      frame.style.animation = 'none';",
+            "    });",
+            "  };",
+            "  showFrame(0);",
+            "  svg.addEventListener('mouseenter', start);",
+            "  svg.addEventListener('mouseleave', stop);",
+            "})();",
+            "</script>",
+            "</svg>",
+        ]
+    )
+
+    return "\n".join(svg_parts)
+
+
+def plot_motion_correction_confounds_cine(
+    uncorr_img: nb.spatialimages.SpatialImage,
+    corr_img: nb.spatialimages.SpatialImage,
+    duration: float,
+    fd_values: np.ndarray | None,
+) -> str:
+    """Create framewise motion correction animated plot with optional confounds.
+
+    For each frame, this function renders orthogonal EPI views for the
+    original and corrected images, concatenates them side-by-side, and
+    embeds the resulting PNG frames in a single SVG with
+    hover-triggered animation. When framewise displacement (FD) values
+    are provided, a synchronized FD chart is added below the image
+    panel, including threshold-colored segments and a moving marker
+    tied to the currently displayed frame.
+
+    Parameters
+    ----------
+    uncorr_img : :obj:`~nibabel.spatialimages.SpatialImage`
+        Uncorrected image. Expected to be 4D, but 3D is accepted and treated as a single frame.
+    corr_img : :obj:`~nibabel.spatialimages.SpatialImage`
+        Motion-corrected image. Expected to be 4D, but 3D is accepted and
+        treated as a single frame.
+    duration : :obj:`float`
+        Display duration (seconds) for each frame in the animation cycle.
+    fd_values : :obj:`~numpy.ndarray` or ``None``
+        Framewise displacement values (in mm) aligned to frame index. If
+        provided, values are truncated to the number of plotted frames and an
+        FD panel is included in the SVG.
+
+    Returns
+    -------
+    :obj:`str`
+        SVG document string for interactive motion comparison.
+    """
+
+    n_frames = min(
+        uncorr_img.shape[-1] if uncorr_img.ndim > 3 else 1,
+        corr_img.shape[-1] if corr_img.ndim > 3 else 1,
+    )
+
+    if fd_values is not None:
+        fd_values = np.asarray(fd_values[:n_frames], dtype=float)
+        n_frames = min(n_frames, len(fd_values))
+
+    # Compute display range and cut coordinates
+    vmin, vmax, cut_coords_uncorr, cut_coords_corr, crop_slices = compute_common_display_params(
+        uncorr_img,
+        corr_img,
+    )
+
+    # Render the frames
+    frames = render_comparison_frames(
+        uncorr_img, corr_img, n_frames, vmin, vmax, cut_coords_uncorr, cut_coords_corr, crop_slices
+    )
+
+    # Compose the motion plot
+    return _compose_motion_svg(frames, duration, fd_values)
 
 
 def plot_fd(fd_file, fd_radius, mean_fd_dist=None, figsize=DINA4_LANDSCAPE):

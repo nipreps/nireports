@@ -22,6 +22,9 @@
 #
 """Screening nuisance signals."""
 
+from pathlib import Path
+
+from nibabel.spatialimages import SpatialImage
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -32,8 +35,14 @@ from nipype.interfaces.base import (
 )
 from nipype.utils.filemanip import fname_presuffix
 
-from nireports.reportlets.nuisance import confounds_correlation_plot, plot_raincloud
+from nireports.reportlets.nuisance import (
+    confounds_correlation_plot,
+    plot_motion_correction_confounds_cine,
+    plot_raincloud,
+)
+from nireports.reportlets.utils import load_framewise_displacement
 from nireports.reportlets.xca import compcor_variance_plot
+from nireports.tools.ndimage import load_api
 
 
 class _CompCorVariancePlotInputSpec(BaseInterfaceInputSpec):
@@ -247,4 +256,70 @@ class RaincloudPlot(SimpleInterface):
             output_file=self._results["out_file"],
             **kwargs,
         )
+        return runtime
+
+
+class _MotionCorrectionConfoundsPlotInputSpec(BaseInterfaceInputSpec):
+    uncorr_file = File(
+        exists=True,
+        mandatory=True,
+        desc="Original (uncorrected) volume in native space",
+    )
+    corr_file = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Motion-corrected volume derived by applying the estimated motion "
+            "transforms to the original data in native space"
+        ),
+    )
+    fd_file = File(exists=True, desc="Confounds file containing framewise displacement")
+    duration = traits.Float(
+        0.2, usedefault=True, desc="Frame duration for the animation (seconds)"
+    )
+    out_file = traits.Either(None, File, value=None, usedefault=True, desc="Path to save plot")
+
+
+class _MotionCorrectionConfoundsPlotOutputSpec(TraitedSpec):
+    out_file = File(exists=True, desc="Path to saved plot")
+
+
+class MotionCorrectionConfoundsPlot(SimpleInterface):
+    """Generate animated visualizations before and after motion correction.
+
+    An animated SVG file is created using ortho views with consistent
+    cut coordinates and color scaling derived from the midpoint frame
+    of each series, and the lineplot of the confounding factor.
+    """
+
+    input_spec = _MotionCorrectionConfoundsPlotInputSpec
+    output_spec = _MotionCorrectionConfoundsPlotOutputSpec
+
+    def _run_interface(self, runtime):
+
+        fd_values = None
+        if isdefined(self.inputs.fd_file):
+            fd_values = load_framewise_displacement(self.inputs.fd_file)
+
+        if self.inputs.out_file is None:
+            self._results["out_file"] = fname_presuffix(
+                self.inputs.corr_file,
+                suffix="_hmc.svg",
+                use_ext=False,
+                newpath=runtime.cwd,
+            )
+        else:
+            self._results["out_file"] = self.inputs.out_file
+
+        svg_content = plot_motion_correction_confounds_cine(
+            load_api(self.inputs.uncorr_file, SpatialImage),
+            load_api(self.inputs.corr_file, SpatialImage),
+            self.inputs.duration,
+            fd_values,
+        )
+
+        out_file = Path(self._results["out_file"])
+        out_file.write_text(svg_content, encoding="utf-8")
+        self._results["out_file"] = str(out_file)
+
         return runtime
