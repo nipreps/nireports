@@ -30,7 +30,6 @@ import math
 import operator
 import os.path as op
 from base64 import b64encode
-from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -139,10 +138,10 @@ def _merge_crop_slices(
 
 
 def plot_motion(
-    orig_img : nb.spatialimages.SpatialImage,
-    corr_img : nb.spatialimages.SpatialImage,
+    orig_img: nb.spatialimages.SpatialImage,
+    corr_img: nb.spatialimages.SpatialImage,
     output_path: Path,
-    duration : float,
+    duration: float,
     cut_coords_orig: tuple[float, float, float],
     cut_coords_corr: tuple[float, float, float],
     vmin_orig: float,
@@ -165,16 +164,16 @@ def plot_motion(
     with TemporaryDirectory() as tmpdir:
         frames = []
         for idx in range(n_frames):
-            orig_png = Path(tmpdir) / f'orig_{idx:04d}.png'
-            corr_png = Path(tmpdir) / f'corr_{idx:04d}.png'
+            orig_png = Path(tmpdir) / f"orig_{idx:04d}.png"
+            corr_png = Path(tmpdir) / f"corr_{idx:04d}.png"
 
             orig_frame = _crop_img(image.index_img(orig_img, idx), crop_slices)
             corr_frame = _crop_img(image.index_img(corr_img, idx), crop_slices)
             plot_epi(
                 orig_frame,
                 colorbar=True,
-                display_mode='ortho',
-                title=f'Before motion correction | Frame {idx + 1}',
+                display_mode="ortho",
+                title=f"Before motion correction | Frame {idx + 1}",
                 cut_coords=cut_coords_orig,
                 vmin=vmin_orig,
                 vmax=vmax_orig,
@@ -183,8 +182,8 @@ def plot_motion(
             plot_epi(
                 corr_frame,
                 colorbar=True,
-                display_mode='ortho',
-                title=f'After motion correction | Frame {idx + 1}',
+                display_mode="ortho",
+                title=f"After motion correction | Frame {idx + 1}",
                 cut_coords=cut_coords_corr,
                 vmin=vmin_corr,
                 vmax=vmax_corr,
@@ -198,12 +197,12 @@ def plot_motion(
             if orig_arr.shape[0] < max_height:
                 pad = max_height - orig_arr.shape[0]
                 orig_arr = np.pad(
-                    orig_arr, ((0, pad), (0, 0), (0, 0)), mode='constant', constant_values=255
+                    orig_arr, ((0, pad), (0, 0), (0, 0)), mode="constant", constant_values=255
                 )
             if corr_arr.shape[0] < max_height:
                 pad = max_height - corr_arr.shape[0]
                 corr_arr = np.pad(
-                    corr_arr, ((0, pad), (0, 0), (0, 0)), mode='constant', constant_values=255
+                    corr_arr, ((0, pad), (0, 0), (0, 0)), mode="constant", constant_values=255
                 )
 
             combined = np.concatenate([orig_arr, corr_arr], axis=1)
@@ -218,28 +217,28 @@ def plot_motion(
         svg_parts = [
             '<svg xmlns="http://www.w3.org/2000/svg" '
             f'width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
-            '<style>',
+            "<style>",
             (
-                '.frame {'
-                f' opacity: 0; animation: framefade {total_duration}s infinite;'
-                ' animation-play-state: paused;'
-                '}'
+                ".frame {"
+                f" opacity: 0; animation: framefade {total_duration}s infinite;"
+                " animation-play-state: paused;"
+                "}"
             ),
-            '.playing .frame {animation-play-state: running;}',
-            '.fd-line-primary {fill: none; stroke: #2c7be5; stroke-width: 2;}',
-            '.fd-line-alert {fill: none; stroke: #d7263d; stroke-width: 2;}',
-            '.fd-axis {stroke: #333; stroke-width: 1;}',
-            '.fd-point {fill: #2c7be5; stroke: white; stroke-width: 1;}',
-            '#fd-marker {fill: #d7263d; stroke: white; stroke-width: 2;}',
-            '#fd-value {font: 14px sans-serif; fill: #1a1a1a;}',
-            '@keyframes framefade {0%, 80% {opacity: 1;} 100% {opacity: 0;}}',
+            ".playing .frame {animation-play-state: running;}",
+            ".fd-line-primary {fill: none; stroke: #2c7be5; stroke-width: 2;}",
+            ".fd-line-alert {fill: none; stroke: #d7263d; stroke-width: 2;}",
+            ".fd-axis {stroke: #333; stroke-width: 1;}",
+            ".fd-point {fill: #2c7be5; stroke: white; stroke-width: 1;}",
+            "#fd-marker {fill: #d7263d; stroke: white; stroke-width: 2;}",
+            "#fd-value {font: 14px sans-serif; fill: #1a1a1a;}",
+            "@keyframes framefade {0%, 80% {opacity: 1;} 100% {opacity: 0;}}",
         ]
 
         for idx in range(n_frames):
             delay = duration * idx
-            svg_parts.append(f'.frame-{idx} {{animation-delay: {delay}s;}}')
+            svg_parts.append(f".frame-{idx} {{animation-delay: {delay}s;}}")
 
-        svg_parts.append('</style>')
+        svg_parts.append("</style>")
 
         for idx, frame in enumerate(frames):
             # ToDo
@@ -275,16 +274,14 @@ def plot_motion(
             for idx, value in enumerate(fd_values):
                 x_coord = fd_x_start + x_scale * idx
                 y_coord = fd_axis_y - (value / fd_max) * fd_y_range
-                points.append(f'{x_coord:.2f},{y_coord:.2f}')
+                points.append(f"{x_coord:.2f},{y_coord:.2f}")
                 point_elems.append(
                     f'<circle class="fd-point fd-point-{idx}" cx="{x_coord:.2f}" '
                     f'cy="{y_coord:.2f}" r="3" data-value="{value:.6f}" />'
                 )
                 if idx > 0:
-                    prev_x, prev_y = map(float, points[idx - 1].split(','))
-                    line_class = (
-                        'fd-line-alert' if value >= fd_threshold else 'fd-line-primary'
-                    )
+                    prev_x, prev_y = map(float, points[idx - 1].split(","))
+                    line_class = "fd-line-alert" if value >= fd_threshold else "fd-line-primary"
                     line_elems.append(
                         f'<line class="{line_class}" x1="{prev_x:.2f}" y1="{prev_y:.2f}" '
                         f'x2="{x_coord:.2f}" y2="{y_coord:.2f}" />'
@@ -306,7 +303,7 @@ def plot_motion(
                 label_elems.append(
                     f'<text x="{fd_x_start - tick_length - 6}" y="{y_coord + 4:.2f}" '
                     'font-size="12" text-anchor="end">'
-                    f'{tick_value:.1f}</text>'
+                    f"{tick_value:.1f}</text>"
                 )
 
             # X-axis ticks show every other frame (plus the last) to avoid clutter
@@ -330,7 +327,7 @@ def plot_motion(
                 x_label_elems.append(
                     f'<text x="{x_coord:.2f}" y="{fd_axis_y + x_tick_length + 14}" '
                     'font-size="12" text-anchor="middle">'
-                    f'{tick_idx + 1}</text>'
+                    f"{tick_idx + 1}</text>"
                 )
 
             svg_parts.extend(
@@ -352,89 +349,89 @@ def plot_motion(
                     f'<text x="{fd_x_start - fd_label_offset}" y="{fd_label_y:.2f}" '
                     'font-size="14" text-anchor="middle" transform='
                     f'"rotate(-90 {fd_x_start - fd_label_offset},{fd_label_y:.2f})">'
-                    'FD (mm)</text>',
+                    "FD (mm)</text>",
                     f'<text x="{(fd_x_start + fd_x_end) / 2:.2f}" '
                     f'y="{fd_axis_y + 35}" font-size="14" text-anchor="middle">'
-                    'Frames</text>',
-                    '</g>',
+                    "Frames</text>",
+                    "</g>",
                 ]
             )
 
         svg_parts.extend(
             [
-                '<script>',
-                '(() => {',
-                '  const svg = document.currentScript.parentNode;',
+                "<script>",
+                "(() => {",
+                "  const svg = document.currentScript.parentNode;",
                 "  const frames = svg.querySelectorAll('.frame');",
                 "  const fdPoints = Array.from(svg.querySelectorAll('.fd-point'));",
                 "  const fdMarker = svg.querySelector('#fd-marker');",
                 "  const fdValueLabel = svg.querySelector('#fd-value');",
-                f'  const cycleMs = {total_duration * 1000:.0f};',
-                f'  const frameDurationMs = {duration * 1000:.0f};',
-                '  let restartTimer = null;',
-                '  let playbackTimer = null;',
-                '  let currentFrame = 0;',
-                '  const setFdMarker = (index) => {',
-                '    if (!fdMarker || !fdPoints.length) return;',
-                '    const point = fdPoints[index % fdPoints.length];',
+                f"  const cycleMs = {total_duration * 1000:.0f};",
+                f"  const frameDurationMs = {duration * 1000:.0f};",
+                "  let restartTimer = null;",
+                "  let playbackTimer = null;",
+                "  let currentFrame = 0;",
+                "  const setFdMarker = (index) => {",
+                "    if (!fdMarker || !fdPoints.length) return;",
+                "    const point = fdPoints[index % fdPoints.length];",
                 '    fdMarker.setAttribute("cx", point.getAttribute("cx"));',
                 '    fdMarker.setAttribute("cy", point.getAttribute("cy"));',
-                '    if (fdValueLabel) {',
+                "    if (fdValueLabel) {",
                 '      const value = parseFloat(point.dataset.value || "0");',
-                '      fdValueLabel.textContent = `Frame ${index + 1}: ${value.toFixed(3)} mm`;',
-                '    }',
-                '  };',
-                '  const showFrame = (index) => {',
-                '    currentFrame = index % frames.length;',
-                '    setFdMarker(currentFrame);',
-                '  };',
-                '  const restart = () => {',
-                '    frames.forEach((frame) => {',
+                "      fdValueLabel.textContent = `Frame ${index + 1}: ${value.toFixed(3)} mm`;",
+                "    }",
+                "  };",
+                "  const showFrame = (index) => {",
+                "    currentFrame = index % frames.length;",
+                "    setFdMarker(currentFrame);",
+                "  };",
+                "  const restart = () => {",
+                "    frames.forEach((frame) => {",
                 "      frame.style.animation = 'none';",
-                '      // Force reflow to restart the CSS animation',
-                '      void frame.getBoundingClientRect();',
+                "      // Force reflow to restart the CSS animation",
+                "      void frame.getBoundingClientRect();",
                 "      frame.style.animation = '';",
-                '    });',
-                '    showFrame(0);',
-                '  };',
-                '  const start = () => {',
-                '    if (restartTimer) {',
-                '      clearInterval(restartTimer);',
-                '    }',
-                '    if (playbackTimer) {',
-                '      clearInterval(playbackTimer);',
-                '    }',
+                "    });",
+                "    showFrame(0);",
+                "  };",
+                "  const start = () => {",
+                "    if (restartTimer) {",
+                "      clearInterval(restartTimer);",
+                "    }",
+                "    if (playbackTimer) {",
+                "      clearInterval(playbackTimer);",
+                "    }",
                 '    svg.classList.add("playing");',
-                '    restart();',
-                '    restartTimer = setInterval(restart, cycleMs);',
-                '    playbackTimer = setInterval(() => {',
-                '      showFrame(currentFrame + 1);',
-                '    }, frameDurationMs);',
-                '  };',
-                '  const stop = () => {',
+                "    restart();",
+                "    restartTimer = setInterval(restart, cycleMs);",
+                "    playbackTimer = setInterval(() => {",
+                "      showFrame(currentFrame + 1);",
+                "    }, frameDurationMs);",
+                "  };",
+                "  const stop = () => {",
                 '    svg.classList.remove("playing");',
-                '    if (restartTimer) {',
-                '      clearInterval(restartTimer);',
-                '      restartTimer = null;',
-                '    }',
-                '    if (playbackTimer) {',
-                '      clearInterval(playbackTimer);',
-                '      playbackTimer = null;',
-                '    }',
-                '    frames.forEach((frame) => {',
+                "    if (restartTimer) {",
+                "      clearInterval(restartTimer);",
+                "      restartTimer = null;",
+                "    }",
+                "    if (playbackTimer) {",
+                "      clearInterval(playbackTimer);",
+                "      playbackTimer = null;",
+                "    }",
+                "    frames.forEach((frame) => {",
                 "      frame.style.animation = 'none';",
-                '    });',
-                '  };',
-                '  showFrame(0);',
+                "    });",
+                "  };",
+                "  showFrame(0);",
                 "  svg.addEventListener('mouseenter', start);",
                 "  svg.addEventListener('mouseleave', stop);",
-                '})();',
-                '</script>',
-                '</svg>',
+                "})();",
+                "</script>",
+                "</svg>",
             ]
         )
 
-        output_path.write_text('\n'.join(svg_parts), encoding='utf-8')
+        output_path.write_text("\n".join(svg_parts), encoding="utf-8")
 
     # ToDo
     # Does not make sense to return an input parameter

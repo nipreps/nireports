@@ -270,22 +270,22 @@ class MotionPlotInputSpec(BaseInterfaceInputSpec):
     original_pet = File(
         exists=True,
         mandatory=True,
-        desc='Original (uncorrected) PET series in native PET space',
+        desc="Original (uncorrected) PET series in native PET space",
     )
     corrected_pet = File(
         exists=True,
         mandatory=True,
         desc=(
-            'Motion-corrected PET series derived by applying the estimated motion '
-            'transforms to the original data in native PET space'
+            "Motion-corrected PET series derived by applying the estimated motion "
+            "transforms to the original data in native PET space"
         ),
     )
-    fd_file = File(exists=True, desc='Confounds file containing framewise displacement')
-    duration = traits.Float(0.2, usedefault=True, desc='Frame duration for the GIF (seconds)')
+    fd_file = File(exists=True, desc="Confounds file containing framewise displacement")
+    duration = traits.Float(0.2, usedefault=True, desc="Frame duration for the GIF (seconds)")
 
 
 class MotionPlotOutputSpec(TraitedSpec):
-    svg_file = File(exists=True, desc='Animated before/after motion correction SVG')
+    svg_file = File(exists=True, desc="Animated before/after motion correction SVG")
 
 
 class MotionPlot(SimpleInterface):
@@ -304,7 +304,7 @@ class MotionPlot(SimpleInterface):
     def _run_interface(self, runtime):
         runtime.cwd = Path(runtime.cwd)
 
-        svg_file = runtime.cwd / 'pet_motion_hmc.svg'
+        svg_file = runtime.cwd / "pet_motion_hmc.svg"
         svg_file.parent.mkdir(parents=True, exist_ok=True)
 
         _, _, vmin_orig, vmax_orig, orig_crop_slices = self._compute_display_params(
@@ -341,7 +341,7 @@ class MotionPlot(SimpleInterface):
             fd_values=fd_values,
         )
 
-        self._results['svg_file'] = str(svg_file)
+        self._results["svg_file"] = str(svg_file)
 
         return runtime
 
@@ -370,18 +370,17 @@ class MotionPlot(SimpleInterface):
             return cropped_mid, cut_coords, vmin, vmax, crop_slices
         return cropped_mid, cut_coords, vmin, vmax
 
-
     def _load_framewise_displacement(self, fd_file: str) -> np.ndarray:
-        framewise_disp = pd.read_csv(fd_file, sep='\t')
-        if 'framewise_displacement' in framewise_disp:
-            fd_values = framewise_disp['framewise_displacement']
-        elif 'FD' in framewise_disp:
-            fd_values = framewise_disp['FD']
+        framewise_disp = pd.read_csv(fd_file, sep="\t")
+        if "framewise_displacement" in framewise_disp:
+            fd_values = framewise_disp["framewise_displacement"]
+        elif "FD" in framewise_disp:
+            fd_values = framewise_disp["FD"]
         else:
-            available = ', '.join(framewise_disp.columns)
+            available = ", ".join(framewise_disp.columns)
             raise ValueError(
-                'Could not find framewise displacement column in confounds file '
-                f'(available columns: {available})'
+                "Could not find framewise displacement column in confounds file "
+                f"(available columns: {available})"
             )
 
         return np.asarray(fd_values.fillna(0.0), dtype=float)

@@ -58,7 +58,7 @@ from nireports.tests.utils import _generate_raincloud_random_data
 from nireports.tools.timeseries import cifti_timeseries as _cifti_timeseries
 from nireports.tools.timeseries import get_tr as _get_tr
 from nireports.tools.timeseries import nifti_timeseries as _nifti_timeseries
-from nireports.tests.utils import _write_image
+
 
 @pytest.mark.parametrize("tr", (None, 0.7))
 @pytest.mark.parametrize("sorting", (None, "ward", "linkage"))
@@ -625,14 +625,14 @@ def test_largest_connected_component_selects_largest():
 
 
 def test_compute_crop_slices_returns_none_without_positive(tmp_path, monkeypatch):
-    img_path = tmp_path / 'zeros.nii.gz'
+    img_path = tmp_path / "zeros.nii.gz"
     img = nb.Nifti1Image(np.zeros((4, 4, 4), dtype=float), np.eye(4))
     img.to_filename(img_path)
 
     def raise_error(_img):
         raise RuntimeError
 
-    monkeypatch.setattr('nireports.reportlets.nuisance.compute_epi_mask', raise_error)
+    monkeypatch.setattr("nireports.reportlets.nuisance.compute_epi_mask", raise_error)
 
     result = _compute_crop_slices(nb.load(str(img_path)))
 
