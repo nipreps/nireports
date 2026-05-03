@@ -40,7 +40,16 @@ import nireports._vendored.svgutils.transform as svgt
 from nireports.reportlets import compression_missing_msg, have_compression
 from nireports.reportlets.modality.func import fMRIPlot
 from nireports.reportlets.mosaic import _create_lscmap_with_alpha, plot_mosaic, plot_segs
-from nireports.reportlets.nuisance import plot_carpet, plot_dist, plot_fd, plot_raincloud
+from nireports.reportlets.nuisance import (
+    _compute_crop_slices,
+    _crop_img,
+    _largest_connected_component,
+    _merge_crop_slices,
+    plot_carpet,
+    plot_dist,
+    plot_fd,
+    plot_raincloud,
+)
 from nireports.reportlets.surface import cifti_surfaces_plot
 from nireports.reportlets.utils import _3d_in_file
 from nireports.reportlets.xca import compcor_variance_plot, plot_melodic_components
@@ -602,3 +611,69 @@ def test_create_cmap(outdir):
     if outdir:
         fig.savefig(outdir / f"{ls_cmap.name}.svg")
     plt.close(fig)
+
+
+def test_largest_connected_component_selects_largest():
+    mask = np.zeros((3, 3, 3), dtype=bool)
+    mask[0, 0, 0] = True
+    mask[1:3, 1:3, 1] = True
+
+    largest = _largest_connected_component(mask)
+
+    assert largest.sum() == 4
+    assert largest[0, 0, 0] == 0
+
+
+def test_compute_crop_slices_returns_none_without_positive(tmp_path, monkeypatch):
+    img_path = tmp_path / "zeros.nii.gz"
+    img = nb.Nifti1Image(np.zeros((4, 4, 4), dtype=float), np.eye(4))
+    img.to_filename(img_path)
+
+    def raise_error(_img):
+        raise RuntimeError
+
+    monkeypatch.setattr("nireports.reportlets.nuisance.compute_epi_mask", raise_error)
+
+    result = _compute_crop_slices(nb.load(str(img_path)))
+
+    assert result is None
+
+
+def test_crop_img_adjusts_affine():
+    data = np.ones((4, 4, 4), dtype=float)
+    affine = np.diag([2.0, 3.0, 4.0, 1.0])
+    img = nb.Nifti1Image(data, affine)
+
+    cropped = _crop_img(img, (slice(1, 3), slice(0, 2), slice(2, 4)))
+
+    assert np.allclose(cropped.affine[:3, 3], [2.0, 0.0, 8.0])
+
+
+def test_crop_img_adjusts_affine_for_oriented_image():
+    data = np.ones((4, 4, 4), dtype=float)
+    affine = np.array(
+        [
+            [0.0, -2.0, 0.0, 0.0],
+            [2.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 3.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+    )
+    img = nb.Nifti1Image(data, affine)
+
+    cropped = _crop_img(img, (slice(1, 3), slice(0, 2), slice(2, 4)))
+
+    assert np.allclose(cropped.affine[:3, 3], [0.0, 2.0, 6.0])
+
+
+def test_merge_crop_slices_uses_union():
+    merged = _merge_crop_slices(
+        (slice(2, 8), slice(4, 9), slice(1, 5)),
+        (slice(1, 6), slice(5, 10), slice(0, 7)),
+    )
+
+    assert merged == (slice(1, 8), slice(4, 10), slice(0, 7))
+
+
+def test_plot_motion():
+    pass

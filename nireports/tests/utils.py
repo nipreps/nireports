@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import nibabel as nb
 import numpy as np
 import pandas as pd
 
@@ -35,3 +38,10 @@ def _generate_raincloud_random_data(
     df = pd.DataFrame(np.vstack([values, names]).T, columns=[features_label, group_label])
 
     df.to_csv(data_file, sep="\t")
+
+
+def _write_image(path: Path, shape):
+    data = np.linspace(0, 1, int(np.prod(shape)), dtype=float).reshape(shape)
+    img = nb.Nifti1Image(data, np.eye(4))
+    img.to_filename(path)
+    return path

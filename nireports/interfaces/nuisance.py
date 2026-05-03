@@ -22,6 +22,15 @@
 #
 """Screening nuisance signals."""
 
+from pathlib import Path
+from typing import cast
+
+import nibabel as nb
+import numpy as np
+import pandas as pd
+from nibabel.spatialimages import SpatialImage
+from nilearn import image
+from nilearn.plotting.find_cuts import find_xyz_cut_coords
 from nipype.interfaces.base import (
     BaseInterfaceInputSpec,
     File,
@@ -32,7 +41,14 @@ from nipype.interfaces.base import (
 )
 from nipype.utils.filemanip import fname_presuffix
 
-from nireports.reportlets.nuisance import confounds_correlation_plot, plot_raincloud
+from nireports.reportlets.nuisance import (
+    _compute_crop_slices,
+    _crop_img,
+    _merge_crop_slices,
+    confounds_correlation_plot,
+    plot_motion,
+    plot_raincloud,
+)
 from nireports.reportlets.xca import compcor_variance_plot
 
 
@@ -248,3 +264,155 @@ class RaincloudPlot(SimpleInterface):
             **kwargs,
         )
         return runtime
+
+
+class MotionPlotInputSpec(BaseInterfaceInputSpec):
+    original_pet = File(
+        exists=True,
+        mandatory=True,
+        desc="Original (uncorrected) PET series in native PET space",
+    )
+    corrected_pet = File(
+        exists=True,
+        mandatory=True,
+        desc=(
+            "Motion-corrected PET series derived by applying the estimated motion "
+            "transforms to the original data in native PET space"
+        ),
+    )
+    fd_file = File(exists=True, desc="Confounds file containing framewise displacement")
+    duration = traits.Float(0.2, usedefault=True, desc="Frame duration for the GIF (seconds)")
+
+
+class MotionPlotOutputSpec(TraitedSpec):
+    svg_file = File(exists=True, desc="Animated before/after motion correction SVG")
+
+
+class MotionPlot(SimpleInterface):
+    """Generate animated visualizations before and after motion correction.
+
+    A single GIF is created using ortho views with consistent cut coordinates
+    and color scaling derived from the midpoint frame of each series. The
+    per-frame views of the original and motion-corrected series are concatenated
+    horizontally, allowing the main PET report to display the animation
+    directly.
+    """
+
+    input_spec = MotionPlotInputSpec
+    output_spec = MotionPlotOutputSpec
+
+    def _run_interface(self, runtime):
+        runtime.cwd = Path(runtime.cwd)
+
+        svg_file = runtime.cwd / "pet_motion_hmc.svg"
+        svg_file.parent.mkdir(parents=True, exist_ok=True)
+
+        _, _, vmin_orig, vmax_orig, orig_crop_slices = self._compute_display_params(
+            self.inputs.original_pet, return_crop_slices=True
+        )
+        _, _, vmin_corr, vmax_corr, corr_crop_slices = self._compute_display_params(
+            self.inputs.corrected_pet, return_crop_slices=True
+        )
+        crop_slices = _merge_crop_slices(orig_crop_slices, corr_crop_slices)
+        _, cut_coords_orig, _, _ = self._compute_display_params(
+            self.inputs.original_pet,
+            crop_slices=crop_slices,
+        )
+        _, cut_coords_corr, _, _ = self._compute_display_params(
+            self.inputs.corrected_pet,
+            crop_slices=crop_slices,
+        )
+
+        fd_values = None
+        if isdefined(self.inputs.fd_file):
+            fd_values = self._load_framewise_displacement(self.inputs.fd_file)
+
+        # ToDo
+        # Does not make sense to assign to an input parameter
+        svg_file = self._build_animation(
+            output_path=svg_file,
+            cut_coords_orig=cut_coords_orig,
+            cut_coords_corr=cut_coords_corr,
+            vmin_orig=vmin_orig,
+            vmax_orig=vmax_orig,
+            vmin_corr=vmin_corr,
+            vmax_corr=vmax_corr,
+            crop_slices=crop_slices,
+            fd_values=fd_values,
+        )
+
+        self._results["svg_file"] = str(svg_file)
+
+        return runtime
+
+    def _compute_display_params(
+        self,
+        in_file: str,
+        crop_slices: tuple[slice, slice, slice] | None = None,
+        return_crop_slices: bool = False,
+    ):
+        img = cast(SpatialImage, nb.load(in_file))
+        if img.ndim == 3:
+            mid_img = img
+        else:
+            mid_img = image.index_img(in_file, img.shape[-1] // 2)
+
+        if crop_slices is None:
+            crop_slices = _compute_crop_slices(mid_img)
+
+        cropped_mid = _crop_img(mid_img, crop_slices)
+        data = cropped_mid.get_fdata().astype(float)
+        vmax = float(np.percentile(data.flatten(), 99.9))
+        vmin = float(np.percentile(data.flatten(), 80))
+        cut_coords = find_xyz_cut_coords(cropped_mid)
+
+        if return_crop_slices:
+            return cropped_mid, cut_coords, vmin, vmax, crop_slices
+        return cropped_mid, cut_coords, vmin, vmax
+
+    def _load_framewise_displacement(self, fd_file: str) -> np.ndarray:
+        framewise_disp = pd.read_csv(fd_file, sep="\t")
+        if "framewise_displacement" in framewise_disp:
+            fd_values = framewise_disp["framewise_displacement"]
+        elif "FD" in framewise_disp:
+            fd_values = framewise_disp["FD"]
+        else:
+            available = ", ".join(framewise_disp.columns)
+            raise ValueError(
+                "Could not find framewise displacement column in confounds file "
+                f"(available columns: {available})"
+            )
+
+        return np.asarray(fd_values.fillna(0.0), dtype=float)
+
+    def _build_animation(
+        self,
+        output_path: Path,
+        cut_coords_orig: tuple[float, float, float],
+        cut_coords_corr: tuple[float, float, float],
+        vmin_orig: float,
+        vmax_orig: float,
+        vmin_corr: float,
+        vmax_corr: float,
+        crop_slices: tuple[slice, slice, slice] | None,
+        fd_values: np.ndarray | None,
+    ):
+        orig_img = cast(SpatialImage, nb.load(self.inputs.original_pet))
+        corr_img = cast(SpatialImage, nb.load(self.inputs.corrected_pet))
+
+        # ToDo
+        # Should return something else
+        return plot_motion(
+            orig_img,
+            corr_img,
+            output_path,
+            self.inputs.duration,
+            cut_coords_orig,
+            cut_coords_corr,
+            vmin_orig,
+            vmax_orig,
+            vmin_corr,
+            vmax_corr,
+            crop_slices,
+            fd_values,
+        )
