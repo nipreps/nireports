@@ -26,6 +26,7 @@ import nibabel as nb
 import numpy as np
 import pytest
 from matplotlib import pyplot as plt
+from matplotlib import rcParams
 
 from nireports.reportlets.modality.dwi import (
     get_segment_labels,
@@ -36,6 +37,29 @@ from nireports.reportlets.modality.dwi import (
 )
 from nireports.reportlets.nuisance import plot_carpet
 from nireports.tests.utils import _generate_raincloud_random_data
+
+
+@pytest.mark.parametrize("latex_available", [False, True])
+def test_plot_dwi_does_not_leak_rcparams(monkeypatch, latex_available):
+    """plot_dwi must not mutate global matplotlib rcParams."""
+    old_usetex = rcParams["text.usetex"]
+    old_family = rcParams["font.family"]
+    old_sans = rcParams["font.sans-serif"]
+
+    # Force the no-LaTeX path through the helper
+    monkeypatch.setattr(
+        "nireports.reportlets.modality.dwi._latex_available", lambda: latex_available
+    )
+
+    data = np.zeros((10, 10, 10), dtype=float)
+    affine = np.eye(4)
+
+    _ = plot_dwi(data, affine)
+
+    # rcParams should be restored after plot_dwi exits
+    assert rcParams["text.usetex"] == old_usetex
+    assert rcParams["font.family"] == old_family
+    assert rcParams["font.sans-serif"] == old_sans
 
 
 def test_plot_dwi(tmp_path, test_data_package, outdir):

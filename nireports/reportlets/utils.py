@@ -32,6 +32,7 @@ from __future__ import annotations
 import base64
 import os
 import re
+import shutil
 import subprocess
 import typing as ty
 import warnings
@@ -542,3 +543,8 @@ def get_parula() -> mpl.colors.LinearSegmentedColormap:
     ]
 
     return LinearSegmentedColormap.from_list("parula", cm_data)
+
+
+def _latex_available() -> bool:
+    """Return True when a LaTeX executable is available on PATH."""
+    return shutil.which("latex") is not None
