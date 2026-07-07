@@ -302,7 +302,8 @@ def cuts_from_bbox(mask_nii: SpatialImage, cuts: int = 3) -> dict[str, list[floa
     vox_coords[-1, :] = 1.0
     for ax, (c, th) in enumerate(zip(ijk_counts, ijk_th)):
         # Start with full plane if mask is seemingly empty
-        smin, smax = (0, mask_data.shape[ax] - 1)
+        smin: np.signedinteger | int = 0
+        smax: np.signedinteger | int = mask_data.shape[ax] - 1
 
         B = np.argwhere(c > th)
         if B.size < cuts:  # Threshold too high

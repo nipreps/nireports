@@ -73,7 +73,7 @@ def load_api(path: ty.Union[str, os.PathLike[str]], api: type[ImgT]) -> ImgT:
 def _get_values_inside_a_mask(
     main_file: ty.Union[str, os.PathLike[str]],
     mask_file: ty.Union[str, os.PathLike[str]],
-) -> npt.NDArray[np.float64]:
+) -> npt.NDArray[np.floating]:
     main_nii = load_api(main_file, SpatialImage)
     main_data = main_nii.get_fdata()
     nan_mask = np.logical_not(np.isnan(main_data))
