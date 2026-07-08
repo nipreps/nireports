@@ -56,19 +56,23 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         dependencies: [latest] # , pre]
         architecture: ['x64']
-        latex: [false, true]
+        latex: [false]
         include:
           # Test minimum dependencies on oldest supported Python
           - os: ubuntu-latest
             python-version: "3.10"
             dependencies: min
+            latex: false
+          # Enable latex to exercise code paths that can take advantage
+          - os: ubuntu-latest
+            python-version: "3"
+            dependencies: latest
             latex: true
         exclude:
           # Do not test pre-releases for versions out of SPEC0
           - os: ubuntu-latest
             python-version: "3.10"
             dependencies: pre
-            latex: true
           # If we re-enable Windows/Mac tests, add the following exclusions:
           # 32-bit is a Windows-only consideration
           # Only run 2 newest Python on Windows/Mac
