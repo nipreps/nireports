@@ -56,11 +56,18 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         dependencies: [latest] # , pre]
         architecture: ['x64']
+        latex: [false]
         include:
           # Test minimum dependencies on oldest supported Python
           - os: ubuntu-latest
             python-version: "3.10"
             dependencies: min
+            latex: false
+          # Enable latex to exercise code paths that can take advantage
+          - os: ubuntu-latest
+            python-version: "3"
+            dependencies: latest
+            latex: true
         exclude:
           # Do not test pre-releases for versions out of SPEC0
           - os: ubuntu-latest
@@ -94,9 +101,15 @@ jobs:
           restore-keys: |
             apt-cache-v0
       - name: Install tex
+        if: ${{ matrix.latex }}
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends dvipng texlive texlive-latex-extra cm-super
+      - name: Show latex availability
+        run: |
+          echo "LaTeX matrix flag: ${{ matrix.latex }}"
+          which latex || true
+          latex --version || true
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
