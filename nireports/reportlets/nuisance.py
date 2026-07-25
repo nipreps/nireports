@@ -526,7 +526,7 @@ def spikesplot(
     # Handle X axis
     last = ntsteps - 1
     ax.set_xlim(0, last)
-    xticks = list(range(0, last)[::20]) + [last] if not hide_x else []
+    xticks = list(range(last)[::20]) + [last] if not hide_x else []
     ax.set_xticks(xticks)
 
     if not hide_x:

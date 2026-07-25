@@ -144,7 +144,6 @@ def _namelast(inlist):
 @click.group()
 def cli():
     """Generate authorship boilerplates."""
-    pass
 
 
 @cli.command()

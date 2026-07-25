@@ -47,8 +47,6 @@ def test_plot_dwi_uses_latex_typography(monkeypatch, expect_latex):
         observed["sans-serif"] = mpl.rcParams["font.sans-serif"]
         observed["title"] = kwargs["title"]
 
-        return None
-
     monkeypatch.setattr(
         "nireports.reportlets.modality.dwi.plot_anat",
         fake_plot_anat,
