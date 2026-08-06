@@ -40,15 +40,28 @@ import nireports._vendored.svgutils.transform as svgt
 from nireports.reportlets import compression_missing_msg, have_compression
 from nireports.reportlets.modality.func import fMRIPlot
 from nireports.reportlets.mosaic import _create_lscmap_with_alpha, plot_mosaic, plot_segs
-from nireports.reportlets.nuisance import plot_carpet, plot_dist, plot_fd, plot_raincloud
+from nireports.reportlets.nuisance import (
+    _compose_fd_panel_svg,
+    _compose_motion_svg,
+    plot_carpet,
+    plot_dist,
+    plot_fd,
+    plot_motion_correction_confounds_cine,
+    plot_raincloud,
+)
 from nireports.reportlets.surface import cifti_surfaces_plot
 from nireports.reportlets.utils import _3d_in_file
 from nireports.reportlets.xca import compcor_variance_plot, plot_melodic_components
 from nireports.tests.testing import _create_dtseries_cifti
-from nireports.tests.utils import _generate_raincloud_random_data
+from nireports.tests.utils import _generate_raincloud_random_data, _write_image
+from nireports.tools.ndimage import load_api
 from nireports.tools.timeseries import cifti_timeseries as _cifti_timeseries
 from nireports.tools.timeseries import get_tr as _get_tr
 from nireports.tools.timeseries import nifti_timeseries as _nifti_timeseries
+
+
+def _dummy_frame(width=20, height=10, channels=3, value=128):
+    return np.full((height, width, channels), value, dtype=np.uint8)
 
 
 @pytest.mark.parametrize("tr", (None, 0.7))
@@ -602,3 +615,147 @@ def test_create_cmap(outdir):
     if outdir:
         fig.savefig(outdir / f"{ls_cmap.name}.svg")
     plt.close(fig)
+
+
+def test_compose_fd_panel_svg_returns_expected_elements():
+    fd_values = np.array([0.0, 1.0, 4.0], dtype=float)
+    parts = _compose_fd_panel_svg(200, 400, 3, fd_values, 220)
+    joined = "\n".join(parts)
+
+    assert '<g class="fd-plot"' in joined
+    assert 'class="fd-line-primary"' in joined or 'class="fd-line-alert"' in joined
+    assert 'class="fd-point fd-point-0"' in joined
+    assert 'id="fd-marker"' in joined
+    assert "FD (mm)" in joined
+    assert "Frames" in joined
+
+
+def test_compose_fd_panel_svg_uses_alert_class_above_threshold():
+    # Threshold in implementation is 3.0
+    fd_values = np.array([0.1, 3.2], dtype=float)
+    parts = _compose_fd_panel_svg(100, 300, 2, fd_values, 220)
+    joined = "\n".join(parts)
+    assert 'class="fd-line-alert"' in joined
+
+
+def test_compose_motion_svg_raises_on_empty_frames():
+    with pytest.raises(ValueError, match="No frames were rendered"):
+        _compose_motion_svg([], 0.2, None)
+
+
+def test_compose_motion_svg_without_fd_contains_expected_structure():
+    frames = [_dummy_frame(), _dummy_frame(value=64)]
+    svg_content = _compose_motion_svg(frames, 0.2, None)
+
+    assert svg_content.startswith('<svg xmlns="http://www.w3.org/2000/svg"')
+    assert 'class="frame frame-0"' in svg_content
+    assert 'class="frame frame-1"' in svg_content
+    assert "data:image/png;base64," in svg_content
+    assert 'class="fd-plot"' not in svg_content
+    assert "mouseenter" in svg_content
+    assert "mouseleave" in svg_content
+
+
+def test_compose_motion_svg_with_fd_contains_fd_panel():
+    frames = [_dummy_frame(), _dummy_frame(), _dummy_frame()]
+    fd_values = np.array([0.1, 0.5, 0.2], dtype=float)
+
+    svg_content = _compose_motion_svg(frames, 0.1, fd_values)
+
+    assert 'class="fd-plot"' in svg_content
+    assert 'id="fd-marker"' in svg_content
+    assert 'id="fd-value"' in svg_content
+    assert "FD (mm)" in svg_content
+    assert "Frames" in svg_content
+
+
+@pytest.mark.parametrize("n_frames", [3, 5])
+@pytest.mark.parametrize("with_fd", [False, True])
+def test_plot_motion_correction_confounds_cine(tmp_path, n_frames, with_fd):
+
+    uncorr_fle = _write_image(tmp_path / "uncorr.nii.gz", (4, 4, 4, n_frames))
+    corr_file = _write_image(tmp_path / "corr.nii.gz", (4, 4, 4, n_frames))
+
+    uncorr_img = load_api(uncorr_fle, nb.spatialimages.SpatialImage)
+    corr_img = load_api(corr_file, nb.spatialimages.SpatialImage)
+    duration = 0.05
+
+    fd_values = np.linspace(0.0, 0.3, n_frames, dtype=float) if with_fd else None
+
+    svg_content = plot_motion_correction_confounds_cine(uncorr_img, corr_img, duration, fd_values)
+
+    assert "frame-0" in svg_content
+    assert f"animation-delay: {duration}s" in svg_content
+
+
+@pytest.mark.parametrize("n_frames", [3, 5])
+@pytest.mark.parametrize("with_fd", [False, True])
+def test_compose_motion_svg_preserves_frame_payload(tmp_path, n_frames, with_fd):
+    """Ensure _compose_motion_svg preserves one non-empty embedded PNG
+    payload per frame.
+
+    Builds synthetic motion frames, composes the SVG, and verifies each
+    frame image is present as a decodable base64 data URI (plus FD
+    panel elements when FD is enabled). Uses size thresholds to catch
+    regressions where payloads are dropped (producing tiny, blank SVGs).
+    """
+
+    import xml.etree.ElementTree as ET
+    from base64 import b64decode
+
+    from nireports.reportlets.utils import compute_common_display_params, render_comparison_frames
+
+    uncorr_fle = _write_image(tmp_path / "uncorr.nii.gz", (4, 4, 4, n_frames))
+    corr_file = _write_image(tmp_path / "corr.nii.gz", (4, 4, 4, n_frames))
+
+    uncorr_img = load_api(uncorr_fle, nb.spatialimages.SpatialImage)
+    corr_img = load_api(corr_file, nb.spatialimages.SpatialImage)
+
+    fd_values = np.linspace(0.0, 0.3, n_frames, dtype=float) if with_fd else None
+
+    vmin, vmax, cut_coords_uncorr, cut_coords_corr, crop_slices = compute_common_display_params(
+        uncorr_img, corr_img
+    )
+
+    frames = render_comparison_frames(
+        uncorr_img, corr_img, n_frames, vmin, vmax, cut_coords_uncorr, cut_coords_corr, crop_slices
+    )
+
+    assert len(frames) == n_frames
+    assert all(f is not None and len(f) > 0 for f in frames)
+
+    duration = 0.5
+    svg_content = _compose_motion_svg(frames, duration, fd_values)
+    assert svg_content is not None
+    assert len(svg_content) > 70_000  # Conservative floor
+
+    root = ET.fromstring(svg_content)
+    ns = {"svg": "http://www.w3.org/2000/svg"}
+
+    image_nodes = root.findall(".//svg:image", ns)
+    assert len(image_nodes) == n_frames
+
+    non_empty_payloads = 0
+    for idx, node in enumerate(image_nodes):
+        cls = node.get("class", "")
+        assert "frame" in cls
+        assert f"frame-{idx}" in cls
+
+        href = node.get("href") or node.get("{http://www.w3.org/1999/xlink}href")
+        assert href is not None
+        assert href.startswith("data:image/png;base64,")
+
+        payload = href.split("base64,", 1)[1]
+        assert payload
+        png_bytes = b64decode(payload)
+        assert len(png_bytes) > 100
+        non_empty_payloads += 1
+
+    assert non_empty_payloads == n_frames
+
+    # Regression guard: should not collapse to tiny output when payloads are empty
+    assert len(svg_content.encode("utf-8")) > 50_000
+
+    if with_fd:
+        assert root.find(".//svg:g[@class='fd-plot']", ns) is not None
+        assert root.find(".//*[@id='fd-marker']") is not None
