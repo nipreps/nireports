@@ -29,3 +29,5 @@
 * **Assembler**: end-user *NiPreps* write out reportlets to a predetermined folder, which is then queried by the assembler using *PyBIDS*.
   The assembler follows a *report specification* in YAML format, which states the query to find specific reportlets and their corresponding metadata and text annotations.
   As a result, one HTML file with a concatenation of reportlets is produced.
+
+  A tutorial is available under the `docs/notebooks` directory of the repository to help you build your own visual report using *NiReports*.
