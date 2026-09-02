@@ -35,8 +35,8 @@ from nipype.interfaces.base import (
     traits,
 )
 from nipype.interfaces.mixins import reporting
-from nipype.utils.filemanip import fname_presuffix
 
+from nireports.deprecation import deprecate_with_version
 from nireports.interfaces.reporting import base as nrb
 
 _LOGGER = logging.getLogger("nipype.interface")
@@ -233,66 +233,17 @@ class MRICoregRPT(nrb.RegistrationRC, fs.MRICoreg):
         return super()._post_run_hook(runtime)
 
 
-class _SimpleBeforeAfterInputSpecRPT(nrb._SVGReportCapableInputSpec):
-    before = File(exists=True, mandatory=True, desc="file before")
-    after = File(exists=True, mandatory=True, desc="file after")
-    wm_seg = File(desc="reference white matter segmentation mask")
-    before_label = traits.Str("before", usedefault=True)
-    after_label = traits.Str("after", usedefault=True)
-    dismiss_affine = traits.Bool(False, usedefault=True, desc="rotate image(s) to cardinal axes")
+@deprecate_with_version(
+    "Duplicate of :class:`~nireports.interfaces.reporting.base.SimpleBeforeAfterRPT`.",
+    since="26.0.0",
+    until="28.0.0",
+)
+class SimpleBeforeAfterRPT(nrb.SimpleBeforeAfterRPT): ...
 
 
-class SimpleBeforeAfterRPT(nrb.RegistrationRC, nrb.ReportingInterface):
-    input_spec = _SimpleBeforeAfterInputSpecRPT
-
-    def _post_run_hook(self, runtime):
-        """there is not inner interface to run"""
-        self._fixed_image_label = self.inputs.after_label
-        self._moving_image_label = self.inputs.before_label
-        self._fixed_image = self.inputs.after
-        self._moving_image = self.inputs.before
-        self._contour = self.inputs.wm_seg if isdefined(self.inputs.wm_seg) else None
-        self._dismiss_affine = self.inputs.dismiss_affine
-        _LOGGER.info(
-            "Report - setting before (%s) and after (%s) images",
-            self._fixed_image,
-            self._moving_image,
-        )
-
-        return super()._post_run_hook(runtime)
-
-
-class _ResampleBeforeAfterInputSpecRPT(_SimpleBeforeAfterInputSpecRPT):
-    base = traits.Enum("before", "after", usedefault=True, mandatory=True)
-
-
-class ResampleBeforeAfterRPT(SimpleBeforeAfterRPT):
-    input_spec = _ResampleBeforeAfterInputSpecRPT
-
-    def _post_run_hook(self, runtime):
-        from nilearn import image as nli
-
-        self._fixed_image = self.inputs.after
-        self._moving_image = self.inputs.before
-        if self.inputs.base == "before":
-            resampled_after = nli.resample_to_img(self._fixed_image, self._moving_image)
-            fname = fname_presuffix(self._fixed_image, suffix="_resampled", newpath=runtime.cwd)
-            resampled_after.to_filename(fname)
-            self._fixed_image = fname
-        else:
-            resampled_before = nli.resample_to_img(self._moving_image, self._fixed_image)
-            fname = fname_presuffix(self._moving_image, suffix="_resampled", newpath=runtime.cwd)
-            resampled_before.to_filename(fname)
-            self._moving_image = fname
-        self._contour = self.inputs.wm_seg if isdefined(self.inputs.wm_seg) else None
-        _LOGGER.info(
-            "Report - setting before (%s) and after (%s) images",
-            self._fixed_image,
-            self._moving_image,
-        )
-
-        runtime = super()._post_run_hook(runtime)
-        _LOGGER.info("Successfully created report (%s)", self._out_report)
-        os.unlink(fname)
-
-        return runtime
+@deprecate_with_version(
+    "Duplicate of :class:`~nireports.interfaces.reporting.base.ResampleBeforeAfterRPT`.",
+    since="26.0.0",
+    until="28.0.0",
+)
+class ResampleBeforeAfterRPT(nrb.ResampleBeforeAfterRPT): ...

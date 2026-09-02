@@ -29,12 +29,12 @@ from tempfile import TemporaryDirectory
 import pytest
 from nipype.pipeline import engine as pe
 
+from nireports.interfaces.reporting.base import SimpleBeforeAfterRPT
 from nireports.interfaces.reporting.registration import (
     FLIRTRPT,
     ApplyXFMRPT,
     BBRegisterRPT,
     MRICoregRPT,
-    SimpleBeforeAfterRPT,
 )
 from nireports.tests.testing import _run_interface_mock, has_freesurfer, has_fsl
 

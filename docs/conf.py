@@ -128,6 +128,7 @@ intersphinx_mapping = {
     "surfplot": ("https://surfplot.readthedocs.io/en/latest/", None),
     "templateflow": ("https://www.templateflow.org/python-client", None),
 }
+intersphinx_timeout = 10
 
 # -- Options for versioning extension ----------------------------------------
 scv_show_banner = True
