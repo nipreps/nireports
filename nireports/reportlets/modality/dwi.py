@@ -83,6 +83,7 @@ def plot_dwi(dataobj, affine, gradient=None, **kwargs):
             vmax=vmax,
             cut_coords=cut_coords,
             title=title,
+            colorbar=kwargs.pop("colorbar", False),
             **kwargs,
         )
 
