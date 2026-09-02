@@ -36,6 +36,7 @@ from nipype.interfaces.base import (
 )
 from nipype.interfaces.mixins import reporting
 
+from nireports.deprecation import deprecate_with_version
 from nireports.interfaces.reporting import base as nrb
 
 _LOGGER = logging.getLogger("nipype.interface")
@@ -232,6 +233,17 @@ class MRICoregRPT(nrb.RegistrationRC, fs.MRICoreg):
         return super()._post_run_hook(runtime)
 
 
-# Avoid reimplementing the same report classes
-SimpleBeforeAfterRPT = nrb.SimpleBeforeAfterRPT
-ResampleBeforeAfterRPT = nrb.ResampleBeforeAfterRPT
+@deprecate_with_version(
+    "Duplicate of :class:`~nireports.interfaces.reporting.base.SimpleBeforeAfterRPT`.",
+    since="26.0.0",
+    until="28.0.0",
+)
+class SimpleBeforeAfterRPT(nrb.SimpleBeforeAfterRPT): ...
+
+
+@deprecate_with_version(
+    "Duplicate of :class:`~nireports.interfaces.reporting.base.ResampleBeforeAfterRPT`.",
+    since="26.0.0",
+    until="28.0.0",
+)
+class ResampleBeforeAfterRPT(nrb.ResampleBeforeAfterRPT): ...
