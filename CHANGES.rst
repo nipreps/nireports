@@ -1,3 +1,21 @@
+26.0.0 (September 2, 2026)
+=========================
+New feature release in the 26.0.x series.
+
+This release adds support for Python 3.14, makes LaTeX rendering optional in
+reportlets, disables colorbars in reportlets by default, and deprecates divergent
+duplicated interface classes.
+
+* ENH: Make LaTeX optional in reportlet and avoid ``rcParams`` side effects (#265)
+* FIX: Remove divergent duplicated interface classes (#281)
+* FIX: Disable colorbar after default switch (#280)
+* FIX: Avoid uninitialized values in DWI signal normalization (#243)
+* FIX: Avoid attempting to write a read-only array (#242)
+* FIX: Specify standardization strategy in carpet plot data cleaning (#241)
+* DOC: Add missing parameter documentation to carpet plot function (#244)
+* MNT: Test with Python 3.14 (#213)
+
+
 25.3.0 (September 10, 2025)
 ===========================
 New feature release in the 25.3.x series.

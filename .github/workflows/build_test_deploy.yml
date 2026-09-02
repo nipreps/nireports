@@ -125,11 +125,11 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: /tmp/templateflow
-          key: templateflow-v3
-          # Fall back to and build on v2
+          key: templateflow-v4
+          # Fall back to and build on v3
           # If the cache need to be cleared, remove this when bumping key version
           restore-keys: |
-            templateflow-v2
+            templateflow-v3
       - name: Pre-fetch templates
         run: |
           uv pip install --system templateflow
@@ -137,9 +137,10 @@ jobs:
           from templateflow.api import get
           get('Fischer344', desc=None, suffix='T2w')
           get('MNI152NLin6Asym', resolution=2, desc='LR', suffix='T1w')
-          get('MNI152NLin2009cAsym', resolution=1, desc='brain', suffix='mask')
-          get('MNI152NLin2009cAsym', resolution=1, suffix='T1w')
-          get('MNI152NLin2009cAsym', resolution=1, label='WM', suffix='probseg')
+          get('MNI152NLin2009aAsym', resolution=1, desc='brain', suffix='mask')
+          get('MNI152NLin2009aAsym', resolution=1, suffix='T1w')
+          get('MNI152NLin2009aAsym', resolution=1, label='WM', suffix='probseg')
+          get('fsLR', density='32k', suffix='inflated', extension=['.surf.gii'])
           END
         if: steps.tf-cache-restore.outputs.cache-hit != 'true'
 
