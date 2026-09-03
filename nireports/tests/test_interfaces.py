@@ -23,6 +23,7 @@
 """Tests plotting interfaces."""
 
 import os
+from pathlib import Path
 from shutil import copy
 
 import nibabel as nb
@@ -33,9 +34,10 @@ from nireports.interfaces.fmri import FMRISummary
 from nireports.interfaces.nuisance import (
     CompCorVariancePlot,
     ConfoundsCorrelationPlot,
+    MotionCorrectionConfoundsPlot,
     RaincloudPlot,
 )
-from nireports.tests.utils import _generate_raincloud_random_data
+from nireports.tests.utils import _generate_raincloud_random_data, _write_image
 
 
 def _smoke_test_report(report_interface, artifact_name):
@@ -139,3 +141,68 @@ def test_FMRISummary(request, test_data_package, tmp_path, outdir):
         from shutil import copy
 
         copy(result.outputs.out_file, outdir / "fmriplot_nipype.svg")
+
+
+def test_motion_plot_builds_svg(tmp_path, monkeypatch):
+    uncorr_path = _write_image(tmp_path / "uncorr.nii.gz", (4, 4, 4, 2))
+    corr_path = _write_image(tmp_path / "corr.nii.gz", (4, 4, 4, 2))
+
+    call_count = {"count": 0}
+    plot_calls = []
+
+    def fake_plot_epi(img, **kwargs):
+        height = 10 if call_count["count"] % 2 == 0 else 6
+        array = np.ones((height, 8, 3), dtype=np.uint8) * 255
+        import imageio.v3 as iio
+
+        plot_calls.append(kwargs.copy())
+        iio.imwrite(kwargs["output_file"], array)
+        call_count["count"] += 1
+
+    monkeypatch.setattr("nireports.reportlets.utils.plot_epi", fake_plot_epi)
+
+    motion = MotionCorrectionConfoundsPlot()
+    motion.inputs.corr_file = str(uncorr_path)
+    motion.inputs.uncorr_file = str(corr_path)
+    motion.inputs.duration = 0.05
+
+    result = motion.run(cwd=tmp_path)
+    svg_file = Path(result.outputs.out_file)
+
+    svg_content = svg_file.read_text()
+    assert "frame-0" in svg_content
+    assert f"animation-delay: {motion.inputs.duration}s" in svg_content
+    assert call_count["count"] == 4
+    assert plot_calls[0]["vmin"] == plot_calls[1]["vmin"]
+    assert plot_calls[0]["vmax"] == plot_calls[1]["vmax"]
+    assert plot_calls[2]["vmin"] == plot_calls[3]["vmin"]
+    assert plot_calls[2]["vmax"] == plot_calls[3]["vmax"]
+
+
+def test_build_animation_includes_fd_plot(tmp_path, monkeypatch):
+    uncorr_path = _write_image(tmp_path / "uncorr.nii.gz", (4, 4, 4, 3))
+    corr_path = _write_image(tmp_path / "corr.nii.gz", (4, 4, 4, 3))
+    fd_path = tmp_path / "fd.tsv"
+    fd_path.write_text("FD\n0\n0\n")
+
+    def fake_plot_epi(img, **kwargs):
+        array = np.ones((8, 8, 3), dtype=np.uint8) * 255
+        import imageio.v3 as iio
+
+        iio.imwrite(kwargs["output_file"], array)
+
+    monkeypatch.setattr("nireports.reportlets.utils.plot_epi", fake_plot_epi)
+
+    motion = MotionCorrectionConfoundsPlot()
+    motion.inputs.uncorr_file = str(uncorr_path)
+    motion.inputs.corr_file = str(corr_path)
+    motion.inputs.fd_file = str(fd_path)
+    motion.inputs.duration = 0.01
+
+    result = motion.run(cwd=tmp_path)
+    svg_file = Path(result.outputs.out_file)
+    svg_content = svg_file.read_text()
+
+    assert "fd-plot" in svg_content
+    assert "FD (mm)" in svg_content
+    assert "frame-2" not in svg_content  # limited to FD length
