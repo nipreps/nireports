@@ -30,6 +30,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import os
 import re
 import shutil
@@ -817,67 +818,71 @@ def render_comparison_frames(
 
     frames: list[np.ndarray] = []
 
-    with TemporaryDirectory() as tmpdir:
-        for idx in range(n_frames):
-            uncorr_png = Path(tmpdir) / f"uncorr_{idx:04d}.png"
-            corr_png = Path(tmpdir) / f"corr_{idx:04d}.png"
+    for idx in range(n_frames):
+        if crop_slices is not None:
+            frame_idx = (*crop_slices, idx)
+        else:
+            # Handle the None case using default full-range slices or a fallback
+            frame_idx = (slice(None), slice(None), slice(None), idx)
+        uncorr_frame = uncorr_img.slicer[frame_idx]
+        corr_frame = corr_img.slicer[frame_idx]
+        display_uncorr = plot_epi(
+            uncorr_frame,
+            cut_coords=cut_coords_uncorr,
+            display_mode=display_mode,
+            title=f"Before motion correction | Frame {idx + 1}",
+            colorbar=colorbar,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+        )
+        buf_uncorr = io.BytesIO()
+        # Bypass nilearn's path check by using matplotlib's figure.savefig directly
+        display_uncorr.frame_axes.figure.savefig(buf_uncorr, format="png", bbox_inches="tight")
+        display_uncorr.close()
+        buf_uncorr.seek(0)
+        uncorr_arr = np.asarray(iio.imread(buf_uncorr))
 
-            if crop_slices is not None:
-                frame_idx = (*crop_slices, idx)
-            else:
-                # Handle the None case using default full-range slices or a fallback
-                frame_idx = (slice(None), slice(None), slice(None), idx)
-            uncorr_frame = uncorr_img.slicer[frame_idx]
-            corr_frame = corr_img.slicer[frame_idx]
-            plot_epi(
-                uncorr_frame,
-                cut_coords=cut_coords_uncorr,
-                output_file=str(uncorr_png),
-                display_mode=display_mode,
-                title=f"Before motion correction | Frame {idx + 1}",
-                colorbar=colorbar,
-                cmap=cmap,
-                vmin=vmin,
-                vmax=vmax,
+        display_corr = plot_epi(
+            corr_frame,
+            cut_coords=cut_coords_corr,
+            display_mode=display_mode,
+            title=f"After motion correction | Frame {idx + 1}",
+            colorbar=colorbar,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+        )
+        buf_corr = io.BytesIO()
+        # Bypass nilearn's path check by using matplotlib's figure.savefig directly
+        display_corr.frame_axes.figure.savefig(buf_corr, format="png", bbox_inches="tight")
+        display_corr.close()
+        buf_corr.seek(0)
+        corr_arr = np.asarray(iio.imread(buf_corr))
+
+        # Padding logic
+        max_height = max(uncorr_arr.shape[0], corr_arr.shape[0])
+        if uncorr_arr.shape[0] < max_height:
+            uncorr_pad_rows: int = int(max_height - uncorr_arr.shape[0])
+            uncorr_pad_width: PadWidth3D = ((0, uncorr_pad_rows), (0, 0), (0, 0))
+            uncorr_arr = np.pad(
+                uncorr_arr,
+                uncorr_pad_width,
+                mode=pad_mode,
+                constant_values=pad_constant,
             )
-            plot_epi(
-                corr_frame,
-                cut_coords=cut_coords_corr,
-                output_file=str(corr_png),
-                display_mode=display_mode,
-                title=f"After motion correction | Frame {idx + 1}",
-                colorbar=colorbar,
-                cmap=cmap,
-                vmin=vmin,
-                vmax=vmax,
+        if corr_arr.shape[0] < max_height:
+            corr_pad_rows: int = int(max_height - corr_arr.shape[0])
+            corr_pad_width: PadWidth3D = ((0, corr_pad_rows), (0, 0), (0, 0))
+            corr_arr = np.pad(
+                corr_arr,
+                corr_pad_width,
+                mode=pad_mode,
+                constant_values=pad_constant,
             )
 
-            uncorr_arr = np.asarray(iio.imread(uncorr_png))
-            corr_arr = np.asarray(iio.imread(corr_png))
-
-            # Padding logic
-            max_height = max(uncorr_arr.shape[0], corr_arr.shape[0])
-            if uncorr_arr.shape[0] < max_height:
-                uncorr_pad_rows: int = int(max_height - uncorr_arr.shape[0])
-                uncorr_pad_width: PadWidth3D = ((0, uncorr_pad_rows), (0, 0), (0, 0))
-                uncorr_arr = np.pad(
-                    uncorr_arr,
-                    uncorr_pad_width,
-                    mode=pad_mode,
-                    constant_values=pad_constant,
-                )
-            if corr_arr.shape[0] < max_height:
-                corr_pad_rows: int = int(max_height - corr_arr.shape[0])
-                corr_pad_width: PadWidth3D = ((0, corr_pad_rows), (0, 0), (0, 0))
-                corr_arr = np.pad(
-                    corr_arr,
-                    corr_pad_width,
-                    mode=pad_mode,
-                    constant_values=pad_constant,
-                )
-
-            combined = np.concatenate([uncorr_arr, corr_arr], axis=1)
-            frames.append(combined.astype(uncorr_arr.dtype, copy=False))
+        combined = np.concatenate([uncorr_arr, corr_arr], axis=1)
+        frames.append(combined.astype(uncorr_arr.dtype, copy=False))
 
     return frames
 

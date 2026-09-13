@@ -150,14 +150,32 @@ def test_motion_plot_builds_svg(tmp_path, monkeypatch):
     call_count = {"count": 0}
     plot_calls = []
 
-    def fake_plot_epi(img, **kwargs):
-        height = 10 if call_count["count"] % 2 == 0 else 6
-        array = np.ones((height, 8, 3), dtype=np.uint8) * 255
-        import imageio.v3 as iio
+    class MockFigure:
+        def savefig(self, buf, **kwargs):
+            height = 10 if call_count["count"] % 2 == 0 else 6
+            array = np.ones((height, 8, 3), dtype=np.uint8) * 255
+            import imageio.v3 as iio
 
+            # Write png bytes straight into the in-memory buffer
+            png_bytes = iio.imwrite("<bytes>", array, extension=".png")
+            buf.write(png_bytes)
+            call_count["count"] += 1
+
+    class MockAxes:
+        def __init__(self, fig):
+            self.figure = fig
+
+    class MockDisplay:
+        def __init__(self):
+            fig = MockFigure()
+            self.frame_axes = MockAxes(fig)
+
+        def close(self):
+            pass
+
+    def fake_plot_epi(img, **kwargs):
         plot_calls.append(kwargs.copy())
-        iio.imwrite(kwargs["output_file"], array)
-        call_count["count"] += 1
+        return MockDisplay()
 
     monkeypatch.setattr("nireports.reportlets.utils.plot_epi", fake_plot_epi)
 
@@ -185,11 +203,27 @@ def test_build_animation_includes_fd_plot(tmp_path, monkeypatch):
     fd_path = tmp_path / "fd.tsv"
     fd_path.write_text("FD\n0\n0\n")
 
-    def fake_plot_epi(img, **kwargs):
-        array = np.ones((8, 8, 3), dtype=np.uint8) * 255
-        import imageio.v3 as iio
+    class MockFigure:
+        def savefig(self, buf, **kwargs):
+            array = np.ones((8, 8, 3), dtype=np.uint8) * 255
+            import imageio.v3 as iio
 
-        iio.imwrite(kwargs["output_file"], array)
+            buf.write(iio.imwrite("<bytes>", array, extension=".png"))
+
+    class MockAxes:
+        def __init__(self, fig):
+            self.figure = fig
+
+    class MockDisplay:
+        def __init__(self):
+            fig = MockFigure()
+            self.frame_axes = MockAxes(fig)
+
+        def close(self):
+            pass
+
+    def fake_plot_epi(img, **kwargs):
+        return MockDisplay()
 
     monkeypatch.setattr("nireports.reportlets.utils.plot_epi", fake_plot_epi)
 

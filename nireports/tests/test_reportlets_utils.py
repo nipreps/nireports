@@ -21,6 +21,8 @@
 #     https://www.nipreps.org/community/licensing/
 #
 
+from pathlib import Path
+
 import nibabel as nb
 import numpy as np
 import pytest
@@ -153,27 +155,51 @@ def test_render_comparison_frames(monkeypatch):
     # Capture calls to ensure plotting invoked per frame and side
     plot_calls = []
 
-    # We don't care about actual files; just return arrays based on filename pattern
-    def fake_imread(path):
-        p = str(path)
-        # uncorr smaller height than corr -> should be padded before concat
-        if "uncorr_" in p:
-            return np.zeros((8, 5, 3), dtype=np.uint8) + 10
-        if "corr_" in p:
-            return np.zeros((10, 7, 3), dtype=np.uint8) + 20
-        raise AssertionError(f"Unexpected path: {p}")
+    # Track calls to alternate between uncorr and corr arrays
+    read_call_count = 0
+
+    def fake_imread(buf):
+        nonlocal read_call_count
+        # Even calls = uncorr, Odd calls = corr (matching the loop order)
+        if read_call_count % 2 == 0:
+            res = np.zeros((8, 5, 3), dtype=np.uint8) + 10
+        else:
+            res = np.zeros((10, 7, 3), dtype=np.uint8) + 20
+        read_call_count += 1
+        return res
+
+    class MockFigure:
+        def savefig(self, buf, **kwargs):
+            # Simulate writing dummy data into the BytesIO buffer
+            buf.write(b"dummy image bytes")
+
+    class MockAxes:
+        def __init__(self, fig):
+            self.figure = fig
+
+    class MockDisplay:
+        def __init__(self):
+            self.frame_axes = MockAxes(MockFigure())
+
+        def close(self):
+            pass
 
     def fake_plot_epi(frame, **kwargs):
+        output_file = kwargs.get("output_file")
+        if output_file:
+            # Ensure the file exists so imread doesn't fail
+            Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+            Path(output_file).touch()
         plot_calls.append(
             {
                 "frame": frame,
-                "output_file": kwargs.get("output_file"),
                 "title": kwargs.get("title"),
                 "vmin": kwargs.get("vmin"),
                 "vmax": kwargs.get("vmax"),
                 "cut_coords": kwargs.get("cut_coords"),
             }
         )
+        return MockDisplay()
 
     monkeypatch.setattr("nireports.reportlets.utils.iio.imread", fake_imread)
     monkeypatch.setattr("nireports.reportlets.utils.plot_epi", fake_plot_epi)
