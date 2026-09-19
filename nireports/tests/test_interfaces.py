@@ -23,6 +23,7 @@
 """Tests plotting interfaces."""
 
 import os
+import re
 from pathlib import Path
 from shutil import copy
 
@@ -47,6 +48,8 @@ def _smoke_test_report(report_interface, artifact_name):
     if save_artifacts:
         copy(out_report, os.path.join(save_artifacts, artifact_name))
     assert os.path.isfile(out_report), f'Report "{out_report}" does not exist'
+
+    return out_report
 
 
 def test_CompCorVariancePlot(datadir):
@@ -240,3 +243,29 @@ def test_build_animation_includes_fd_plot(tmp_path, monkeypatch):
     assert "fd-plot" in svg_content
     assert "FD (mm)" in svg_content
     assert "frame-2" not in svg_content  # limited to FD length
+
+
+def test_MotionCorrectionConfoundsPlot(test_data_package, tmp_path):
+    stem = "ds000114_sub-01_ses-test_desc-trunc_dwi"
+    uncorr_path = test_data_package / f"{stem}_motion.nii.gz"
+    corr_path = test_data_package / f"{stem}.nii.gz"
+    fd_path = test_data_package / "motion_fd.tsv"
+
+    motion = MotionCorrectionConfoundsPlot()
+    motion.inputs.uncorr_file = str(uncorr_path)
+    motion.inputs.corr_file = str(corr_path)
+    motion.inputs.fd_file = str(fd_path)
+    motion.inputs.duration = 0.05
+
+    out_file = _smoke_test_report(motion, f"{stem}_hmc.svg")
+
+    assert os.path.isfile(out_file)
+
+    svg_content = Path(out_file).read_text()
+    fd = np.loadtxt(fd_path, skiprows=1)
+    n_frames = np.atleast_1d(fd).size
+
+    assert "fd-plot" in svg_content
+    assert "FD (mm)" in svg_content
+    assert re.search(rf"\.frame-{n_frames - 1}\s*\{{", svg_content)
+    assert not re.search(rf"\.frame-{n_frames}\s*\{{", svg_content)
