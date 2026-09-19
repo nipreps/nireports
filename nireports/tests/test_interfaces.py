@@ -136,6 +136,4 @@ def test_FMRISummary(request, test_data_package, tmp_path, outdir):
     result = interface.run()
 
     if outdir is not None:
-        from shutil import copy
-
         copy(result.outputs.out_file, outdir / "fmriplot_nipype.svg")
