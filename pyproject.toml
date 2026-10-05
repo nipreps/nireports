@@ -33,6 +33,7 @@ dependencies = [
     "seaborn >= 0.13",
     "templateflow >= 23.1",
     "lxml >= 4.7",  # required by vendored svgutils
+    "imageio >= 2.34",
 ]
 dynamic = ["version"]
 

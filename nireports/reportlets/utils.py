@@ -30,6 +30,7 @@
 from __future__ import annotations
 
 import base64
+import io
 import os
 import re
 import shutil
@@ -40,13 +41,21 @@ from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Literal as L
+from typing import cast
 from uuid import uuid4
 
+import imageio.v3 as iio
 import matplotlib as mpl
 import nibabel as nb
 import numpy as np
 import numpy.typing as npt
+import pandas as pd
 from nibabel.spatialimages import SpatialImage
+from nilearn import image as nlimage
+from nilearn.masking import compute_epi_mask
+from nilearn.plotting import plot_epi
+from nilearn.plotting.find_cuts import find_xyz_cut_coords
+from scipy import ndimage
 
 import nireports._vendored.svgutils.transform as svgt
 from nireports.reportlets import compression_missing_msg, have_compression
@@ -55,6 +64,8 @@ from nireports.tools.ndimage import load_api
 SVGNS = "http://www.w3.org/2000/svg"
 
 G = ty.TypeVar("G", bound=np.generic)
+CropSlices = tuple[slice, slice, slice]
+PadWidth3D = tuple[tuple[int, int], tuple[int, int], tuple[int, int]]
 
 
 class DisplayObject(ty.Protocol):
@@ -327,7 +338,6 @@ def _3d_in_file(
     if in_file is a list of files, return an arbitrary file from
     the list, and an arbitrary volume from that file
     """
-    from nilearn import image as nlimage
 
     if isinstance(in_file, list):
         in_file = in_file[0]
@@ -424,7 +434,7 @@ def _compose_view(
     with TemporaryDirectory() as tmpdirname:
         out_file = Path(tmpdirname) / "tmp.svg"
         fig.save(str(out_file))
-        # Post processing
+        # Post-processing
         svg = out_file.read_text().splitlines()
 
     # Remove <?xml... line
@@ -548,3 +558,365 @@ def get_parula() -> mpl.colors.LinearSegmentedColormap:
 def _latex_available() -> bool:
     """Return True when a LaTeX executable is available on PATH."""
     return shutil.which("latex") is not None
+
+
+def _largest_connected_component(mask_data: np.ndarray) -> np.ndarray:
+    """Return the largest connected component of a binary mask.
+
+    Connected components are computed with :func:`scipy.ndimage.label`. If the
+    mask contains zero or one component, the input is returned unchanged.
+
+    Parameters
+    ----------
+    mask_data : :obj:`~numpy.ndarray`
+        Boolean or binary mask array.
+
+    Returns
+    -------
+    :obj:`~numpy.ndarray`
+        Boolean array containing only the largest connected component.
+    """
+
+    labeled, num = ndimage.label(mask_data)
+    if num <= 1:
+        return mask_data
+    counts = np.bincount(labeled.ravel())
+    counts[0] = 0
+    largest = counts.argmax()
+    return labeled == largest
+
+
+def _compute_crop_slices(img: nb.spatialimages.SpatialImage) -> tuple[slice, slice, slice]:
+    """Compute tight 3D crop slices around foreground signal in an image.
+
+    Foreground is estimated using :func:`nilearn.masking.compute_epi_mask` when
+    available. If mask computation fails, a fallback threshold-based mask is
+    computed from positive intensities (> 80th percentile). The largest connected
+    component is then selected before deriving bounding-box slices. If no
+    positive values are found or no foreground can be identified, fallback to
+    the entire volume.
+
+    Parameters
+    ----------
+    img : :obj:`~nibabel.spatialimages.SpatialImage`
+        Input 3D image used to estimate the crop region.
+
+    Returns
+    -------
+    :obj:`tuple` of :obj:`slice`
+        Cropping slices in ``(x, y, z)`` order.
+    """
+    # Full-volume fallback
+    fallback_slices = cast(
+        tuple[slice, slice, slice], tuple(slice(0, dim) for dim in img.shape[:3])
+    )
+
+    try:
+        mask_img = compute_epi_mask(img)
+    except (ValueError, RuntimeError):
+        data = np.asanyarray(img.dataobj)
+        positive = data[data > 0]
+        # Return fallback solution if no positive values were found
+        if positive.size == 0:
+            return fallback_slices
+        threshold = np.percentile(positive, 80)
+        # If all values are identical, skip the percentile and keep everything
+        if np.all(positive == threshold):
+            mask_data = np.ones(data.shape, dtype=bool)
+        else:
+            mask_data = data > threshold
+    else:
+        # Executed if compute_epi_mask succeeds without raising an error
+        mask_data = np.asanyarray(mask_img.dataobj) > 0
+
+    mask_data = _largest_connected_component(mask_data)
+
+    # Return fallback solution if no foreground can be found
+    if not mask_data.any():
+        return fallback_slices
+
+    coords = np.array(np.where(mask_data))
+    start = coords.min(axis=1)
+    end = coords.max(axis=1) + 1
+    crop_slices = tuple(slice(int(s), int(e)) for s, e in zip(start, end))
+    return cast(tuple[slice, slice, slice], crop_slices)
+
+
+def merge_crop_slices(
+    first: tuple[slice, slice, slice] | None, second: tuple[slice, slice, slice] | None
+) -> tuple[slice, slice, slice] | None:
+    """Merge two 3D crop boxes into their union.
+
+    Parameters
+    ----------
+    first : :obj:`tuple` of :obj:`slice` or ``None``
+        First crop box in ``(x, y, z)`` order.
+    second : :obj:`tuple` of :obj:`slice` or ``None``
+        Second crop box in ``(x, y, z)`` order.
+
+    Returns
+    -------
+    :obj:`tuple` of :obj:`slice` or ``None``
+        Union of both crop boxes, or whichever one is not ``None``.
+    """
+
+    if first is None:
+        return second
+    if second is None:
+        return first
+
+    merged = []
+    for first_slc, second_slc in zip(first, second):
+        start = min(first_slc.start or 0, second_slc.start or 0)
+        stop = max(first_slc.stop or 0, second_slc.stop or 0)
+        merged.append(slice(start, stop or None))
+
+    merged_tuple = tuple(merged)
+    return cast(tuple[slice, slice, slice], merged_tuple)
+
+
+def compute_display_params(
+    img: nb.spatialimages.SpatialImage, crop_slices: tuple[slice, slice, slice] | None = None
+):
+    """Compute display parameters for plotting a (possibly 4D) neuroimaging file.
+
+    A representative 3D volume is selected (the input itself if 3D, otherwise the
+    temporal midpoint for 4D images), optionally cropped, and then used to compute
+    robust display bounds and cut coordinates.
+
+    Parameters
+    ----------
+    img : :obj:`~nibabel.spatialimages.SpatialImage`
+        Input image.
+    crop_slices : :obj:`tuple` of :obj:`slice`, optional
+        Cropping slices to apply in ``(x, y, z)`` order. If ``None``, slices are
+        computed from the selected representative volume.
+
+    Returns
+    -------
+    cropped_mid : :obj:`~nibabel.spatialimages.SpatialImage`
+        Cropped representative 3D image used for display parameter estimation.
+    cut_coords : :obj:`tuple`
+        Cut coordinates returned by :func:`nilearn.plotting.find_xyz_cut_coords`.
+    vmin : :obj:`float`
+        Lower display bound (80th percentile of cropped data).
+    vmax : :obj:`float`
+        Upper display bound (99.9th percentile of cropped data).
+    crop_slices : :obj:`tuple` of :obj:`slice`
+        Cropping slices actually used.
+    """
+
+    if img.ndim == 3:
+        mid_img = img
+    else:
+        mid_img = img.slicer[..., img.shape[-1] // 2]
+
+    if crop_slices is None:
+        crop_slices = _compute_crop_slices(mid_img)
+
+    cropped_mid = mid_img.slicer[crop_slices]
+    data = cropped_mid.get_fdata().astype(float)
+    vmin, vmax = np.percentile(data, (80, 99.9))
+    cut_coords = find_xyz_cut_coords(cropped_mid)
+
+    return cropped_mid, cut_coords, vmin, vmax, crop_slices
+
+
+def compute_common_display_params(
+    uncorr_img: nb.spatialimages.SpatialImage,
+    corr_img: nb.spatialimages.SpatialImage,
+) -> tuple[
+    float,
+    float,
+    tuple[float, float, float],
+    tuple[float, float, float],
+    CropSlices | None,
+]:
+    """Compute shared crop and display params for uncorrected and corrected images.
+
+    Parameters
+    ----------
+    uncorr_img : :obj:`~nibabel.spatialimages.SpatialImage`
+        Uncorrected volume.
+    corr_img : :obj:`~nibabel.spatialimages.SpatialImage`
+        Motion-corrected volume.
+
+    Returns
+    -------
+    :obj:`tuple`
+        A 5-item tuple containing:
+
+        1. ``vmin`` (:obj:`float`)
+           Lower intensity bound used for plotting.
+        2. ``vmax`` (:obj:`float`)
+           Upper intensity bound used for plotting.
+        3. ``cut_coords_orig`` (:obj:`tuple` of :obj:`float`)
+           Orthogonal cut coordinates for the original image.
+        4. ``cut_coords_corr`` (:obj:`tuple` of :obj:`float`)
+           Orthogonal cut coordinates for the corrected image.
+        5. ``crop_slices`` (:obj:`tuple` of :obj:`slice`)
+           Common crop slices covering both images.
+    """
+
+    _, _, vmin, vmax, uncorr_crop_slices = compute_display_params(uncorr_img)
+    _, _, _, _, corr_crop_slices = compute_display_params(corr_img)
+
+    crop_slices = merge_crop_slices(uncorr_crop_slices, corr_crop_slices)
+
+    _, cut_coords_uncorr, _, _, _ = compute_display_params(uncorr_img, crop_slices)
+    _, cut_coords_corr, _, _, _ = compute_display_params(corr_img, crop_slices)
+
+    return vmin, vmax, cut_coords_uncorr, cut_coords_corr, crop_slices
+
+
+def render_comparison_frames(
+    uncorr_img: nb.spatialimages.SpatialImage,
+    corr_img: nb.spatialimages.SpatialImage,
+    n_frames: int,
+    vmin: float,
+    vmax: float,
+    cut_coords_uncorr: tuple[float, float, float],
+    cut_coords_corr: tuple[float, float, float],
+    crop_slices: CropSlices | None,
+    cmap: mpl.colors.Colormap | str = "RdBu_r",
+) -> list[np.ndarray]:
+    """Render side-by-side uncorrected/corrected frames as RGB(A) arrays.
+
+    Parameters
+    ----------
+    uncorr_img : :obj:`~nibabel.spatialimages.SpatialImage`
+        Uncorrected volume.
+    corr_img : :obj:`~nibabel.spatialimages.SpatialImage`
+        Motion-corrected volume.
+    n_frames : :obj:`int`
+        Number of frames (timepoints) to render.
+    vmin : :obj:`float`
+        Lower intensity bound used for both plotted panels.
+    vmax : :obj:`float`
+        Upper intensity bound used for both plotted panels.
+    cut_coords_uncorr : :obj:`tuple` of :obj:`float`
+        Cut coordinates used when plotting uncorrected frames.
+    cut_coords_corr : :obj:`tuple` of :obj:`float`
+        Cut coordinates used when plotting corrected frames.
+    crop_slices : :obj:`tuple` of :obj:`slice`
+        Spatial crop slices applied to both images before plotting.
+    cmap : :obj:`~matplotlib.colors.Colormap` or :obj:`str`, optional
+        Colormap to use.
+
+    Returns
+    -------
+    :obj:`list` of :obj:`~numpy.ndarray`
+        Rendered side-by-side frame images, one array per timepoint, suitable
+        for embedding into an SVG animation.
+    """
+
+    pad_mode: L["constant"] = "constant"
+    pad_constant: int = 255
+
+    display_mode = "ortho"
+    colorbar = True
+
+    frames: list[np.ndarray] = []
+
+    for idx in range(n_frames):
+        if crop_slices is not None:
+            frame_idx = (*crop_slices, idx)
+        else:
+            # Handle the None case using default full-range slices or a fallback
+            frame_idx = (slice(None), slice(None), slice(None), idx)
+        uncorr_frame = uncorr_img.slicer[frame_idx]
+        corr_frame = corr_img.slicer[frame_idx]
+        display_uncorr = plot_epi(
+            uncorr_frame,
+            cut_coords=cut_coords_uncorr,
+            display_mode=display_mode,
+            title=f"Before motion correction | Frame {idx + 1}",
+            colorbar=colorbar,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+        )
+        buf_uncorr = io.BytesIO()
+        # Bypass nilearn's path check by using matplotlib's figure.savefig directly
+        display_uncorr.frame_axes.figure.savefig(buf_uncorr, format="png", bbox_inches="tight")
+        display_uncorr.close()
+        buf_uncorr.seek(0)
+        uncorr_arr = np.asarray(iio.imread(buf_uncorr))
+
+        display_corr = plot_epi(
+            corr_frame,
+            cut_coords=cut_coords_corr,
+            display_mode=display_mode,
+            title=f"After motion correction | Frame {idx + 1}",
+            colorbar=colorbar,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+        )
+        buf_corr = io.BytesIO()
+        # Bypass nilearn's path check by using matplotlib's figure.savefig directly
+        display_corr.frame_axes.figure.savefig(buf_corr, format="png", bbox_inches="tight")
+        display_corr.close()
+        buf_corr.seek(0)
+        corr_arr = np.asarray(iio.imread(buf_corr))
+
+        # Padding logic
+        max_height = max(uncorr_arr.shape[0], corr_arr.shape[0])
+        if uncorr_arr.shape[0] < max_height:
+            uncorr_pad_rows: int = int(max_height - uncorr_arr.shape[0])
+            uncorr_pad_width: PadWidth3D = ((0, uncorr_pad_rows), (0, 0), (0, 0))
+            uncorr_arr = np.pad(
+                uncorr_arr,
+                uncorr_pad_width,
+                mode=pad_mode,
+                constant_values=pad_constant,
+            )
+        if corr_arr.shape[0] < max_height:
+            corr_pad_rows: int = int(max_height - corr_arr.shape[0])
+            corr_pad_width: PadWidth3D = ((0, corr_pad_rows), (0, 0), (0, 0))
+            corr_arr = np.pad(
+                corr_arr,
+                corr_pad_width,
+                mode=pad_mode,
+                constant_values=pad_constant,
+            )
+
+        combined = np.concatenate([uncorr_arr, corr_arr], axis=1)
+        frames.append(combined.astype(uncorr_arr.dtype, copy=False))
+
+    return frames
+
+
+def load_framewise_displacement(fd_file: str, sep="\t") -> np.ndarray:
+    """Load framewise displacement (FD) values from a delimiter-separated confounds file.
+
+    The function expects either a ``framewise_displacement`` column (preferred)
+    or an ``FD`` column. Missing values are replaced with ``0.0``.
+
+    Parameters
+    ----------
+    fd_file : :obj:`str`
+        Path to a tab-separated values (TSV) confounds file.
+    sep : :obj:`str`, optional
+        Separator character or pattern.
+
+    Returns
+    -------
+    :obj:`~numpy.ndarray`
+        One-dimensional array of framewise displacement values.
+
+    Raises
+    ------
+    :exc:`ValueError`
+        If neither a ``framewise_displacement`` nor an ``FD`` column is present in the file.
+    """
+    framewise_disp = pd.read_csv(fd_file, sep=sep)
+    fd_values = framewise_disp.get("framewise_displacement", framewise_disp.get("FD"))
+    if fd_values is None:
+        available = ", ".join(framewise_disp.columns)
+        raise ValueError(
+            "Could not find a 'framewise_displacement' or 'FD' column in the "
+            f"confounds file (available columns: {available})"
+        )
+
+    return np.asarray(fd_values.fillna(0.0), dtype=float)

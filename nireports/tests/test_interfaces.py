@@ -23,6 +23,8 @@
 """Tests plotting interfaces."""
 
 import os
+import re
+from pathlib import Path
 from shutil import copy
 
 import nibabel as nb
@@ -33,9 +35,10 @@ from nireports.interfaces.fmri import FMRISummary
 from nireports.interfaces.nuisance import (
     CompCorVariancePlot,
     ConfoundsCorrelationPlot,
+    MotionCorrectionConfoundsPlot,
     RaincloudPlot,
 )
-from nireports.tests.utils import _generate_raincloud_random_data
+from nireports.tests.utils import _generate_raincloud_random_data, _write_image
 
 
 def _smoke_test_report(report_interface, artifact_name):
@@ -45,6 +48,8 @@ def _smoke_test_report(report_interface, artifact_name):
     if save_artifacts:
         copy(out_report, os.path.join(save_artifacts, artifact_name))
     assert os.path.isfile(out_report), f'Report "{out_report}" does not exist'
+
+    return out_report
 
 
 def test_CompCorVariancePlot(datadir):
@@ -137,3 +142,128 @@ def test_FMRISummary(request, test_data_package, tmp_path, outdir):
 
     if outdir is not None:
         copy(result.outputs.out_file, outdir / "fmriplot_nipype.svg")
+
+
+def test_motion_plot_builds_svg(tmp_path, monkeypatch):
+    uncorr_path = _write_image(tmp_path / "uncorr.nii.gz", (4, 4, 4, 2))
+    corr_path = _write_image(tmp_path / "corr.nii.gz", (4, 4, 4, 2))
+
+    call_count = {"count": 0}
+    plot_calls = []
+
+    class MockFigure:
+        def savefig(self, buf, **kwargs):
+            height = 10 if call_count["count"] % 2 == 0 else 6
+            array = np.ones((height, 8, 3), dtype=np.uint8) * 255
+            import imageio.v3 as iio
+
+            # Write png bytes straight into the in-memory buffer
+            png_bytes = iio.imwrite("<bytes>", array, extension=".png")
+            buf.write(png_bytes)
+            call_count["count"] += 1
+
+    class MockAxes:
+        def __init__(self, fig):
+            self.figure = fig
+
+    class MockDisplay:
+        def __init__(self):
+            fig = MockFigure()
+            self.frame_axes = MockAxes(fig)
+
+        def close(self):
+            pass
+
+    def fake_plot_epi(img, **kwargs):
+        plot_calls.append(kwargs.copy())
+        return MockDisplay()
+
+    monkeypatch.setattr("nireports.reportlets.utils.plot_epi", fake_plot_epi)
+
+    motion = MotionCorrectionConfoundsPlot()
+    motion.inputs.corr_file = str(uncorr_path)
+    motion.inputs.uncorr_file = str(corr_path)
+    motion.inputs.duration = 0.05
+
+    result = motion.run(cwd=tmp_path)
+    svg_file = Path(result.outputs.out_file)
+
+    svg_content = svg_file.read_text()
+    assert "frame-0" in svg_content
+    assert f"animation-delay: {motion.inputs.duration}s" in svg_content
+    assert call_count["count"] == 4
+    assert plot_calls[0]["vmin"] == plot_calls[1]["vmin"]
+    assert plot_calls[0]["vmax"] == plot_calls[1]["vmax"]
+    assert plot_calls[2]["vmin"] == plot_calls[3]["vmin"]
+    assert plot_calls[2]["vmax"] == plot_calls[3]["vmax"]
+
+
+def test_build_animation_includes_fd_plot(tmp_path, monkeypatch):
+    uncorr_path = _write_image(tmp_path / "uncorr.nii.gz", (4, 4, 4, 3))
+    corr_path = _write_image(tmp_path / "corr.nii.gz", (4, 4, 4, 3))
+    fd_path = tmp_path / "fd.tsv"
+    fd_path.write_text("FD\n0\n0\n")
+
+    class MockFigure:
+        def savefig(self, buf, **kwargs):
+            array = np.ones((8, 8, 3), dtype=np.uint8) * 255
+            import imageio.v3 as iio
+
+            buf.write(iio.imwrite("<bytes>", array, extension=".png"))
+
+    class MockAxes:
+        def __init__(self, fig):
+            self.figure = fig
+
+    class MockDisplay:
+        def __init__(self):
+            fig = MockFigure()
+            self.frame_axes = MockAxes(fig)
+
+        def close(self):
+            pass
+
+    def fake_plot_epi(img, **kwargs):
+        return MockDisplay()
+
+    monkeypatch.setattr("nireports.reportlets.utils.plot_epi", fake_plot_epi)
+
+    motion = MotionCorrectionConfoundsPlot()
+    motion.inputs.uncorr_file = str(uncorr_path)
+    motion.inputs.corr_file = str(corr_path)
+    motion.inputs.fd_file = str(fd_path)
+    motion.inputs.duration = 0.01
+
+    result = motion.run(cwd=tmp_path)
+    svg_file = Path(result.outputs.out_file)
+    svg_content = svg_file.read_text()
+
+    assert "fd-plot" in svg_content
+    assert "FD (mm)" in svg_content
+    assert "frame-2" not in svg_content  # limited to FD length
+
+
+def test_MotionCorrectionConfoundsPlot(test_data_package, tmp_path):
+    stem = "ds000114_sub-01_ses-test_desc-trunc_dwi"
+    uncorr_path = test_data_package / f"{stem}_motion.nii.gz"
+    corr_path = test_data_package / f"{stem}.nii.gz"
+    fd_path = test_data_package / "motion_fd.tsv"
+
+    motion = MotionCorrectionConfoundsPlot()
+    motion.inputs.uncorr_file = str(uncorr_path)
+    motion.inputs.corr_file = str(corr_path)
+    motion.inputs.fd_file = str(fd_path)
+    motion.inputs.duration = 0.05
+
+    out_file = _smoke_test_report(motion, f"{stem}_hmc.svg")
+
+    assert os.path.isfile(out_file)
+
+    svg_content = Path(out_file).read_text()
+    fd = np.loadtxt(fd_path, skiprows=1)
+    n_frames = np.atleast_1d(fd).size
+
+    assert "fd-plot" in svg_content
+    assert "FD (mm)" in svg_content
+    assert re.search(rf"\.frame-{n_frames - 1}\s*\{{", svg_content)
+    assert not re.search(rf"\.frame-{n_frames}\s*\{{", svg_content)
