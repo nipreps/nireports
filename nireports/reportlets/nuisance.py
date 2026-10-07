@@ -27,7 +27,6 @@
 import math
 import operator
 import os.path as op
-from typing import Union
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -38,7 +37,6 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_pdf import FigureCanvasPdf as FigureCanvas
 from matplotlib.colors import Normalize
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
-from scipy.ndimage import gaussian_filter
 
 from nireports.tools.ndimage import _get_values_inside_a_mask
 
@@ -1252,11 +1250,11 @@ def _extract_slice(img_data: np.ndarray, orientation: str, slice_idx: int) -> np
 
     axis = ORIENTATIONS.index(orientation)
 
-    axis_sizw = img_data.shape[axis]
+    axis_size = img_data.shape[axis]
 
-    if not (0 <= slice_idx < axis_sizw):
+    if not (0 <= slice_idx < axis_size):
         raise IndexError(
-            f"Slice index {slice_idx} out of bounds for axis {orientation} with size {axis_sizw}"
+            f"Slice index {slice_idx} out of bounds for axis {orientation} with size {axis_size}"
         )
 
     slice_obj: list[int | slice] = [slice(None)] * 3
@@ -1280,7 +1278,7 @@ def plot_volumewise_motion(
     frames : :obj:`~numpy.ndarray`
         Frame indices.
     motion_params : :obj:`~numpy.ndarray`
-        Motion parameters.Motion parameters: translation and rotation. Each row
+        Motion parameters: translation and rotation. Each row
         represents one frame, and columns represent each coordinate axis ``x``,
         ``y``, and ``z``. Translation parameters are followed by rotation
         parameters column-wise.
@@ -1309,7 +1307,7 @@ def plot_volumewise_motion(
     ax[1].plot(frames, motion_params[:, 4], label="Ry")
     ax[1].plot(frames, motion_params[:, 5], label="Rz")
     ax[1].set_ylabel("Rotation (deg)")
-    ax[1].set_xlabel("Time (s)")
+    ax[1].set_xlabel("Frame")
     ax[1].legend(loc="upper right")
     ax[1].set_title("Rotation vs frames")
 
@@ -1323,7 +1321,8 @@ def plot_motion_overlay(
     orientation: str,
     slice_idx: int,
     smooth: bool = True,
-    ax: Union[Axes, None] = None,
+    colorbar: bool = True,
+    ax: Axes | None = None,
 ) -> Axes:
     """Plot motion relative difference as an overlay on a given orientation and slice of the imaging data.
 
@@ -1339,11 +1338,15 @@ def plot_motion_overlay(
     brain_mask : :obj:`~numpy.ndarray`
         Brain mask.
     orientation : :obj:`str`
-        Orientation. Can be one of obj:`ORIENTATIONS`.
+        Orientation. Can be one of :data:`ORIENTATIONS`.
     slice_idx : :obj:`int`
         Slice index to plot.
     smooth : :obj:`bool`, optional
         ``True`` to smooth the motion relative difference.
+    colorbar : :obj:`bool`, optional
+        ``True`` to draw a colorbar. The color scale is symmetric around zero
+        and spans the whole masked volume, so it is shared across slices and
+        orientations of the same data.
     ax : :obj:`~matplotlib.axes.Axes`, optional
         Figure axis.
 
@@ -1355,13 +1358,15 @@ def plot_motion_overlay(
 
     # Check dimensionality
     if img_data.shape != rel_diff.shape:
-        raise IndexError(
+        raise ValueError(
             f"Dimension mismatch: imaging data shape {img_data.shape}, overlay shape {rel_diff.shape}"
         )
 
     # Smooth the relative difference
     smoothed_diff = rel_diff
     if smooth:
+        from scipy.ndimage import gaussian_filter
+
         smoothed_diff = gaussian_filter(rel_diff, sigma=1)
 
     # Mask the background
@@ -1375,10 +1380,14 @@ def plot_motion_overlay(
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=(10, 5), constrained_layout=True)
 
+    # Center the diverging colormap at zero, scaled over the whole volume
+    vmax = np.nanmax(np.abs(masked_smooth_diff))
+
     ax.imshow(masked_img_slice, cmap="gray")
-    im = ax.imshow(diff_img_slice, cmap="bwr", alpha=0.5)
-    ax.figure.colorbar(im, ax=ax, label="Relative Difference (%)")
-    ax.set_title("Smoothed Relative Difference Overlay")
+    im = ax.imshow(diff_img_slice, cmap="bwr", alpha=0.5, vmin=-vmax, vmax=vmax)
+    if colorbar:
+        ax.figure.colorbar(im, ax=ax, label="Relative Difference (%)")
+    ax.set_title(f"{'Smoothed ' if smooth else ''}Relative Difference Overlay")
     ax.axis("off")
 
     return ax

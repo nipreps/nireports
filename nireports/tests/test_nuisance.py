@@ -23,11 +23,12 @@
 # STATEMENT OF CHANGES: This file was ported carrying over full git history from
 # other NiPreps projects licensed under the Apache-2.0 terms.
 
+import matplotlib.pyplot as plt
 import nibabel as nb
 import numpy as np
 import pytest
-from matplotlib.figure import Figure
-from scipy.ndimage import affine_transform
+from nilearn.masking import compute_epi_mask
+from scipy.ndimage import shift
 
 from nireports.reportlets.nuisance import (
     ORIENTATIONS,
@@ -36,122 +37,90 @@ from nireports.reportlets.nuisance import (
 )
 
 
-def test_plot_volumewise_motion(request, tmp_path):
+@pytest.fixture
+def motion_data(test_data_package):
+    """A DWI volume, its brain mask, and the relative difference after a simulated shift."""
+    img = nb.load(test_data_package / "ds000114_sub-01_ses-test_desc-trunc_dwi.nii.gz")
+    b0 = img.slicer[..., 1]
+    data = b0.get_fdata()
+    mask = compute_epi_mask(b0).get_fdata().astype(bool)
+
+    moved = shift(data, (0.5, -0.3, 0), order=1)
+    rel_diff = np.zeros_like(data)
+    valid = mask & (data > 1e-5)
+    rel_diff[valid] = 100 * (moved[valid] - data[valid]) / data[valid]
+    return data, mask, np.clip(rel_diff, -10, 10)
+
+
+def test_plot_volumewise_motion(request, outdir):
     rng = request.node.rng
-
-    # Simulate motion for a given number of frames
     n_frames = 100
-    frames = np.arange(n_frames)
-
-    # Simulated translations (in mm)
-    translations = rng.standard_normal((n_frames, 3)).cumsum(axis=0) * 0.2
-
-    # Simulated rotations (in degrees)
-    rotations = rng.standard_normal((n_frames, 3)).cumsum(axis=0) * 0.1
-
-    # Combine into one motion matrix: shape (n_frames, 6)
-    motion_params = np.hstack([translations, rotations])
-
-    ax = plot_volumewise_motion(frames, motion_params)
-    assert isinstance(ax[0].figure, Figure)
-    fig = ax[0].figure
-    out_svg = tmp_path / "volumewise_motion.svg"
-    fig.savefig(out_svg, format="svg")
-
-
-@pytest.mark.parametrize("orientation", ["axial", "coronal", "sagittal"])
-def test_plot_motion_overlay(tmp_path, orientation, test_data_package):
-    import scipy.ndimage as ndi
-
-    def compute_brain_mask_from_b0(_img_data, _vol_idx=0, _threshold_percentile=20):
-        b0 = img_data[..., _vol_idx] if img_data.ndim == 4 else img_data
-
-        positive = b0[b0 > 0]
-        thr = np.percentile(positive, _threshold_percentile) if positive.size else 0.0
-        _brain_mask = b0 > thr
-
-        labels, nlab = ndi.label(_brain_mask)
-        if nlab > 0:
-            sizes = ndi.sum(_brain_mask, labels, index=np.arange(1, nlab + 1))
-            keep = 1 + np.argmax(sizes)
-            _brain_mask = labels == keep
-
-        _brain_mask = ndi.binary_fill_holes(_brain_mask)
-        return _brain_mask
-
-    def _compute_percentage_change(reference, test, mask):
-        # Avoid divide-by-zero errors
-        eps = 1e-5
-        _rel_diff = np.zeros_like(reference)
-        mask = mask.copy()
-        mask[reference <= eps] = False
-        _rel_diff[mask] = 100 * (test[mask] - reference[mask]) / reference[mask]
-
-        return _rel_diff
-
-    dwi_img = nb.load(test_data_package / "ds000114_sub-01_ses-test_desc-trunc_dwi.nii.gz")
-    img_data = dwi_img.get_fdata()
-
-    brain_mask = compute_brain_mask_from_b0(img_data, _vol_idx=0)
-
-    # Create an affine transformation (rotation + translation)
-    theta = np.deg2rad(5)  # 5 degree rotation
-    cos_t, sin_t = np.cos(theta), np.sin(theta)
-
-    # Rotate around Z axis and shift by +5 in x and -3 in y
-    rotation_matrix = np.array([[cos_t, -sin_t, 0], [sin_t, cos_t, 0], [0, 0, 1]])
-    translation = np.array([5, -3, 0])  # in voxel units
-
-    # Transform matrix
-    transform = np.eye(4)
-    transform[:3, :3] = rotation_matrix
-    transform[:3, 3] = translation
-
-    # Inverse affine because scipy applies the inverse
-    inv_transform = np.linalg.inv(transform)
-
-    dwi_dir_data = img_data[..., 1]
-
-    # Apply the transformation
-    shifted = affine_transform(
-        dwi_dir_data, inv_transform[:3, :3], offset=inv_transform[:3, 3], order=1
+    # Random-walk translations (mm) and rotations (deg)
+    motion_params = np.hstack(
+        [
+            rng.standard_normal((n_frames, 3)).cumsum(axis=0) * 0.2,
+            rng.standard_normal((n_frames, 3)).cumsum(axis=0) * 0.1,
+        ]
     )
 
-    # Compute relative difference
-    rel_diff = _compute_percentage_change(dwi_dir_data, shifted, brain_mask)
+    ax = plot_volumewise_motion(np.arange(n_frames), motion_params)
 
-    # Clip values for visualization purposes
-    rel_diff = np.clip(rel_diff, -10, 10)
+    assert [line.get_label() for line in ax[0].get_lines()] == ["x", "y", "z"]
+    assert [line.get_label() for line in ax[1].get_lines()] == ["Rx", "Ry", "Rz"]
+    np.testing.assert_array_equal(ax[1].get_lines()[2].get_ydata(), motion_params[:, 5])
 
-    smooth = True
-    axis = ORIENTATIONS.index(orientation)
-    slice_idx = img_data.shape[axis] // 2
+    if outdir is not None:
+        ax[0].figure.savefig(outdir / "volumewise_motion.svg", bbox_inches="tight")
 
-    with pytest.raises(IndexError):
-        _ = plot_motion_overlay(
-            rel_diff[..., np.newaxis],
-            dwi_dir_data,
-            brain_mask,
+
+@pytest.mark.parametrize("orientation", ORIENTATIONS)
+def test_plot_motion_overlay(motion_data, orientation, outdir):
+    data, mask, rel_diff = motion_data
+    slice_idx = data.shape[ORIENTATIONS.index(orientation)] // 2
+
+    ax = plot_motion_overlay(rel_diff, data, mask, orientation, slice_idx)
+
+    _, overlay = ax.get_images()
+    vmin, vmax = overlay.get_clim()
+    assert vmin == -vmax
+
+    if outdir is not None:
+        ax.figure.savefig(outdir / f"motion_overlay_{orientation}.svg", bbox_inches="tight")
+
+
+def test_motion_summary_composite(request, motion_data, outdir):
+    rng = request.node.rng
+    data, mask, rel_diff = motion_data
+    motion_params = rng.standard_normal((50, 6)).cumsum(axis=0) * 0.1
+
+    fig, axes = plt.subplot_mosaic(
+        [["trans", *ORIENTATIONS], ["rot", *ORIENTATIONS]],
+        figsize=(16, 5),
+        constrained_layout=True,
+    )
+    plot_volumewise_motion(np.arange(50), motion_params, ax=[axes["trans"], axes["rot"]])
+    for orientation in ORIENTATIONS:
+        slice_idx = data.shape[ORIENTATIONS.index(orientation)] // 2
+        plot_motion_overlay(
+            rel_diff,
+            data,
+            mask,
             orientation,
             slice_idx,
-            smooth=smooth,
+            smooth=False,
+            colorbar=orientation == ORIENTATIONS[-1],
+            ax=axes[orientation],
         )
 
-    _slice_idx = img_data.shape[axis]
-    with pytest.raises(IndexError):
-        _ = plot_motion_overlay(
-            rel_diff,
-            dwi_dir_data,
-            brain_mask,
-            orientation,
-            _slice_idx,
-            smooth=smooth,
-        )
-
-    ax = plot_motion_overlay(
-        rel_diff, dwi_dir_data, brain_mask, orientation, slice_idx, smooth=smooth
+    # Unsmoothed axial overlay is the masked input slice, unrotated
+    axial_slice = data.shape[2] // 2
+    np.testing.assert_array_equal(
+        axes["axial"].get_images()[1].get_array().filled(np.nan),
+        np.where(mask, rel_diff, np.nan)[..., axial_slice],
     )
-    assert isinstance(ax.figure, Figure)
-    fig = ax.figure
-    out_svg = tmp_path / "motion_overlay.svg"
-    fig.savefig(out_svg, format="svg")
+    assert axes["axial"].get_title() == "Relative Difference Overlay"
+    # A single colorbar is shared by all overlays
+    assert len(fig.axes) == len(axes) + 1
+
+    if outdir is not None:
+        fig.savefig(outdir / "motion_summary.svg", bbox_inches="tight")
