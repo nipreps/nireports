@@ -31,6 +31,7 @@ env:
   # Force tox and pytest to use color
   FORCE_COLOR: true
   TEMPLATEFLOW_HOME: /tmp/templateflow
+  NIREPORTS_WERRORS: 1
 
 jobs:
   build:
