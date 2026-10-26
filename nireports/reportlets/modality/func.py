@@ -27,7 +27,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.gridspec import GridSpec
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
 from nireports.reportlets.nuisance import confoundplot, plot_carpet, spikesplot
 
@@ -140,10 +140,19 @@ class fMRIPlot:
             )
             grid_id += 1
 
+        # Use the same horizontal split as the spikes and confound plots,
+        # so all panels share the same time axis
+        carpet_gs = GridSpecFromSubplotSpec(
+            1,
+            2,
+            subplot_spec=grid[-1],
+            width_ratios=[1, 100],
+            wspace=0.0,
+        )
         plot_carpet(
             self.timeseries,
             segments=self.segments,
-            subplot=grid[-1],
+            subplot=carpet_gs[1],
             tr=self.tr,
             sort_rows=self.sort_carpet,
             drop_trs=self.nskip,

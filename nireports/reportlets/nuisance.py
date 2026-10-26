@@ -367,12 +367,18 @@ def plot_carpet(
     t_stop = size[1] * t_step + t_start
     data = data[:, t_start:t_stop:t_step]
 
-    xticks = np.linspace(0, data.shape[-1] - 1, endpoint=True, num=7)
-    idx_ticks = t_step * xticks + t_start
+    # Place each (decimated) column at its original time-point index, with every sample
+    # spanning [i - 0.5, i + 0.5], so the carpet lines up with the confound plots
+    n_cols = data.shape[-1]
+    extent_x = (t_start - 0.5 * t_step, t_start + (n_cols - 0.5) * t_step)
+
+    # Ticks fall on plotted columns (fewer than 7 when there are few time points)
+    col_ticks = np.unique(np.rint(np.linspace(0, n_cols - 1, endpoint=True, num=7)))
+    xticks = t_step * col_ticks + t_start
     if tr is not None:
-        xticklabels = [f"{t // 60:02d}:{t % 60:02d}" for t in np.rint(tr * idx_ticks).astype(int)]
+        xticklabels = [f"{t // 60:02d}:{t % 60:02d}" for t in np.rint(tr * xticks).astype(int)]
     else:
-        xticklabels = np.rint(idx_ticks).astype(int)
+        xticklabels = np.rint(xticks).astype(int)
 
     # Define nested GridSpec
     gs = GridSpecFromSubplotSpec(
@@ -394,7 +400,9 @@ def plot_carpet(
             cmap="gray",
             vmin=vminmax[0],
             vmax=vminmax[1],
+            extent=(*extent_x, len(indices) - 0.5, -0.5),
         )
+        ax.set_xlim((-0.5, n_trs - 0.5))
 
         # Toggle the spine objects
         ax.spines["top"].set_visible(False)
@@ -529,7 +537,7 @@ def spikesplot(
 
     # Handle X axis
     last = ntsteps - 1
-    ax.set_xlim(0, last)
+    ax.set_xlim(-0.5, last + 0.5)
     xticks = list(range(last)[::20]) + [last] if not hide_x else []
     ax.set_xticks(xticks)
 
@@ -559,13 +567,13 @@ def spikesplot(
         # yticks.insert(0, ts_z.min())
         # yticks += [ts_z.max()]
         for val in ytick_vals:
-            ax.plot((0, ntsteps - 1), (-val, -val), "k:", alpha=0.2)
-            ax.plot((0, ntsteps - 1), (val, val), "k:", alpha=0.2)
+            ax.plot((-0.5, ntsteps - 0.5), (-val, -val), "k:", alpha=0.2)
+            ax.plot((-0.5, ntsteps - 0.5), (val, val), "k:", alpha=0.2)
 
         # Plot spike threshold
         if zs_max < spike_thresh:
-            ax.plot((0, ntsteps - 1), (-spike_thresh, -spike_thresh), "k:")
-            ax.plot((0, ntsteps - 1), (spike_thresh, spike_thresh), "k:")
+            ax.plot((-0.5, ntsteps - 0.5), (-spike_thresh, -spike_thresh), "k:")
+            ax.plot((-0.5, ntsteps - 0.5), (spike_thresh, spike_thresh), "k:")
     else:
         yticks = [
             ts_z[:, nskip:].min(),
@@ -770,10 +778,10 @@ def confoundplot(
     )
 
     # Annotate percentile 95
-    ax_ts.plot((0, ntsteps - 1), [p95] * 2, linewidth=0.1, color="lightgray")
+    ax_ts.plot((-0.5, ntsteps - 0.5), [p95] * 2, linewidth=0.1, color="lightgray")
     ax_ts.annotate(
         f"{p95:.2f}",
-        xy=(0, p95),
+        xy=(-0.5, p95),
         xytext=(-1, 0),
         textcoords="offset points",
         va="center",
@@ -786,11 +794,11 @@ def confoundplot(
         cutoff = []
 
     for thr in cutoff:
-        ax_ts.plot((0, ntsteps - 1), [thr] * 2, linewidth=0.2, color="dimgray")
+        ax_ts.plot((-0.5, ntsteps - 0.5), [thr] * 2, linewidth=0.2, color="dimgray")
 
         ax_ts.annotate(
             f"{thr:.2f}",
-            xy=(0, thr),
+            xy=(-0.5, thr),
             xytext=(-1, 0),
             textcoords="offset points",
             va="center",
@@ -800,7 +808,8 @@ def confoundplot(
         )
 
     ax_ts.plot(tseries, color=color, linewidth=0.8)
-    ax_ts.set_xlim((0, ntsteps - 1))
+    # Match the carpet plot, where each time point spans [i - 0.5, i + 0.5]
+    ax_ts.set_xlim((-0.5, ntsteps - 0.5))
 
     if gs_dist is not None:
         ax_dist = plt.subplot(gs_dist)
