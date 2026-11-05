@@ -132,6 +132,8 @@ def svg_compress(image: str, compress: bool | L["auto"] = "auto") -> str:
                     tmp_lines = [line]
                     while "/>" not in line:
                         line = fp.readline()
+                        if not line:
+                            raise ValueError("Unterminated embedded PNG image in SVG")
                         tmp_lines.append(line)
                     content = "".join(tmp_lines).replace("\n", "").replace(",  ", ",")
 
